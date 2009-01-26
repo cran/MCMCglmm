@@ -1,0 +1,40 @@
+useDynLib(MCMCglmm)
+#import(limma)
+#import(MASS)
+#import(corpcor)
+#import(bayesm)
+#import(combinat)
+#import(mvtnorm)
+#import(orthopolynom)
+#import(survival)
+#import(tensorA)
+#import(Matrix)
+#import(coda)
+#import(bayesSurv)
+#import(nlme)
+import(Matrix)
+export(
+  commutation,
+  Dtensor,
+  evalDtensor,
+  Ddivergence,
+  knorm,
+  KPPM, 
+  krzanowski.test,
+  kunif,
+  list2bdiag,
+  MCMCglmm,
+  posterior.mode,
+  plotsubspace,
+  Ptensor,
+  Tri2M,
+  rbv,
+  rIW,
+  prunePed,
+  Dexpressions,
+  inverseA,
+  sm2asreml,
+  list2bdiag
+) 
+
+

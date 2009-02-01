@@ -9,9 +9,9 @@ and phylogenies. Please read the tutorial: \code{vignette("Tutorial",
 }
 \usage{
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
-data=NULL,
-      start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL", scale=TRUE,
-      nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE)
+    data=NULL,start=NULL, prior=NULL, tune=NULL, pedigree=NULL,
+    nodes="ALL", scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
+    pl=FALSE, verbose=TRUE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 

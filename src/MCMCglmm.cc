@@ -135,7 +135,7 @@ double  densityl1,
 
         for(k=0; k<nGR; k++){
            t[k]=0.0;
-          sd[k]=0.0;
+          sd[k]=1.0;
           wn[k]=0.0;
           zn[k]=0.0;
         }
@@ -947,7 +947,6 @@ cs*     KGinv[nGR];
                zn[k]++;
                Eaccl++;  
              }
-
 /***************/
 /* Adaptive MH */
 /***************/
@@ -979,12 +978,11 @@ cs*     KGinv[nGR];
          if(AMtuneP[k]==1 && itt<burnin){
            for(i=0; i<dimG; i++){
              for(l=0; l<dimG; l++){
-			   propC[k]->x[i*dimG+l] += (muC[k]->x[i]*muC[k]->x[l])/t[k];
+			   propC[k]->x[i*dimG+l] += (muC[k]->x[i]*muC[k]->x[l])/(t[k]);
                propC[k]->x[i*dimG+l] *= sd[k];
              }
            }
-
-		   if(wn[k]>0.0){
+			   if(wn[k]>0.0){
              sd[k] = pow(qACCEPT, ((zn[k]/wn[k])-alpha_star));
 		   }		 
            zn[k] = 0.0; 

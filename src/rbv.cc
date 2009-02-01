@@ -23,7 +23,7 @@ void rbv(
   int nid = nidP[0];
   double  f[nid];
   double  ai;
-  double  AN[100];
+  double  AN[nid];
   double  li[nid];
 
   int dimG = GdimP[0];

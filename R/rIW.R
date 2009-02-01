@@ -1,7 +1,7 @@
 "rIW"<-function(nu,V,split=NULL, n=1){
  
   if(is.matrix(V)==FALSE | dim(V)[1]!=dim(V)[2]){stop("V must be a square matrix")}
-  if(is.positive.definite(V)==FALSE){stop("V must be positive definite")}
+  if(is.positive.definite(V, tol=1e-11)==FALSE){stop("V must be positive definite")}
   if(nu<=0){stop("nu must be greater than zero")}
   if(is.null(split)){
     split=-998

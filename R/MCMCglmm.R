@@ -210,7 +210,9 @@
 
          if(dist.preffix=="mu"){
            nJ<-as.numeric(substr(family[i],12,nchar(family[i])))-1                                                                            # number of J-1 categories
-           mfac<-c(mfac, rep(nJ,nJ))             
+		   if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
+           mfac<-c(mfac, rep(nJ,nJ))  
+		   if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){stop("multinomial data must be positive integers")}
            y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
            data<-data[,-which(names(data)==response.names[nt+nJ]),drop=FALSE]                                                                      # remove first category
            response.names<-response.names[-(nt+nJ)]
@@ -223,12 +225,17 @@
 # censored traits #
 ###################
 
-         if(dist.preffix=="ce"){                                                                         
+         if(dist.preffix=="ce"){         
+		   if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
            y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                               # get upper interval
            if(family.names[nt]=="cenpoisson"){
+			  if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
              data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]<-data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]-1
            }
-	   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                                # remove upper interval from the response
+		   if(family.names[nt]=="cenexponential"){
+			   if(any(data[,response.names[0:1+nt]]<0, na.rm=T)){stop("Exponential data must be positive")}  
+		   }
+		   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                                # remove upper interval from the response
            response.names<-response.names[-(nt+1)]
            nt<-nt+1
          }
@@ -249,7 +256,8 @@
 ########################
 		  
 	 if(dist.preffix=="zi"){                                                                         
-           y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+	   y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+	   if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be integers")}
 	   cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
 	   colnames(cont)<-paste("zi", response.names[nt], sep=".")
 	   data<-cbind(data, cont)
@@ -268,6 +276,12 @@
 #######################################
 
         }else{
+			if(family.names[nt]=="poisson"){
+				if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
+			}
+			if(family.names[nt]=="exponential"){
+				if(any(data[,response.names[nt]]<0, na.rm=T)){stop("Exponential data must be positive")}
+			}	
           y.additional<-cbind(y.additional,matrix(NA,nS,1))     
           nt<-nt+1
         }
@@ -360,11 +374,15 @@
           components<-strsplit(rmodel.terms[r], "\\:")[[1]]
           if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
           if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
+		  if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
+		  if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
           rmodel.terms[r]<-paste(components, collapse=".")
           data[[rmodel.terms[r]]]<-as.factor(paste(data[,components[1]], data[,components[2]], sep=""))
         }
+		  
         if(is.factor(data[,rmodel.terms[r]])==FALSE){stop(paste(rmodel.terms[r], " is not a factor"))}
-
+		if(any(levels(data[,rmodel.terms[r]])%in%unique(data[,rmodel.terms[r]])==FALSE)){stop(paste("some levels not observed in ", rmodel.terms[r]))}		  
+		  
         nrl[nr]<-nlevels(data[,rmodel.terms[r]])
         variance.names<-c(variance.names, rmodel.terms[r])
 		  
@@ -412,6 +430,10 @@
         components<-strsplit(rmodel.terms[r], "\\(|\\)\\:")[[1]][2:3]                               # find component terms
          if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
          if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
+		if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
+		if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
+
+		  
          nfl[nr]<-nlevels(data[,components[1]]) 
          nrl[nr]<-nlevels(data[,components[2]]) 
          variance.names<-c(variance.names, paste(components[2],components[1], expand.grid(levels(data[,components[1]]), levels(data[,components[1]]))[,1], expand.grid(levels(data[,components[1]]), levels(data[,components[1]]))[,2], sep="."))
@@ -468,6 +490,8 @@
         components<-strsplit(rmodel.terms[r], "\\(|\\)\\:")[[1]][2:3]                               # find component terms
         if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
         if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
+		  if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
+		  if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
 
         nfl[nr+1:nlevels(data[,components[1]])-1]<-1
         nrl[nr+1:nlevels(data[,components[1]])-1]<-colSums(table(data[,components[2]],  data[,components[1]])>0)
@@ -534,6 +558,8 @@
           names(data)[which(names(data)=="legvar")]<-legvar.name
         }
         if(is.factor(data[,rr.covariate[3]])==FALSE){stop(paste(rr.covariate[3], " is not a factor"))}
+		if(any(levels(data[,rr.covariate[3]])%in%unique(data[,rr.covariate[3]])==FALSE)){stop(paste("some levels not observed in ",rr.covariate[3]))}
+
         rmodel.terms[r]<-paste(rr.covariate[3], ":", legvar.name, sep="")
         nfl[nr]<-abs(as.numeric(rr.covariate[2]))+(as.numeric(rr.covariate[2])>0)
         nrl[nr]<-nlevels(data[,rr.covariate[3]])
@@ -689,11 +715,26 @@
        }
 
    X<-model.matrix(as.formula(paste("~", paste(fmodel.terms, collapse="+"), sep="")),data)
-
    X[which(is.na(X))]<-0 
+   if(any(apply(X,2, function(x){all(x==0)}))){
+	 warning(paste("fixed effects ", colnames(X)[which(apply(X,2, function(x){all(x==0)}))],  " not represented in data and have been deleted"))
+     X<-X[,-which(apply(X,2, function(x){all(x==0)}))] 
+   }		 
    X<-as(X, "sparseMatrix")
 
-   if(is.null(prior$B)){prior$B=list(V=diag(dim(X)[2])*1e+10, mu=rep(0,dim(X)[2]))}
+   if(is.null(prior$B)){
+      prior$B=list(V=diag(dim(X)[2])*1e+10, mu=matrix(0,dim(X)[2],1))
+   }else{
+	   if(any(prior$B$mu!=0)){stop("sorry; non-zero mean vector for fixed effect prior not yet implemented")}
+	   if(is.matrix(prior$B$mu)==FALSE){
+		   prior$B$mu<-matrix(prior$B$mu,  length(prior$B$mu), 1)
+	   }
+	   if(is.matrix(prior$B$V)==FALSE){
+		   prior$B$V<-as.matrix(prior$B$V)
+	   }	   
+	   if(dim(X)[2]!=dim(prior$B$mu)[1]){stop("fixed effect mu prior is the wrong dimension")}
+	   if(dim(X)[2]!=dim(prior$B$V)[1] | dim(X)[2]!=dim(prior$B$V)[2]){stop("fixed effect V prior is the wrong dimension")}
+   }	   
 
 ################
 # Missing data #
@@ -747,7 +788,7 @@
                  mu<-0
               }
             }
-            if(data_tmp$MCMC_family.names[1]==5 | data_tmp$MCMC_family.names[1]==9){
+            if(data_tmp$MCMC_family.names[1]=="exponential" | data_tmp$MCMC_family.names[1]=="cenexponential"){
               m1<-summary(glm(MCMC_y~1, family="Gamma", data=data_tmp,subset=is.na(data_tmp$MCMC_y)==FALSE))
               v<-abs((as.numeric(m1$dispersion[1])-1)/2)
               mu<-as.numeric(m1$coef[1])
@@ -856,7 +897,7 @@
     }
 
     if(length(mfac)==0){mfac=-999}
-
+	
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
         as.double(data$MCMC_y.additional),

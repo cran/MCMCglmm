@@ -1,16 +1,19 @@
 #include "cs_inv.h"
+#define Ctol  1e-12
+#define Dtol  1e-12
 
 /* matrix inversion through Gauss-Jordan elimination: modified from numerical recipes */
 
 cs *cs_inv(const cs *C){  
-
+	
     int n, i, icol,irow,j,k,l,ll;
-    double big,dum,pivinv,temp, det;
+    double big,dum,pivinv,temp, det, CN;
+	CN = cs_norm(C);
 
     cs *A;
     n = C->n;
     det=1.0;
-    int indxc[10], indxr[10],ipiv[10]; 
+    int indxc[n], indxr[n],ipiv[n]; 
 
     A = cs_spalloc (n, n, n*n, 1, 0);
 
@@ -69,8 +72,10 @@ cs *cs_inv(const cs *C){
                  }
        }
 
-	   if (det < 0.0){
-		 error("non-positive definite G/R structure: use proper priors\n");
+	CN *= cs_norm(A); 
+
+	   if (1/CN < Ctol || det < Dtol){
+		 error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
 	   }
 	   return (cs_done (A, NULL, NULL, 1)) ;	/* success; free workspace, return C */
 

@@ -607,15 +607,16 @@
 #      }		 
     }
 
-   if(dim(data)[1]>20000){  # For big problems
      if(length(rmodel.terms)>1){   # random effects exist
        for(i in 1:(length(rmodel.terms)-1)){
          if(length(grep("\\:", rmodel.terms[i]))>0){
            if(is.factor(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]])){
              data_comb<-data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]]:data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]]
              xfactor<-rep(1,length(na.omit(data_comb)))
-           }else{
-              stop("random regression not implemented yet for very large problems because I'm lazy: email me j.hadfield@ed.ac.uk")
+            }else{
+             dpol<-dim(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]])[2]
+             data_comb<-as.factor(rep(1:dpol, each=dim(data)[1])):rep(data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]], dpol)
+             xfactor<-na.omit(c(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]]))
            }
          }else{
            data_comb<-data[,rmodel.terms[i]]
@@ -623,12 +624,13 @@
          }
          rlevels<-levels(data_comb)
          data_pos<-match(data_comb,rlevels)
-         Ztmp<-Matrix(0,dim(data)[1],length(table(data_pos)), dimnames=list(as.character(1:length(data_comb)), paste(rmodel.terms[i], rlevels, sep=".")))
+         Ztmp<-Matrix(0,dim(data)[1],length(table(data_pos)), dimnames=list(as.character(1:dim(data)[1]), paste(rmodel.terms[i], rlevels[as.numeric(names(table(data_pos)))], sep=".")))
          Ztmp[,1][2]<-1              # force it out of vbeing upper triangle!!!!
          Ztmp@p<-as.integer(c(0,cumsum(table(data_pos))))    
          cnt<-0
          for(j in 1:length(rlevels)){
            hit<-which(data_pos==j)
+           hit<-hit-dim(data)[1]*(ceiling(hit/dim(data)[1])-1)
            if(length(hit)>0){
              Ztmp@i[cnt+1:length(hit)]<-as.integer(hit-1)
              cnt<-cnt+length(hit)
@@ -644,33 +646,6 @@
      }else{
        Z<-as(matrix(0,1,0), "sparseMatrix")
      }
-
-   }else{        # For little problems: eventually delete
-
-     if(length(rmodel.terms)>1){   # random effects exist
-       for(i in 1:(length(rmodel.terms)-1)){
-         if(i==1){
-	   Z<-model.matrix(as.formula(paste("~", rmodel.terms[i], "-1", sep="")),data)  # delete columns pertaining to missing combinations in idh structures
- 	   Z[which(is.na(Z))]<-0 
-	   Zdel<-which(colSums(Z)==0) # delete columns pertaining to missing combinations in idh structures
-	   if(length(Zdel)>0){
-	     Z<-Z[,-Zdel]
-	   }		 
-           Z<-as(Z, "sparseMatrix")
-         }else{
-           Ztmp<-model.matrix(as.formula(paste("~", rmodel.terms[i], "-1", sep="")),data)
-	   Ztmp[which(is.na(Ztmp))]<-0
-	   Zdel<-which(colSums(Ztmp)==0) # delete columns pertaining to missing combinations in idh structures
-	   if(length(Zdel)>0){
-	     Ztmp<-Ztmp[,-Zdel]
-	   }		 
-           Z<-cBind(Z, as(Ztmp, "sparseMatrix"))
-         }
-       }     
-     }else{
-       Z<-as(matrix(0,1,0), "sparseMatrix")
-     }
-   }
 
      nR<-nr-nG-1  # number of R structures
      if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
@@ -717,7 +692,7 @@
    X<-model.matrix(as.formula(paste("~", paste(fmodel.terms, collapse="+"), sep="")),data)
    X[which(is.na(X))]<-0 
    if(any(apply(X,2, function(x){all(x==0)}))){
-	 warning(paste("fixed effects ", colnames(X)[which(apply(X,2, function(x){all(x==0)}))],  " not represented in data and have been deleted"))
+	 warning(paste("fixed effects ", paste(colnames(X)[which(apply(X,2, function(x){all(x==0)}))], collapse=" "),  " not represented in data and have been deleted"))
      X<-X[,-which(apply(X,2, function(x){all(x==0)}))] 
    }		 
    X<-as(X, "sparseMatrix")
@@ -868,8 +843,14 @@
     }
     data$MCMC_family.names<-match(data$MCMC_family.names, family.types)     # add measurement error variances and y.additional 
 
+    if(nitt%%1!=0){stop("nitt must be integer")}
+    if(thin%%1!=0){stop("thin must be integer")}
+    if(burnin%%1!=0){stop("burnin must be integer")}
+
     nkeep<-ceiling((nitt-burnin)/thin)
+
     if(nkeep<1){stop("burnin is equal to, or greater than number of iterations")}
+
     Loc<-1:((sum((nfl*nrl)[1:nG])*pr+dim(X)[2])*nkeep)
     if(pl==TRUE){
       PLiab<-1:(length(data$MCMC_y)*nkeep)
@@ -897,7 +878,7 @@
     }
 
     if(length(mfac)==0){mfac=-999}
-	
+    DIC=FALSE	
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
         as.double(data$MCMC_y.additional),
@@ -948,7 +929,8 @@
         as.integer(mfac), 
 	as.integer(observed),
         as.integer(diagP),
-        as.integer(AMtune)	   
+        as.integer(AMtune),
+		as.integer(DIC)	   
         )
 
         Sol<-t(matrix(output[[39]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))

@@ -64,7 +64,8 @@ void MCMCglmm(
         int *mfacP,          // vector of J-1 levels for each multinomial response 
 	int *observedP,	     // vector of 1 (observed) and 0 (missing)
 	int *diagP,          // is a us matrix in fact diagonal?
-        int *AMtuneP          // should adaptive Metroplis algorithm be used
+        int *AMtuneP,          // should adaptive Metroplis algorithm be used
+		int *DICP	   // should DIC be computed
 ){         
 
 int     i, j, k,l,cnt,cnt2,itt,record,dimG,
@@ -140,12 +141,13 @@ double  densityl1,
           zn[k]=0.0;
         }
 
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky,  *pred, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
 
 csn	*L;
 css     *S;
 
 cs*     Ginv[nGR];
+cs*     muGinv[nGR];	
 cs*     propC[nGR];
 cs*     propCinv[nGR];
 cs*     muC[nGR];
@@ -221,7 +223,7 @@ cs*     KGinv[nGR];
             for (i = 0 ; i <= ncolA ; i++){
               A->p[i] = pAP[i];
             }
-       
+
 // create matrix for breeding values when sampling kronecker(G,A) of dimesion ntXpedigree
         
             cnt=0;
@@ -253,19 +255,20 @@ cs*     KGinv[nGR];
             bv->p[dimG] = dimG*ncolA;
           }
         }
-
  
 // read in G/R matrices 
  
         for (k = 0 ; k < nGR; k++){
           dimG = GRdim[k];
           Ginv[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+		  muGinv[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           G[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           pG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           Grv[k] = cs_spalloc(1, dimG, dimG, true, false);
           cnt=0;
            for (i = 0 ; i < dimG; i++){
               Ginv[k]->p[i] = i*dimG;
+			  muGinv[k]->p[i] = i*dimG;
               G[k]->p[i] = i*dimG;
               pG[k]->p[i] = i*dimG;
               Grv[k]->p[i] = i;
@@ -273,6 +276,8 @@ cs*     KGinv[nGR];
               for (j = 0 ; j < dimG; j++){
                  Ginv[k]->i[cnt] = j;
                  Ginv[k]->x[cnt] = GRinvP[cnt+tvc];
+				 muGinv[k]->i[cnt] = j;
+				 muGinv[k]->x[cnt] = 0.0;
                  G[k]->i[cnt] = j;
                  G[k]->x[cnt] = GRinvP[cnt+tvc];
                  pG[k]->i[cnt] = j;
@@ -281,6 +286,7 @@ cs*     KGinv[nGR];
               }
           }
           Ginv[k]->p[dimG] = dimG*dimG;
+		  muGinv[k]->p[dimG] = dimG*dimG;
           G[k]->p[dimG] = dimG*dimG;
           pG[k]->p[dimG] = dimG*dimG;
           Grv[k]->p[dimG] = dimG;
@@ -324,6 +330,9 @@ cs*     KGinv[nGR];
         zstar = cs_spalloc(ny, 1, ny, true, false);
         linky = cs_spalloc(ny, 1, ny, true, false);
         pred = cs_spalloc(ny, 1, ny, true, false);
+	    mupred = cs_spalloc(ny, 1, ny, true, false);
+	    mulinky = cs_spalloc(ny, 1, ny, true, false);
+
         dev = cs_spalloc(ny, 1, ny, true, false);
 
         astar = cs_spalloc(dimAS, 1, dimAS, true, false);
@@ -338,15 +347,24 @@ cs*     KGinv[nGR];
            zstar->i[i] = i;
            linky->i[i] = i;
            pred->i[i] = i;
-           dev->i[i] = i;
+		   mupred->i[i] = i;
+		   mupred->x[i] = 0.0;
+		   mulinky->i[i] = i;
+		   mulinky->x[i] = 0.0;
+		   dev->i[i] = i;
            linky->x[i] = liabP[i];                         /* this needs to be changed for random regression */
         }
+
         zstar->p[0] = 0; 
         zstar->p[1] = ny;
         linky->p[0] = 0; 
         linky->p[1] = ny;
         pred->p[0] = 0; 
         pred->p[1] = ny;
+    	mupred->p[0] = 0; 
+	    mupred->p[1] = ny;
+   	    mulinky->p[0] = 0; 
+	    mulinky->p[1] = ny;
         dev->p[0] = 0; 
         dev->p[1] = ny;
 
@@ -400,7 +418,6 @@ cs*     KGinv[nGR];
            GinvL[k] = cs_chol(Ginv[k], GinvS[k]);              // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
         }
             
-
 // form KGinv = G^{-1} \otimes I    
 
         for (k = 0 ; k < nGR ; k++){
@@ -993,7 +1010,7 @@ cs*     KGinv[nGR];
          cnt+=nlGR[k];
        }
      }
-
+			
 /***********************/
 /*   store posterior   */
 /***********************/
@@ -1006,6 +1023,25 @@ cs*     KGinv[nGR];
        }
      }
      if(itt>=burnin && itt%thin == 0){
+	   if(DICP[0]==1){
+	     for(i=0; i< ny; i++){
+		   mupred->x[i] *= post_cnt;
+		   mupred->x[i] += pred->x[i];
+		   mupred->x[i] /= post_cnt+1.0;
+		   mulinky->x[i] *= post_cnt;
+		   mulinky->x[i] += linky->x[i];
+		   mulinky->x[i] /= post_cnt+1.0;
+		 }
+		 for(i=0; i<nGR; i++){    
+		   dimG = GRdim[i];
+		   for(j=0; j<(dimG*dimG); j++){
+			 muGinv[i]->x[j] *= post_cnt;
+			   muGinv[i]->x[j] += Ginv[i]->x[j];
+			 muGinv[i]->x[j] /= post_cnt+1.0;
+		   }				 
+		 }
+	   }	 
+		 
        if(pr){
          for (i = 0 ; i < dimAS ; i++){
            LocP[i+post_cnt*dimAS] = location->x[i];
@@ -1054,6 +1090,8 @@ cs*     KGinv[nGR];
         cs_spfree(linki);
         cs_spfree(linki_tmp);
         cs_spfree(pred);
+   	cs_spfree(mupred);
+   	cs_spfree(mulinky);
         cs_spfree(predi);
         cs_spfree(dev);                              
         cs_spfree(pvB);
@@ -1075,6 +1113,7 @@ cs*     KGinv[nGR];
 
         for(i=0; i<nGR; i++){
 	    cs_spfree(Ginv[i]);
+		cs_spfree(muGinv[i]);
 	    cs_spfree(G[i]);
 	    cs_spfree(Gtmp[i]);
  	    cs_spfree(Grv[i]);

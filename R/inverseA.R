@@ -20,7 +20,7 @@
  
     dnmiss<-which(numeric.pedigree[,2]!=-998)   		                 # dams not missing
     snmiss<-which(numeric.pedigree[,3]!=-998)                                    # sires not missing
-    bnmiss<-which(numeric.pedigree[,2]!=-998 &  numeric.pedigree[,3]!=-998)      # neither missing
+    bnmiss<-which(numeric.pedigree[,2]!=-998 &  numeric.pedigree[,3]!=-998)      # one present 
 
     if(length(intersect(numeric.pedigree[,2][dnmiss], numeric.pedigree[,3][snmiss]))>0){stop("dams appearing as sires")}
     if(any(numeric.pedigree[,2][dnmiss]>numeric.pedigree[,1][dnmiss])){stop("dams appearing before their offspring: try orderPed form MasterBayes")}
@@ -29,8 +29,6 @@
     n<-dim(numeric.pedigree)[1]
     nA<-n+2*length(dnmiss)+2*length(snmiss)                                                               # parent-offspring elements
     nA<-nA+2*sum(duplicated(paste(numeric.pedigree[,2], numeric.pedigree[,3])[bnmiss])==FALSE)            # add spouse elements
-    nA<-nA-2*sum(numeric.pedigree[,3][numeric.pedigree[,2][bnmiss]]==numeric.pedigree[,3][bnmiss] & duplicated(paste(numeric.pedigree[,3][numeric.pedigree[,2][bnmiss]],numeric.pedigree[,3][bnmiss]))==FALSE)       # remove daughter-father pairings
-    nA<-nA-2*sum(numeric.pedigree[,2][numeric.pedigree[,3][bnmiss]]== numeric.pedigree[,2][bnmiss] & duplicated(paste(numeric.pedigree[,2][numeric.pedigree[,3][bnmiss]],numeric.pedigree[,2][bnmiss]))==FALSE)       # remove son-mother pairings
 
     inbreeding<-rep(0, n)
     dii<-rep(0, n)
@@ -43,6 +41,7 @@
     Tinv.x<-c(rep(-0.5, length(dnmiss)+length(snmiss)),rep(1, n))
     el.order<-order(Tinv.col+Tinv.row/(n+1), decreasing=FALSE)
     Tinv<-Matrix(0,n,n)
+    Tinv[1,2]<-1
     Tinv@i<-as.integer(Tinv.row[el.order]-1)
     Tinv@p<-as.integer(c(match(1:n, Tinv.col[el.order]),length(el.order)+1)-1)
     Tinv@x<-as.double(Tinv.x[el.order])
@@ -67,14 +66,15 @@
 
     inbreeding<-output[[4]]
     dii<-output[[5]]
-    Ainv<-t(Tinv)%*%Tinv
-    Ainv@i<-output[[6]]
+    Ainv<-Matrix(0,n,n)
+    Ainv[1,2]<-1
+    Ainv@i<-output[[6]][1:output[[10]]]
     Ainv@p<-output[[7]]
-    Ainv@x<-output[[8]]
+    Ainv@x<-output[[8]][1:output[[10]]]
 
     if(nodes[1]!="ALL"){
        tips<-match(nodes, pedigree[,1])
-       if(is.na(tips)){stop("some nodes do not appear in pedigree")}
+       if(is.na(tips[1])){stop("some nodes do not appear in pedigree")}
        Ainv<-Ainv[,tips][tips,]-Ainv[,-tips][tips,]%*%as(solve(Ainv[,-tips][-tips,]), "sparseMatrix")%*%Ainv[,tips][-tips,]
        node.names<-pedigree[,1][tips]
     }else{
@@ -82,6 +82,13 @@
     }
 
   }else{
+
+    if(is.null(pedigree$edge.length)){
+      warning("no branch lengths: compute.brlen from ape has been used")
+      pedigree$edge.length<-compute.brlen(pedigree)$edge.length
+      scale=TRUE
+    }	  
+    if(is.ultrametric(pedigree)==FALSE & scale==TRUE){stop("can't scale non-ultrametric trees")}
 
     roots<-setdiff(pedigree$edge[,1], pedigree$edge[,2])  
     reorder<-order((pedigree$edge[,1]%in%roots==FALSE)*pedigree$edge[,2]+10000000*(pedigree$edge[,2]<=length(pedigree$tip.label)))
@@ -94,12 +101,14 @@
     node.names[-tips]<-paste("a", 1:(length(id)-length(tips)), sep="")
 
     inbreeding<-pedigree$edge.length[reorder]
+
     dam<-match(pedigree$edge[,1][reorder], id)
     id<-match(id, id)
 
     pedigree<-cbind(node.names, node.names[dam], rep(NA, length(node.names)))
 
     dam[which(is.na(dam))]<--998
+
 
     if(scale){
       root2tip<-0

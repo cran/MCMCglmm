@@ -34,7 +34,7 @@ void inverseA(
   for(i=0; i<nAP[0]; i++){
      li[i]=0.0;               // set l to zero
   }
-  for(i=0; i<100; i++){
+  for(i=0; i<nAP[0]; i++){
      AN[i]=-1;               // set AN to zero
   }
 
@@ -97,6 +97,7 @@ void inverseA(
       ai += li[j]*li[j]*D->x[j];
 
       j=-1;
+
       for(k=0; k<cnt; k++){   // find eldest individual
         if(AN[k]>j){
           j = AN[k];
@@ -130,6 +131,7 @@ void inverseA(
   for (i = 0 ; i <= A->n; i++){
     pAP[i] = A->p[i];
   }
+  nzmaxAP[0] = A->nzmax;
   cs_spfree(Tinv);
   cs_spfree(tTinv);
   cs_spfree(D);

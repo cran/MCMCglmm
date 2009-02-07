@@ -124,7 +124,7 @@ print(i)
 }
 
 # gauss with idh random effect 1.7 seconds
-
+source("~/Work/AManal/MCMCglmm_1.02/R/MCMCglmm.R")
 print("res7")
 res7<-matrix(NA,nsim,4)
 R<-as.matrix(2)
@@ -345,7 +345,7 @@ res20<-matrix(NA, nsim,6)
 print("res16")
 tune<-diag(2)
 R=matrix(c(2,0.25,0.25,1),2,2)
-prior=list(R=list(V=R, n=1, fix=2))
+prior=list(R=list(V=R, n=2, fix=2))
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=rbinom(300, 1, inv.logit(y[,2])), y3=y[,2])
@@ -358,7 +358,6 @@ print(i)
 
 res21<-matrix(NA, nsim,7)
 print("res21")
-tune<-diag(2)
 G=matrix(c(2,0.25,0.25,1),2,2)
 R=matrix(1,1,1)
 
@@ -370,11 +369,28 @@ time<-rnorm(900)
 y<-(-1+int.slope[,1][ind]*0.7071068)+(1+1.224745*time*int.slope[,2][ind])
 y<-y+rnorm(900,0,R)
 data=data.frame(y1=y, time=time, ind=ind)
+
+#fixed=y1~time
+#random=~leg(time,1):ind
+#rcov=~units
+#family="gaussian"
+#mev=NULL
+#start=NULL
+#tune=NULL
+#pedigree=NULL
+#nodes="ALL"
+#scale=TRUE
+#nitt=13000
+#thin=10
+#burnin=3000
+#pr=FALSE
+#pl=FALSE
+#verbose=TRUE
+
 m1<-MCMCglmm(y1~time, random=~leg(time,1):ind, data=data, prior=prior)
 res21[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
 print(i)
 }
-
 if(file.exists("~/Work/Boots/Data/Raw/PO.csv")){
 
   POdata<-read.csv("~/Work/Boots/Data/Raw/PO.csv") 

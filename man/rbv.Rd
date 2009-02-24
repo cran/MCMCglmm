@@ -3,7 +3,7 @@
 \title{Random Generation of MVN Breeding Values and Phylogenetic Effects}
 \description{Random Generation of MVN Breeding Values and Phylogenetic Effects}
 \usage{
-rbv(pedigree, G, nodes="ALL", scale=TRUE)
+rbv(pedigree, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NULL)
 }
 \arguments{
  \item{pedigree}{ordered pedigree with 3 columns id, dam and sire or a 
@@ -17,6 +17,8 @@ passed to \code{nodes} specifying the subset of individuals for which animal
 effects are returned.}
  \item{scale}{logical: should a phylogeny (needs to be ultrametric) be scaled to 
 unit length (distance from root to tip)?}
+ \item{ggroups}{optional; vector of genetic groups}
+ \item{gmeans}{matrix of mean breeding value for genetic groups (rows) by traits (columns)}
 }
 \value{
   matrix of breeding values/phylogenetic effects

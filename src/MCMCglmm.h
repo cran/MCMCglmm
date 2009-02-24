@@ -75,3 +75,10 @@ extern "C"{
 }
 #endif
 
+#ifndef _CS_DCMVNORM_H
+extern "C"{
+#include "cs_dcmvnorm.h"
+}
+#endif
+
+

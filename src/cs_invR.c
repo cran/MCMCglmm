@@ -9,7 +9,7 @@ double cs_invR(const cs *C, const cs *A){
     int n, i, icol,irow,j,k,l,ll;
     double big,dum,pivinv,temp, det, CN;
 	
-	CN = cs_norm(C);
+    CN = cs_norm(C);
 
     n = C->n;
     det=1.0;
@@ -44,8 +44,8 @@ double cs_invR(const cs *C, const cs *A){
                  }
                  indxr[i]=irow;
                  indxc[i]=icol;
-    			 det *= A->x[A->i[icol]+A->p[icol]];
-				 pivinv=1.0/A->x[A->i[icol]+A->p[icol]];
+    		 det *= A->x[A->i[icol]+A->p[icol]];
+		 pivinv=1.0/A->x[A->i[icol]+A->p[icol]];
                  A->x[A->i[icol]+A->p[icol]]=1.0;
                  for (l=0;l<n;l++) A->x[A->i[icol]+A->p[l]] *= pivinv;
                  for (ll=0;ll<n;ll++)

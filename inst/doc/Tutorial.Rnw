@@ -28,7 +28,7 @@
 \newpage
 
 
-MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov chain Monte Carlo techniques. Most commonly used distributions like the normal and the Poisson are supported together with some useful but less popular ones like the zero-inflated Poisson and the multinomial. Missing values and left, right and interval censoring are accommodated for all traits. The package also supports multi-trait models where the multiple responses can follow different types of distribution.  The package allows various residual and random-effect variance structures to be specified including heterogeneous variances, unstructured covariance matrices and random regression (e.g. random slope models).  Three special types of variance structure that can be specified are those associated with pedigrees (animal models), phylogenies (the comparative method) and measurement error (meta-analysis).  The package makes heavy use of results in \citet{Sorensen.2002} and \citet{Davis.2006} which taken together result in what is hopefully a fast and efficient routine. Most small to medium sized problems should take seconds to a few minutes, but large problems (> 20,000 records) are possible.  My interest is in evolutionary biology so there are also several functions for applying tensor analysis \citep{Rice.2004} to real data and functions for visualising and comparing matrices.
+MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov chain Monte Carlo techniques \citep{Hadfield.2009b}. Most commonly used distributions like the normal and the Poisson are supported together with some useful but less popular ones like the zero-inflated Poisson and the multinomial. Missing values and left, right and interval censoring are accommodated for all traits. The package also supports multi-trait models where the multiple responses can follow different types of distribution.  The package allows various residual and random-effect variance structures to be specified including heterogeneous variances, unstructured covariance matrices and random regression (e.g. random slope models).  Three special types of variance structure that can be specified are those associated with pedigrees (animal models), phylogenies (the comparative method) and measurement error (meta-analysis).  The package makes heavy use of results in \citet{Sorensen.2002} and \citet{Davis.2006} which taken together result in what is hopefully a fast and efficient routine. Most small to medium sized problems should take seconds to a few minutes, but large problems (> 20,000 records) are possible.  My interest is in evolutionary biology so there are also several functions for applying tensor analysis \citep{Rice.2004} to real data and functions for visualising and comparing matrices.
 
 
 \begin{Schunk}
@@ -710,6 +710,37 @@ Multinomial and categorical models are parametrised in $k-1$ dimensions where $k
 For censored responses two data columns must be passed. The first column should contain the minimum value the data could take and the second column the maximum. If these values are finite the data are said to be interval censored. For left censored data use \texttt{-Inf} in the first column and for right censored data use \texttt{Inf} in the second column. If a particular data point is not censored have the same value in both columns.\\   
 
 Although only a single column of data is passed for the zero-inflated Poisson, the response is actually expanded to form a bivariate model. The first \texttt{trait} is the Poisson part of the model and the residual variance can be estimated (to account for over-disperion) but the second \texttt{trait} is the zero-inflation and as with a binary model the residual variance cannot be estimated. In addition the residual (co)variance between the Poisson term and the zero-infaltion term cannot be estimated because we can't observe both processes in a single individual.  Nevertheless this does not mean that these covariances cannot be estimated at the level of some random effect.
+
+\subsection{Deviance and DIC}
+
+The deviance $D$ is defined as:
+
+\begin{equation}
+D = -2\texttt{log}(p({\bf y} | ...))
+\end{equation}
+
+where again $...$ stands for the model parameters.  This probability can be calculated in different ways depending on what is in `focus', and MCMCglmm calculates this probability for the lowest level of the hierarchy \citep{Spiegelhalter.2002}. For Gaussian response variables the likelihood is the density of ${\bf y}$ in the multinormal distribution:
+
+\begin{equation}
+N({\bf X}{\bm \beta}+{\bf Z}{\bf u}, {\bf R}) 
+\end{equation}
+
+but for other response variables variables it is simply the density $p({\bf y} | {\bf l})$. For multivariate models with mixtures of Gaussian and non-Gaussian data (including missing values) the likelihood of the Gaussian data is the density of ${\bf y}_{g}$ in the conditional multinormal distribution:
+
+\begin{equation}
+N({\bf X}_{g}{\bm \beta}+{\bf Z}_{g}{\bf u}+{\bf R}_{g,l}{\bf R}^{-1}_{l,l}({\bf l}-{\bf X}_{l}{\bm \beta}-{\bf Z}_{l}{\bf u}), {\bf R}_{g,g}-{\bf R}_{g,l}{\bf R}^{-1}_{l,l}{\bf R}_{l,g}) 
+\end{equation}
+
+where the subscripts $g$ and $l$ denote rows of the data vector/design matrices that pertain to Gaussian data, and non-Gaussian data respectively. Subscripts on the ${\bf R}$-structure index both rows and columns.\\
+
+The deviance is calculated at each iteration if \texttt{DIC=TRUE} and stored each \texttt{thin}$^{th}$ iteration after burn-in.  The mean deviance ($\bar{D}$) is calculated over all iterations, as is the mean of the latent variables (${\bf l}$) the ${\bf R}$-structure and the vector of predictors (${\bf X}{\bm \beta}+{\bf Z}{\bf u}$).  The deviance is calculated at the mean estimate of the parameters ($D(\bar{...})$) and the deviance information criterion calculated as:
+
+\begin{equation}
+\texttt{DIC} = 2\bar{D}-D(\bar{...})
+\end{equation}
+   
+Models with lower DIC are preferred.
+
 
 \section{Acknowledgements}
 

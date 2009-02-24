@@ -1,13 +1,7 @@
 #source("~/Desktop/MCMCglmmTEST.R")
-#source("~/Work/AManal/MCMCglmm_6.0/R/MCMCglmm.R")
+#source("~/Work/AManal/MCMCglmm_1.02/R/MCMCglmm.R")
 library(MCMCglmm)
 library(VGAM)
-
-posterior.mode2d<-function(x,y){
-kd<-kde2d(x,y)
-kdmax<-which.max(kd$z)
-c(kd$x[floor(kdmax/length(kd$x))], kd$y[kdmax%%length(kd$x)])
-}
 
 nsim<-1
 
@@ -15,9 +9,10 @@ nsim<-1
 print("res1")
 R<-diag(1)
 res1<-matrix(NA, nsim,2)
-prior<-list(R=list(V=as.matrix(1), n=1))
+prior<-list(R=list(V=as.matrix(1), n=1), G=list(G1=list(V=as.matrix(1), n=1)))
 for(i in 1:nsim){
-y<-rpois(100,exp(rnorm(100,1,R)))
+l<-exp(rnorm(100,1,R))
+y<-rpois(100,l)
 data=data.frame(y1=y, y2=y)
 m1<-MCMCglmm(cbind(y1)~1, family="poisson", data=data, prior=prior)
 res1[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
@@ -44,25 +39,26 @@ prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 for(i in 1:nsim){
 y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
+prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior)
 res3[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
 print(i)
 }
 
+
 # gauss with blocked random  1.5 seconds OK
 print("res4")
 res4<-matrix(NA, nsim,3)
-res4b<-matrix(NA, nsim,2)
 R<-as.matrix(2)
 G<-as.matrix(1)
 prior<-list(R=list(V=as.matrix(1), n=1), G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
-fac<-as.factor(sample(1:75,300,replace=TRUE))
-y<-mvrnorm(300, c(-1), R)+mvrnorm(75, c(0), G)[fac]
-data=data.frame(y1=y, fac=fac)
+fac<-as.factor(sample(1:50,300,replace=TRUE))
+ffac<-gl(2,150)
+y<-mvrnorm(300, c(-1), R)+mvrnorm(50, c(0), G)[fac]
+data=data.frame(y1=y, fac=fac, ffac=ffac)
 m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior)
 res4[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
-res4b[i,]<-posterior.mode2d(m1$VCV[,1], m1$VCV[,2])
 print(i)
 }
 
@@ -86,7 +82,6 @@ print(i)
 # gauss with correlated random 9.6 seconds OK
 print("res5")
 res5<-matrix(NA, nsim,3)
-res5b<-matrix(NA, nsim,2)
 R<-as.matrix(2)
 G<-as.matrix(1)
 prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
@@ -97,7 +92,6 @@ data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]))
 m1<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior, nitt=25000, thin=20, burnin=5000)
 m2<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior, nitt=25000, thin=20, burnin=5000)
 res5[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
-res5b[i,]<-posterior.mode2d(m1$VCV[,1], m1$VCV[,2])
 print(i)
 }
 
@@ -124,12 +118,11 @@ print(i)
 }
 
 # gauss with idh random effect 1.7 seconds
-source("~/Work/AManal/MCMCglmm_1.02/R/MCMCglmm.R")
 print("res7")
 res7<-matrix(NA,nsim,4)
 R<-as.matrix(2)
 G=matrix(c(1,0,0,2),2,2)
-prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
+prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=2)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 facf<-as.factor(sample(1:2,300,replace=TRUE))
@@ -140,23 +133,6 @@ res7[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
 print(i)
 }
 
-fixed=cbind(y1,y2)~trait-1
-random=NULL
-rcov=~us(trait):units
-family=c("gaussian","gaussian")
-mev=NULL
-start=NULL
-tune=NULL
-pedigree=NULL
-nodes="ALL"
-scale=TRUE
-nitt=13000
-thin=10
-burnin=3000
-pr=FALSE
-pl=FALSE
-verbose=TRUE
-startL="QUASI"
 # bivariate gauss 1.9 seconds
 print("res8")
 res8<-matrix(NA, nsim,6)
@@ -165,6 +141,7 @@ prior=list(R=list(V=R, n=1))
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
+data$y1[sample(1:300, 30)]<-NA
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~us(trait):units, data=data, prior=prior)
 res8[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
 print(i)
@@ -178,6 +155,7 @@ prior=list(R=list(V=R, n=1))
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
+data$y1[sample(1:300, 50)]<-NA
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~idh(trait):units, data=data, prior=prior)
 res9[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
 print(i)
@@ -354,13 +332,14 @@ res20[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
 print(i)
 }
 
+
+
 # gauss random regression
 
 res21<-matrix(NA, nsim,7)
 print("res21")
 G=matrix(c(2,0.25,0.25,1),2,2)
 R=matrix(1,1,1)
-
 prior=list(R=list(V=R, n=1), G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 int.slope<-mvrnorm(300, c(0,0), G)
@@ -369,24 +348,6 @@ time<-rnorm(900)
 y<-(-1+int.slope[,1][ind]*0.7071068)+(1+1.224745*time*int.slope[,2][ind])
 y<-y+rnorm(900,0,R)
 data=data.frame(y1=y, time=time, ind=ind)
-
-#fixed=y1~time
-#random=~leg(time,1):ind
-#rcov=~units
-#family="gaussian"
-#mev=NULL
-#start=NULL
-#tune=NULL
-#pedigree=NULL
-#nodes="ALL"
-#scale=TRUE
-#nitt=13000
-#thin=10
-#burnin=3000
-#pr=FALSE
-#pl=FALSE
-#verbose=TRUE
-
 m1<-MCMCglmm(y1~time, random=~leg(time,1):ind, data=data, prior=prior)
 res21[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
 print(i)

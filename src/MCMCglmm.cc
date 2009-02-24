@@ -65,7 +65,8 @@ void MCMCglmm(
 	int *observedP,	     // vector of 1 (observed) and 0 (missing)
 	int *diagP,          // is a us matrix in fact diagonal?
         int *AMtuneP,          // should adaptive Metroplis algorithm be used
-		int *DICP	   // should DIC be computed
+	int *DICP,	   // should DIC be computed
+        double *dbarP
 ){         
 
 int     i, j, k,l,cnt,cnt2,itt,record,dimG,
@@ -76,7 +77,10 @@ int     i, j, k,l,cnt,cnt2,itt,record,dimG,
         ny = nyP[0],          // number of records
         *nlGR = levelsRP,     // number of random levels 
         *GRdim = GRdimP,      // dimensions of variance structures
-
+        cond[GRdim[nG]],
+        keep[GRdim[nG]],
+        ncond=0,
+        nkeep=0,
         nitt = nittP[0], 
         thin = thinP[0], 
         burnin = burninP[0], 
@@ -121,6 +125,8 @@ bool    missing = FALSE;
 
 double  densityl1,
         densityl2,
+        dbar = 0.0,
+        mdbar = 0.0,
         Eaccl= 0.0,
         alpha_star = (-double(GRdimP[nG])/(1.0-2.75*double(GRdimP[nG])))-0.133,  // optimal acceptance ratio
         rACCEPT = 0.9,
@@ -147,7 +153,7 @@ csn	*L;
 css     *S;
 
 cs*     Ginv[nGR];
-cs*     muGinv[nGR];	
+cs*     muG[nGR];	
 cs*     propC[nGR];
 cs*     propCinv[nGR];
 cs*     muC[nGR];
@@ -180,14 +186,14 @@ cs*     KGinv[nGR];
 
         cnt = 0;
         for (i = 0 ; i < ncolX ; i++){
-               pvB->p[i] = i*ncolX; 
-               pmuB->i[i] = i;
-               pmuB->x[i] = BmupP[i];
-            for (j = 0 ; j < ncolX ; j++){
-               pvB->i[cnt] = j;
-               pvB->x[cnt] = BvpP[cnt];
-               cnt++;
-            }
+          pvB->p[i] = i*ncolX; 
+          pmuB->i[i] = i;
+          pmuB->x[i] = BmupP[i];
+          for (j = 0 ; j < ncolX ; j++){
+            pvB->i[cnt] = j;
+            pvB->x[cnt] = BvpP[cnt];
+            cnt++;
+          }
         }
         pvB->p[ncolX] = ncolX*ncolX;
         pmuB->p[0] = 0; 
@@ -261,33 +267,33 @@ cs*     KGinv[nGR];
         for (k = 0 ; k < nGR; k++){
           dimG = GRdim[k];
           Ginv[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
-		  muGinv[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           G[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+          muG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           pG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           Grv[k] = cs_spalloc(1, dimG, dimG, true, false);
           cnt=0;
            for (i = 0 ; i < dimG; i++){
               Ginv[k]->p[i] = i*dimG;
-			  muGinv[k]->p[i] = i*dimG;
               G[k]->p[i] = i*dimG;
+              muG[k]->p[i] = i*dimG;
               pG[k]->p[i] = i*dimG;
               Grv[k]->p[i] = i;
               Grv[k]->i[i] = 0;
               for (j = 0 ; j < dimG; j++){
                  Ginv[k]->i[cnt] = j;
                  Ginv[k]->x[cnt] = GRinvP[cnt+tvc];
-				 muGinv[k]->i[cnt] = j;
-				 muGinv[k]->x[cnt] = 0.0;
                  G[k]->i[cnt] = j;
                  G[k]->x[cnt] = GRinvP[cnt+tvc];
+		 muG[k]->i[cnt] = j;
+		 muG[k]->x[cnt] = 0.0;
                  pG[k]->i[cnt] = j;
                  pG[k]->x[cnt] = GRvpP[cnt+tvc];
                  cnt++;
               }
           }
           Ginv[k]->p[dimG] = dimG*dimG;
-		  muGinv[k]->p[dimG] = dimG*dimG;
           G[k]->p[dimG] = dimG*dimG;
+          muG[k]->p[dimG] = dimG*dimG;
           pG[k]->p[dimG] = dimG*dimG;
           Grv[k]->p[dimG] = dimG;
           ldet[k] = log(cs_invR(Ginv[k], G[k]));
@@ -330,8 +336,8 @@ cs*     KGinv[nGR];
         zstar = cs_spalloc(ny, 1, ny, true, false);
         linky = cs_spalloc(ny, 1, ny, true, false);
         pred = cs_spalloc(ny, 1, ny, true, false);
-	    mupred = cs_spalloc(ny, 1, ny, true, false);
-	    mulinky = cs_spalloc(ny, 1, ny, true, false);
+	mupred = cs_spalloc(ny, 1, ny, true, false);
+	mulinky = cs_spalloc(ny, 1, ny, true, false);
 
         dev = cs_spalloc(ny, 1, ny, true, false);
 
@@ -347,11 +353,11 @@ cs*     KGinv[nGR];
            zstar->i[i] = i;
            linky->i[i] = i;
            pred->i[i] = i;
-		   mupred->i[i] = i;
-		   mupred->x[i] = 0.0;
-		   mulinky->i[i] = i;
-		   mulinky->x[i] = 0.0;
-		   dev->i[i] = i;
+	   mupred->i[i] = i;
+	   mupred->x[i] = 0.0;
+	   mulinky->i[i] = i;
+	   mulinky->x[i] = 0.0;
+	   dev->i[i] = i;
            linky->x[i] = liabP[i];                         /* this needs to be changed for random regression */
         }
 
@@ -362,9 +368,9 @@ cs*     KGinv[nGR];
         pred->p[0] = 0; 
         pred->p[1] = ny;
     	mupred->p[0] = 0; 
-	    mupred->p[1] = ny;
-   	    mulinky->p[0] = 0; 
-	    mulinky->p[1] = ny;
+        mupred->p[1] = ny;
+        mulinky->p[0] = 0; 
+	mulinky->p[1] = ny;
         dev->p[0] = 0; 
         dev->p[1] = ny;
 
@@ -453,7 +459,7 @@ cs*     KGinv[nGR];
 /***** MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC MCMC *****/
 /**********************************************************************************************************/
 
-        for (itt = 0; itt < nitt; itt++){
+        for (itt = 0; itt < (nitt+DICP[0]); itt++){
 
 /***************************/
 /* sample location effects */
@@ -505,7 +511,7 @@ cs*     KGinv[nGR];
 
           cnt = 0;
 
-			for(k=0; k<nG; k++){
+	  for(k=0; k<nG; k++){
             dimG = GRdim[k];
             if(AtermP[k]==1){          
 
@@ -788,15 +794,61 @@ cs*     KGinv[nGR];
 /***********************/
 /* sample liabilities  */   
 /***********************/
+     dbar =0.0;
+
+     if(DICP[0]==1 && itt>=burnin){
+       if(itt==nitt){
+          for(k=nG; k<nGR; k++){
+             dimG = GRdim[k];
+             for(i=0; i<(dimG*dimG); i++){          
+               G[k]->x[i] = muG[k]->x[i];
+             }
+             ldet[k] = log(cs_invR(G[k], Ginv[k]));  
+          }
+          for(i=0; i<ny; i++){          
+            linky->x[i] = mulinky->x[i];
+            pred->x[i] = mupred->x[i];
+          }
+       }         
+       cnt2=0;
+       for(k=nG; k<nGR; k++){          // Iterate through R-structures
+         dimG = GRdim[k];
+         for(j=0; j<nlGR[k]; j++){     // Iterate through levels
+           nkeep=0;
+           ncond=0;
+           for(i=0; i<dimG; i++){       // Iterate through fixed levels
+             record=cnt2+nlGR[k]*i+j;
+             linki->x[i] = linky->x[record];              
+             predi->x[i] =  pred->x[record];
+             if(familyP[record]==1 && observedP[record]==1){
+               keep[nkeep] = i;
+               nkeep ++;
+             }else{
+               cond[ncond] = i;
+               ncond ++;
+             }
+           }
+           if(nkeep>0){      // some gaussian observed traits
+             if(ncond>0){   // some non-gaussian or non-observed traits
+               dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // all gaussian observed
+             }else{
+               dbar += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);                                     // all gaussian observed
+             }
+           }
+         }
+         cnt2+=nlGR[k]*dimG;
+       }
+     }
 
      if(missing){
 
        cnt2=0;
        cnt=0;
+
        for(k=nG; k<nGR; k++){      // Iterate through R-structures
          dimG = GRdim[k];
-		   propCinv[k] = cs_inv(propC[k]);
-		   propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]);                 // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
+	 propCinv[k] = cs_inv(propC[k]);
+	 propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]);    
 
          for(j=0; j<nlGR[k]; j++){     // Iterate through levels
            densityl1 = 0.0;
@@ -811,8 +863,7 @@ cs*     KGinv[nGR];
              linki_tmp->x[i] = rnorm(0.0,1.0);
            }
 
-           if(mvtype[cnt+j]==1){         // can be Gibbsed
-
+           if(mvtype[cnt+j]==1){         // can be Gibbsed  
              cs_ltsolve(GinvL[k]->L, linki_tmp->x);  
              for(i=0; i<dimG; i++){
                linky->x[nlGR[k]*i+j+cnt2] = linki_tmp->x[i]+pred->x[nlGR[k]*i+j+cnt2];
@@ -947,6 +998,7 @@ cs*     KGinv[nGR];
                }
              }
            }
+           dbar += densityl1;
 
            if(mvtype[cnt+j]<1){
 			       
@@ -976,11 +1028,11 @@ cs*     KGinv[nGR];
                   propC[k]->x[i*dimG+l] += muC[k]->x[i]*muC[k]->x[l];
                  }
                }
-			   for(i=0; i<dimG; i++){
-				  muC[k]->x[i] *= (t[k]-1.0);
-					 muC[k]->x[i] += linky->x[nlGR[k]*i+j+cnt2];
-					 muC[k]->x[i] /= t[k];
-			   }				 
+	       for(i=0; i<dimG; i++){
+		  muC[k]->x[i] *= (t[k]-1.0);
+		  muC[k]->x[i] += linky->x[nlGR[k]*i+j+cnt2];
+		  muC[k]->x[i] /= t[k];
+	       }				 
                for(i=0; i<dimG; i++){
                  for(l=0; l<dimG; l++){
                    propC[k]->x[i*dimG+l] -= ((t[k]+1.0)/t[k])*muC[k]->x[i]*muC[k]->x[l];
@@ -995,17 +1047,16 @@ cs*     KGinv[nGR];
          if(AMtuneP[k]==1 && itt<burnin){
            for(i=0; i<dimG; i++){
              for(l=0; l<dimG; l++){
-			   propC[k]->x[i*dimG+l] += (muC[k]->x[i]*muC[k]->x[l])/(t[k]);
+	       propC[k]->x[i*dimG+l] += (muC[k]->x[i]*muC[k]->x[l])/(t[k]);
                propC[k]->x[i*dimG+l] *= sd[k];
              }
            }
-			   if(wn[k]>0.0){
+	   if(wn[k]>0.0){
              sd[k] = pow(qACCEPT, ((zn[k]/wn[k])-alpha_star));
-		   }		 
+	   }		 
            zn[k] = 0.0; 
            wn[k] = 0.0;
          }
-
          cnt2+=nlGR[k]*dimG;
          cnt+=nlGR[k];
        }
@@ -1022,26 +1073,33 @@ cs*     KGinv[nGR];
          Eaccl = 0.0;
        }
      }
-     if(itt>=burnin && itt%thin == 0){
-	   if(DICP[0]==1){
-	     for(i=0; i< ny; i++){
-		   mupred->x[i] *= post_cnt;
-		   mupred->x[i] += pred->x[i];
-		   mupred->x[i] /= post_cnt+1.0;
-		   mulinky->x[i] *= post_cnt;
-		   mulinky->x[i] += linky->x[i];
-		   mulinky->x[i] /= post_cnt+1.0;
-		 }
-		 for(i=0; i<nGR; i++){    
-		   dimG = GRdim[i];
-		   for(j=0; j<(dimG*dimG); j++){
-			 muGinv[i]->x[j] *= post_cnt;
-			   muGinv[i]->x[j] += Ginv[i]->x[j];
-			 muGinv[i]->x[j] /= post_cnt+1.0;
-		   }				 
-		 }
-	   }	 
-		 
+
+     if(DICP[0]==1 & itt>=burnin){
+       mdbar *= (itt-burnin);
+       mdbar += dbar;
+       mdbar /= (itt-burnin+1.0);
+       for(i=0; i< ny; i++){
+	 mupred->x[i] *= (itt-burnin);
+	 mupred->x[i] += pred->x[i];
+	 mupred->x[i] /= (itt-burnin+1.0);
+	 mulinky->x[i] *= (itt-burnin);
+	 mulinky->x[i] += linky->x[i];
+	 mulinky->x[i] /= (itt-burnin+1.0);
+       }
+       for(i=0; i<nGR; i++){    
+	 dimG = GRdim[i];
+	 for(j=0; j<(dimG*dimG); j++){
+	   muG[i]->x[j] *= (itt-burnin);
+     	   muG[i]->x[j] += G[i]->x[j];
+	   muG[i]->x[j] /= (itt-burnin+1.0);
+         }				 
+       }
+     }
+
+     if(itt>=burnin && itt%thin == 0 && itt!=nitt){
+       if(DICP[0]==1){
+         dbarP[post_cnt] = dbar;
+       }
        if(pr){
          for (i = 0 ; i < dimAS ; i++){
            LocP[i+post_cnt*dimAS] = location->x[i];
@@ -1067,7 +1125,13 @@ cs*     KGinv[nGR];
        post_cnt++;
      }
    }
-
+   if(DICP[0]==1){
+     mdbar *= (itt-burnin+1.0);
+     mdbar -= dbar;
+     mdbar /= (itt-burnin);
+     dbarP[post_cnt] = mdbar;
+     dbarP[post_cnt+1] = dbar;
+   }
 	PutRNGstate();
 
         cs_spfree(X);
@@ -1113,7 +1177,7 @@ cs*     KGinv[nGR];
 
         for(i=0; i<nGR; i++){
 	    cs_spfree(Ginv[i]);
-		cs_spfree(muGinv[i]);
+	    cs_spfree(muG[i]);
 	    cs_spfree(G[i]);
 	    cs_spfree(Gtmp[i]);
  	    cs_spfree(Grv[i]);

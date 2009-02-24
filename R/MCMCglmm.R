@@ -1,4 +1,4 @@
-"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data=NULL, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE){
+"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data=NULL, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE){
    
     options("na.action"="na.pass")
     row.names(data)=NULL	
@@ -42,16 +42,16 @@
 	    warning(paste("some pedigree/phylogeny nodes not appearing in data: adding",length(Ai$node.names)-length(unique(data$animal)), "missing records"))
             missing.combinations<-setdiff(levels(data$animal), data$animal)
             if(length(missing.combinations)>0){
-	      data[dim(data)[1]+1:length(missing.combinations),]<-NA
+	      data[dim(data)[1]+1:length(missing.combinations),]<-as.data.frame(NA)
 	      data$animal[dim(data)[1]-(length(missing.combinations)-1):0]<-missing.combinations
-	    }			
+	    }		
 	  }
 	}
 
 #######################################################################################################
 # for interactions involving pedigrees/phylogenies or us structures augment with missing combinations #
 #######################################################################################################
- 	
+
 	rterms<-strsplit(as.character(random)[2], " *\\+ *")[[1]]
 	
 	for(i in 1:length(rterms)){
@@ -852,6 +852,8 @@
     if(nkeep<1){stop("burnin is equal to, or greater than number of iterations")}
 
     Loc<-1:((sum((nfl*nrl)[1:nG])*pr+dim(X)[2])*nkeep)
+    dbar<-1:(2+nkeep)
+
     if(pl==TRUE){
       PLiab<-1:(length(data$MCMC_y)*nkeep)
     }else{
@@ -878,7 +880,7 @@
     }
 
     if(length(mfac)==0){mfac=-999}
-    DIC=FALSE	
+    	
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
         as.double(data$MCMC_y.additional),
@@ -930,7 +932,8 @@
 	as.integer(observed),
         as.integer(diagP),
         as.integer(AMtune),
-		as.integer(DIC)	   
+	as.integer(DIC),
+        as.double(dbar)	   
         )
 
         Sol<-t(matrix(output[[39]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
@@ -945,6 +948,13 @@
         colnames(VCV)<-variance.names
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
 
+        if(DIC==TRUE){
+         deviance<--2*output[[52]][1:nkeep]
+         DIC<--4*output[[52]][nkeep+1]+2*output[[52]][nkeep+2]
+        }else{
+         deviance<-NULL
+         DIC<-NULL
+        }
         if(pl==TRUE){
           Liab<-mcmc(t(matrix(output[[41]], length(data$MCMC_y), nkeep)))
         }else{
@@ -952,7 +962,7 @@
         }
     	options("na.action"="na.omit")
 
-        list(Sol=mcmc(Sol), VCV=mcmc(VCV), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov)
+        list(Sol=mcmc(Sol), VCV=mcmc(VCV), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=mcmc(deviance),DIC=DIC)
 	
 }
 

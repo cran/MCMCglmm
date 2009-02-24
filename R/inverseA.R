@@ -9,8 +9,8 @@
 
     if(all(is.na(pedigree[,2])) & all(is.na(pedigree[,3]))){stop("All dams and sires are missing")}
     if(dim(pedigree)[2]!=3){stop("pedigree must have three columns: id, dam and sire")}
-    if(sum((na.omit(pedigree[,2])%in%pedigree[,1])==FALSE)>0){stop("individuals appearing as dams but not in pedigree")}
-    if(sum((na.omit(pedigree[,3])%in%pedigree[,1])==FALSE)>0){stop("individuals appearing as sire but not in pedigree")}
+    if(sum((na.omit(pedigree[,2])%in%pedigree[,1])==FALSE)>0 & any(is.na(pedigree[,2])==FALSE)){stop("individuals appearing as dams but not in pedigree")}
+    if(sum((na.omit(pedigree[,3])%in%pedigree[,1])==FALSE)>0 & any(is.na(pedigree[,3])==FALSE)){stop("individuals appearing as sire but not in pedigree")}
 
     numeric.pedigree<-matrix(-998, dim(pedigree)[1], dim(pedigree)[2])
 
@@ -22,9 +22,9 @@
     snmiss<-which(numeric.pedigree[,3]!=-998)                                    # sires not missing
     bnmiss<-which(numeric.pedigree[,2]!=-998 &  numeric.pedigree[,3]!=-998)      # one present 
 
-    if(length(intersect(numeric.pedigree[,2][dnmiss], numeric.pedigree[,3][snmiss]))>0){stop("dams appearing as sires")}
-    if(any(numeric.pedigree[,2][dnmiss]>numeric.pedigree[,1][dnmiss])){stop("dams appearing before their offspring: try orderPed form MasterBayes")}
-    if(any(numeric.pedigree[,3][snmiss]>numeric.pedigree[,1][snmiss])){stop("sires appearing before their offspring: try orderPed from MasterBayes")}
+    if(length(intersect(numeric.pedigree[,2][dnmiss], numeric.pedigree[,3][snmiss]))>0 & (length(dnmiss)>0) & (length(snmiss)>0)){stop("dams appearing as sires")}
+    if(any(numeric.pedigree[,2][dnmiss]>numeric.pedigree[,1][dnmiss]) & (length(dnmiss)>0)){stop("dams appearing before their offspring: try orderPed form MasterBayes")}
+    if(any(numeric.pedigree[,3][snmiss]>numeric.pedigree[,1][snmiss]) & (length(snmiss)>0) ){stop("sires appearing before their offspring: try orderPed from MasterBayes")}
 
     n<-dim(numeric.pedigree)[1]
     nA<-n+2*length(dnmiss)+2*length(snmiss)                                                               # parent-offspring elements

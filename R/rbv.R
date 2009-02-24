@@ -1,4 +1,4 @@
-rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE){
+rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NULL){
 
   ped=TRUE
   if(length(attr(pedigree, "class"))!=0){
@@ -12,20 +12,35 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE){
     if(dim(pedigree)[2]!=3){stop("pedigree must have three columns: id, dam and sire")}
     if(sum((na.omit(pedigree[,2])%in%pedigree[,1])==FALSE)>0){stop("individuals appearing as dams but not in pedigree")}
     if(sum((na.omit(pedigree[,3])%in%pedigree[,1])==FALSE)>0){stop("individuals appearing as sire but not in pedigree")}
-  
+
     node.names<-pedigree[,1]
 
     id<-match(pedigree[,1], pedigree[,1], nomatch=-998)
     dam<-match(pedigree[,2], pedigree[,1], nomatch=-998)
     sire<-match(pedigree[,3], pedigree[,1], nomatch=-998)
 
+    if(is.null(ggroups)==FALSE){
+       if(is.factor(ggroups)==FALSE){stop("ggroups must be a factor")}
+       if(dim(pedigree)[1]!=length(ggroups)){stop("ggroups must be the same length as number of individuals in the pedigree")}
+       if(any(is.na(ggroups[which(dam==-998 | sire==-998)]))){stop("all individuals without both parents should have a genetic group")}
+       if(is.null(gmeans)){stop("genetic groups specified but no gmeans")}else{gmeans<-as.matrix(gmeans)}
+       ngroups<-nlevels(ggroups)
+       if(ngroups!=dim(gmeans)[1]){stop("number of rows in gmeans should have length nlevels(ggroups)")}
+       if(dim(G)[2]!=dim(gmeans)[2]){stop("number of columns in gmeans should have length dim(G)[1]")}
+       ggroups<-match(ggroups, levels(ggroups), nomatch=-998)
+    }else{
+       ngroups<-1
+       ggroups<-rep(0, dim(pedigree)[1])
+       gmeans<-rep(0, dim(G)[1])
+    }
+
     dnmiss<-which(dam!=-998)   		        # dams not missing
     snmiss<-which(sire!=-998)                   # sires not missing
     bnmiss<-which(dam!=-999 & sire!=-998)       # neither missing
 
-    if(length(intersect(dam[dnmiss], sire[snmiss]))>0){stop("dams appearing as sires")}
-    if(sum(dam[dnmiss]-id[dnmiss])>=0){stop("dams appearing before their offspring: try order.ped")}
-    if(sum(sire[snmiss]-id[snmiss])>=0){stop("sires appearing before their offspring: try order.ped")}
+    if(length(intersect(dam[dnmiss], sire[snmiss]))>0 & (length(dnmiss)>0) & (length(snmiss)>0)){stop("dams appearing as sires")}
+    if(sum(dam[dnmiss]-id[dnmiss])>=0 & (length(dnmiss)>0)){stop("dams appearing before their offspring: try orderPed from MasterBayes")}
+    if(sum(sire[snmiss]-id[snmiss])>=0 & (length(snmiss)>0)){stop("sires appearing before their offspring: try orderPed from MasterBayes")}
 
     d<-rep(1,length(id))
     
@@ -57,6 +72,11 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE){
       d<-d/root2tip
     }
   }
+
+    ngroups<-1
+    ggroups<-rep(0, length(id))
+    gmeans<-rep(0, dim(G)[1])
+
   
    rbv<-rep(0, dim(G)[1]*length(id))
 
@@ -69,7 +89,11 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE){
         as.integer(length(id)),
         as.integer(dim(G)[1]),        
         as.double(c(solve(G))),
-        as.logical(ped))      
+        as.integer(ped),
+        as.integer(ggroups-1),
+        as.double(c(gmeans)),
+        as.integer(ngroups)
+   )       
  
    rbv<-matrix(output[[5]], length(id),  dim(G)[1])
    rownames(rbv)<-node.names

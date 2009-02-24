@@ -11,7 +11,7 @@ and phylogenies. Please read the tutorial: \code{vignette("Tutorial",
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
     data=NULL,start=NULL, prior=NULL, tune=NULL, pedigree=NULL,
     nodes="ALL", scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
-    pl=FALSE, verbose=TRUE)
+    pl=FALSE, verbose=TRUE, DIC=TRUE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
@@ -76,6 +76,7 @@ saved?}
   \item{pl}{logical: should the posterior distribution of latent variables be 
 saved?}
   \item{verbose}{logical: if \code{TRUE} MH diagnostics are printed to screen}
+  \item{DIC}{logical: if \code{TRUE} deviance and deviance information criterion are calculated}
 }
 \details{
 }
@@ -86,10 +87,13 @@ saved?}
   \item{Fixed}{formula: fixed terms}
   \item{Random}{formula: random terms}
   \item{Residual}{formula: residual terms}
+  \item{Deviance}{deviance -2*log(p(y|...))}
+  \item{DIC}{deviance information criterion}
+
 }
 \references{
 For phylogenetic analyses: Hadfield & Nakagawa (2009) \emph{submitted}
-For other analyses: Hadfield \emph{in prep}
+For other analyses: Hadfield  \emph{in prep}
 Sorensen \& Gianola (2004) Springer
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}

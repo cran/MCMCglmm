@@ -32,7 +32,6 @@ void rbv(
 
   int dimG = GdimP[0];
 
-
   cs *Ginv, *Grv;
   csn *GinvL;
   css *GinvS;
@@ -100,14 +99,13 @@ void rbv(
           rbv[j*nid+i] += 0.5*gmeans[ggroups[i]+j*ngroup];
         } 
       }
-
       if(dam[i]!=-999){  
         for(j=0; j<dimG; j++){
            rbv[j*nid+i] += 0.5*(rbv[j*nid+dam[i]]);
         }  
       }else{
         for(j=0; j<dimG; j++){
-          rbv[j*nid+i] += 0.5*gmeans[ggroups[i]+j*ngroup];
+          rbv[j*nid+i] += 0.5*gmeans[ggroups[i]];
         } 
       }
 

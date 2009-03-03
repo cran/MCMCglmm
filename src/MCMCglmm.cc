@@ -66,10 +66,11 @@ void MCMCglmm(
 	int *diagP,          // is a us matrix in fact diagonal?
         int *AMtuneP,          // should adaptive Metroplis algorithm be used
 	int *DICP,	   // should DIC be computed
-        double *dbarP
+        double *dbarP,
+        int *proposal      
 ){         
 
-int     i, j, k,l,cnt,cnt2,itt,record,dimG,
+int     i, j, k,l,p,cnt,cnt2,itt,record,dimG,
 
         nG = nGP[0],          // number of G structures
         nR = nGP[1],          // number of R structures 
@@ -131,17 +132,17 @@ double  densityl1,
         alpha_star = (-double(GRdimP[nG])/(1.0-2.75*double(GRdimP[nG])))-0.133,  // optimal acceptance ratio
         rACCEPT = 0.9,
         qACCEPT = 2.0,
-        t[nGR],
-        sd[nGR],
-        wn[nGR],
-        zn[nGR],
+        t[nGR*2],
+        sd[nGR*2],
+        wn[nGR*2],
+        zn[nGR*2],
         ldet[nR+nG],
         interval,
         remainder,
         dm = 1.0/PedDimP[1];  // 0.5 for pedigrees 1 for phylogenies for taking averaging of potential bv.
 
-        for(k=0; k<nGR; k++){
-           t[k]=0.0;
+        for(k=0; k<(nGR*2); k++){
+          t[k]=0.0;
           sd[k]=1.0;
           wn[k]=0.0;
           zn[k]=0.0;
@@ -154,17 +155,17 @@ css     *S;
 
 cs*     Ginv[nGR];
 cs*     muG[nGR];	
-cs*     propC[nGR];
-cs*     propCinv[nGR];
-cs*     muC[nGR];
+cs*     propC[nGR*2];
+cs*     propCinv[nGR*2];
+cs*     muC[nGR*2];
 cs*     G[nGR];
 cs*     pG[nGR];
 cs*     Gtmp[nGR];
 cs*     Grv[nGR];
 css*    GinvS[nGR];
 csn*    GinvL[nGR];
-css*    propCinvS[nR];
-csn*    propCinvL[nR];
+css*    propCinvS[nGR*2];
+csn*    propCinvL[nGR*2];
 cs*     KGinv[nGR];
 
 // read in fixed-effects design matrix X 
@@ -309,26 +310,39 @@ cs*     KGinv[nGR];
           dimG = GRdim[k];
           propC[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           muC[k] = cs_spalloc(dimG, 1, dimG, true, false);
+          propC[k+nGR] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+          muC[k+nGR] = cs_spalloc(dimG, 1, dimG, true, false);
           cnt=0;
           for (i = 0 ; i < dimG; i++){
             propC[k]->p[i] = i*dimG;
+            propC[k+nGR]->p[i] = i*dimG;
             for (j = 0 ; j < dimG; j++){
               propC[k]->i[cnt] = j;
               propC[k]->x[cnt] = propCP[cnt2];
+              propC[k+nGR]->i[cnt] = j;
+              propC[k+nGR]->x[cnt] = propCP[cnt2];
               cnt++;
               cnt2++;
             }
           }
           propC[k]->p[dimG] = dimG*dimG;
+          propC[k+nGR]->p[dimG] = dimG*dimG;
           muC[k]->p[0] = 0;
           muC[k]->p[1] = dimG;
+          muC[k+nGR]->p[0] = 0;
+          muC[k+nGR]->p[1] = dimG;
           for (i = 0 ; i < dimG; i++){
             muC[k]->i[i] = i;
             muC[k]->x[i] = 0.0;
+            muC[k+nGR]->i[i] = i;
+            muC[k+nGR]->x[i] = 0.0;
           }
           propCinv[k] = cs_inv(propC[k]);
           propCinvS[k] = cs_schol(1, propCinv[k]);   
           propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]);       
+          propCinv[k+nGR] = cs_inv(propC[k+nGR]);
+          propCinvS[k+nGR] = cs_schol(1, propCinv[k+nGR]);   
+          propCinvL[k+nGR] = cs_chol(propCinv[k+nGR], propCinvS[k+nGR]);
         }
 
 // allocate vecotors for pseudo-random effects z* and [0, *a] 
@@ -490,10 +504,13 @@ cs*     KGinv[nGR];
 	      cs_spfree(KGinv[i]);   
             }
           }
+
           if(missing){	
             for (i = nG ; i < nGR; i++){
 	      cs_nfree(propCinvL[i]);
 	      cs_spfree(propCinv[i]);   
+	      cs_nfree(propCinvL[i+nGR]);
+	      cs_spfree(propCinv[i+nGR]);   
             }
           }
 
@@ -840,17 +857,23 @@ cs*     KGinv[nGR];
        }
      }
 
+
      if(missing){
 
        cnt2=0;
        cnt=0;
 
        for(k=nG; k<nGR; k++){      // Iterate through R-structures
-         dimG = GRdim[k];
-	 propCinv[k] = cs_inv(propC[k]);
-	 propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]);    
 
+         dimG = GRdim[k];
+
+	 propCinv[k] = cs_inv(propC[k]);
+	 propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]); 
+	 propCinv[k+nGR] = cs_inv(propC[k+nGR]);
+	 propCinvL[k+nGR] = cs_chol(propCinv[k+nGR], propCinvS[k+nGR]);
+   
          for(j=0; j<nlGR[k]; j++){     // Iterate through levels
+
            densityl1 = 0.0;
            densityl2 = 0.0;
  
@@ -858,6 +881,8 @@ cs*     KGinv[nGR];
            nthmnl = 1;
            mndenom1 = 1.0;
            mndenom2 = 1.0;
+
+           p = k+proposal[cnt+j]*nGR;  // indexes proposal distributions
 
            for(i=0; i<dimG; i++){
              linki_tmp->x[i] = rnorm(0.0,1.0);
@@ -870,7 +895,7 @@ cs*     KGinv[nGR];
              } 
            }
            if(mvtype[cnt+j]<1){         // has to be MHed
-             cs_ltsolve(propCinvL[k]->L, linki_tmp->x);
+             cs_ltsolve(propCinvL[p]->L, linki_tmp->x);
            }
 
            for(i=0; i<dimG; i++){       // Iterate through fixed levels
@@ -969,20 +994,20 @@ cs*     KGinv[nGR];
 		   break;
 						 
 		   case 11: /* Zero-inflated Poisson */
-                     if(nthmnl==1){
-                       mndenom1 = dpois(yP[record], exp(linki->x[i]), false);  
-                       mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), false);  
+                    if(nthmnl==1){
+                       mndenom1 = dpois(yP[record], exp(linki->x[i]), true);  
+                       mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true);  
 		       nthmn ++;
                        nthmnl++;
                      }else{
-			mndenom1 *= (1.0-exp(linki->x[i])/(1.0+exp(linki->x[i])));
-			mndenom2 *= (1.0-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
+			mndenom1 += log(1.0-exp(linki->x[i])/(1.0+exp(linki->x[i])));
+			mndenom2 += log(1.0-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
                         if(yP[record]>0.5){
-			  mndenom1 += exp(linki->x[i])/(1.0+exp(linki->x[i]));
-			  mndenom2 += exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i]));    
+			  mndenom1 = log(exp(mndenom1)+exp(linki->x[i])/(1.0+exp(linki->x[i])));
+			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));  
 			}
-                        densityl1 += log(mndenom1);
-                        densityl2 += log(mndenom2);
+                        densityl1 += mndenom1;
+                        densityl2 += mndenom2;
                         nthmnl = 1;
                         mndenom1 = 1.0;
                         mndenom2 = 1.0;
@@ -1005,15 +1030,15 @@ cs*     KGinv[nGR];
              densityl1 += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);
              densityl2 += cs_dmvnorm(linki_tmp, predi, ldet[k], Ginv[k]);
 
-             zn[k] *= rACCEPT; 
-             wn[k] *= rACCEPT;
-             wn[k] ++;
+             zn[p] *= rACCEPT; 
+             wn[p] *= rACCEPT;
+             wn[p] ++;
 
              if((densityl2-densityl1)>log(runif(0.0,1.0))){
                for(i=0; i<dimG; i++){
                  linky->x[nlGR[k]*i+j+cnt2] = linki_tmp->x[i];
                }
-               zn[k]++;
+               zn[p]++;
                Eaccl++;  
              }
 /***************/
@@ -1021,24 +1046,24 @@ cs*     KGinv[nGR];
 /***************/
 
              if(AMtuneP[k]==1 && itt<burnin){
-               t[k] ++;
+               t[p] ++;
                for(i=0; i<dimG; i++){
                  for(l=0; l<dimG; l++){
-                  propC[k]->x[i*dimG+l] *= (t[k]-1.0)/t[k];
-                  propC[k]->x[i*dimG+l] += muC[k]->x[i]*muC[k]->x[l];
+                  propC[p]->x[i*dimG+l] *= (t[p]-1.0)/t[p];
+                  propC[p]->x[i*dimG+l] += muC[p]->x[i]*muC[p]->x[l];
                  }
                }
 	       for(i=0; i<dimG; i++){
-		  muC[k]->x[i] *= (t[k]-1.0);
-		  muC[k]->x[i] += linky->x[nlGR[k]*i+j+cnt2];
-		  muC[k]->x[i] /= t[k];
+		  muC[p]->x[i] *= (t[p]-1.0);
+		  muC[p]->x[i] += linky->x[nlGR[k]*i+j+cnt2];
+		  muC[p]->x[i] /= t[p];
 	       }				 
                for(i=0; i<dimG; i++){
                  for(l=0; l<dimG; l++){
-                   propC[k]->x[i*dimG+l] -= ((t[k]+1.0)/t[k])*muC[k]->x[i]*muC[k]->x[l];
-                   propC[k]->x[i*dimG+l] += linky->x[nlGR[k]*i+j+cnt2]*linky->x[nlGR[k]*l+j+cnt2]/t[k];
+                   propC[p]->x[i*dimG+l] -= ((t[p]+1.0)/t[p])*muC[p]->x[i]*muC[p]->x[l];
+                   propC[p]->x[i*dimG+l] += linky->x[nlGR[k]*i+j+cnt2]*linky->x[nlGR[k]*l+j+cnt2]/t[p];
                  }
-                 propC[k]->x[i*(dimG+1)] += 0.001/t[k];
+                 propC[p]->x[i*(dimG+1)] += 0.001/t[p];
                }
              }
            }
@@ -1049,19 +1074,29 @@ cs*     KGinv[nGR];
              for(l=0; l<dimG; l++){
 	       propC[k]->x[i*dimG+l] += (muC[k]->x[i]*muC[k]->x[l])/(t[k]);
                propC[k]->x[i*dimG+l] *= sd[k];
+               if(t[k+nGR]>0.0){
+	         propC[k+nGR]->x[i*dimG+l] += (muC[k+nGR]->x[i]*muC[k+nGR]->x[l])/(t[k+nGR]);
+                 propC[k+nGR]->x[i*dimG+l] *= sd[k+nGR];
+               }
              }
            }
 	   if(wn[k]>0.0){
              sd[k] = pow(qACCEPT, ((zn[k]/wn[k])-alpha_star));
-	   }		 
+	   }	
+	   if(wn[k+nGR]>0.0){
+             sd[k+nGR] = pow(qACCEPT, ((zn[k+nGR]/wn[k+nGR])-alpha_star));
+	   }	 
            zn[k] = 0.0; 
            wn[k] = 0.0;
+           zn[k+nGR] = 0.0; 
+           wn[k+nGR] = 0.0;
          }
          cnt2+=nlGR[k]*dimG;
          cnt+=nlGR[k];
        }
      }
-			
+	
+
 /***********************/
 /*   store posterior   */
 /***********************/
@@ -1132,6 +1167,7 @@ cs*     KGinv[nGR];
      dbarP[post_cnt] = mdbar;
      dbarP[post_cnt+1] = dbar;
    }
+
 	PutRNGstate();
 
         cs_spfree(X);
@@ -1193,6 +1229,12 @@ cs*     KGinv[nGR];
 	    cs_spfree(propCinv[i]);
 	    cs_sfree(propCinvS[i]);
 	    cs_nfree(propCinvL[i]);
+	    cs_spfree(propC[i+nGR]);
+	    cs_spfree(propCinv[i+nGR]);
+	    cs_sfree(propCinvS[i+nGR]);
+	    cs_nfree(propCinvL[i+nGR]);
+	    cs_spfree(muC[i]);
+ 	    cs_spfree(muC[i+nGR]);
         }
 }
 }

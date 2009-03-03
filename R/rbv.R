@@ -30,7 +30,7 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
        ggroups<-match(ggroups, levels(ggroups), nomatch=-998)
     }else{
        ngroups<-1
-       ggroups<-rep(0, dim(pedigree)[1])
+       ggroups<-rep(1, dim(pedigree)[1])
        gmeans<-rep(0, dim(G)[1])
     }
 
@@ -71,12 +71,12 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
       }
       d<-d/root2tip
     }
+    ngroups<-1
+    ggroups<-rep(1, length(id))
+    gmeans<-rep(0, dim(G)[1])
   }
 
-    ngroups<-1
-    ggroups<-rep(0, length(id))
-    gmeans<-rep(0, dim(G)[1])
-
+ 
   
    rbv<-rep(0, dim(G)[1]*length(id))
 

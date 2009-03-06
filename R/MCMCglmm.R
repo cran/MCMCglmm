@@ -227,16 +227,16 @@
 ###################
 
          if(dist.preffix=="ce"){         
-		   if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
+           if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
            y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                               # get upper interval
            if(family.names[nt]=="cenpoisson"){
-			  if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
+	     if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
              data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]<-data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]-1
-           }
-		   if(family.names[nt]=="cenexponential"){
-			   if(any(data[,response.names[0:1+nt]]<0, na.rm=T)){stop("Exponential data must be positive")}  
-		   }
-		   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                                # remove upper interval from the response
+             }
+	   if(family.names[nt]=="cenexponential"){
+	     if(any(data[,response.names[0:1+nt]]<0, na.rm=T)){stop("Exponential data must be positive")}  
+	   }
+	   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                                # remove upper interval from the response
            response.names<-response.names[-(nt+1)]
            nt<-nt+1
          }
@@ -838,7 +838,7 @@
           }else{
             if(data_tmp$MCMC_family.names[1]=="poisson" | data_tmp$MCMC_family.names[1]=="cenpoisson" ){
               mu<-mean((data_tmp$MCMC_y+1), na.rm=TRUE)
-              v<-log(((var(data_tmp$MCMC_y+1, na.rm=TRUE)-mu)/(mu^2))+1)
+              v<-abs(log(((var(data_tmp$MCMC_y+1, na.rm=TRUE)-mu)/(mu^2))+1))
               mu<-log(mu)-0.5*v
             }
             if(data_tmp$MCMC_family.names[1]=="multinomial"){
@@ -871,7 +871,7 @@
               }else{
                 data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
                 mu<-mean(data_tmp$MCMC_y, na.rm=TRUE)
-                v<-log(((var(data_tmp$MCMC_y, na.rm=TRUE)-mu)/(mu^2))+1)
+                v<-abs(log(((var(data_tmp$MCMC_y, na.rm=TRUE)-mu)/(mu^2))+1))
                 mu<-log(mu)-0.5*v
               }
             }

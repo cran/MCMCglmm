@@ -37,7 +37,7 @@
 	if(is.null(pedigree)==FALSE){
 	  if(is.null(data$animal) |length(grep("animal", random))==0){stop("pedigree/phylogeny has been passed, but no 'animal' variable")}
 	  Ai<-inverseA(pedigree, nodes=nodes, scale=scale)
-          if(any(data$animal%in%Ai$node.names==FALSE)){stop("individuals in data not appearing in pedigree")}
+          if(any(data$animal%in%Ai$node.names==FALSE)){stop("individuals in data not appearing in pedigree/phylogeny")}
 	  data$animal<-factor(data$animal, levels=Ai$node.names)                           # add factor levels to animal in data for additional nodes
 	  if(length(unique(data$animal))!=length(Ai$node.names)){
 	    warning(paste("some pedigree/phylogeny nodes not appearing in data: adding",length(Ai$node.names)-length(unique(data$animal)), "missing records"))
@@ -45,6 +45,9 @@
             if(length(missing.combinations)>0){
 	      data[dim(data)[1]+1:length(missing.combinations),]<-as.data.frame(NA)
 	      data$animal[dim(data)[1]-(length(missing.combinations)-1):0]<-missing.combinations
+              if(is.null(mev)==FALSE){
+                 mev<-c(mev,rep(1, length(missing.combinations)))
+              }
 	    }	
 	  }
 	}
@@ -104,6 +107,9 @@
 	      if(length(missing.combinations)>0){                                                      # add dummy records if still needed
 		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
 		data[,components][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-missing.combinations
+                if(is.null(mev)==FALSE){
+                   mev<-c(mev,rep(1, length(missing.combinations)))
+                }
 	      }
 	    }		  
 	  }

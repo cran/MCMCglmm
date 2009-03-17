@@ -40,10 +40,10 @@ supported, where the prefix \code{"cen"} means censored and the prefix
   \item{mev}{optional vector of measurement error variances for each data point 
 for random effect meta-analysis.}
   \item{data}{\code{data.frame}}
-  \item{start}{optional list of starting parameters having 3 possible elements: 
+  \item{start}{optional list having 4 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables 
-or liabilities). \code{G} itself is also a list with as many elements as random 
-effect components}
+or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random 
+effect components. The fourth element \code{QUASI} shoudl be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
   \item{prior}{optional list of prior specifications having 3 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). Each 
 element is a list containing the expected (co)variances (\code{V}) and a degree 

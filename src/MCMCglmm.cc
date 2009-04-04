@@ -847,7 +847,7 @@ cs*     KGinv[nGR];
            }
            if(nkeep>0){      // some gaussian observed traits
              if(ncond>0){   // some non-gaussian or non-observed traits
-               dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // all gaussian observed
+               dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
              }else{
                dbar += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);                                     // all gaussian observed
              }
@@ -1096,7 +1096,6 @@ cs*     KGinv[nGR];
        }
      }
 	
-
 /***********************/
 /*   store posterior   */
 /***********************/
@@ -1160,6 +1159,7 @@ cs*     KGinv[nGR];
        post_cnt++;
      }
    }
+
    if(DICP[0]==1){
      mdbar *= (itt-burnin+1.0);
      mdbar -= dbar;

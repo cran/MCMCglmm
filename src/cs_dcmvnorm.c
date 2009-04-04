@@ -10,6 +10,7 @@ double cs_dcmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv, c
       j, 
       cnt;
   double tmp;
+
  
   cs *invSc, *S22, *invS22, *S12, *muC, *dev, *cdev;
 
@@ -57,22 +58,24 @@ double cs_dcmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv, c
   cdev->p[0] = 0;
   cdev->p[1] = ncond;
   invS22->p[ncond] = ncond*ncond;
+
   ldet -= log(cs_invR(S22, invS22));
 
   cnt = 0;
   for(i = 0; i<ncond; i++){
-    S12->p[i] = i*ncond;
+    S12->p[i] = i*nkeep;
     for(j = 0; j<nkeep; j++){
       S12->i[cnt] = j;
       S12->x[cnt] = M->x[M->p[cond[i]]+keep[j]]; 
       cnt ++;
     }
   }
-  S12->p[ncond] = ncond*ncond;
+  S12->p[ncond] = ncond*nkeep;
 
   muC = cs_multiply(S12, invS22);
-  dev = cs_multiply(muC, cdev);
 
+  dev = cs_multiply(muC, cdev);
+ 
   for(i = 0; i<nkeep; i++){
     dev->x[i]  = beta->x[keep[i]]-dev->x[i]-mu->x[keep[i]];
   }
@@ -84,7 +87,7 @@ double cs_dcmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv, c
     }    
     llik-= tmp*dev->x[i];
   }
-  
+
   llik -= LPIx2*(nkeep);
   llik -= ldet;
   llik /= 2.0;

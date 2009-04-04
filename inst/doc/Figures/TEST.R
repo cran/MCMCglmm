@@ -9,7 +9,7 @@ nsim<-1
 print("res1")
 R<-diag(1)
 res1<-matrix(NA, nsim,2)
-prior<-list(R=list(V=as.matrix(1), n=1), G=list(G1=list(V=as.matrix(1), n=1)))
+prior<-list(R=list(V=as.matrix(1), n=1))
 for(i in 1:nsim){
 l<-exp(rnorm(100,1,R))
 y<-rpois(100,l)

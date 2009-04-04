@@ -192,14 +192,13 @@
 ######################
 # categorical traits #
 ######################
-
           if(dist.preffix=="ca"){
             cont<-as.matrix(model.matrix(~ as.factor(data[[response.names[nt]]]))[,-1])                            # form new J-1 variable   
             nJ<-dim(cont)[2]                                                                                       # number of J-1 categories 
             mfac<-c(mfac, rep(nJ,nJ))             
             new.names<-paste(response.names[nt], ".", levels(as.factor(data[[response.names[nt]]]))[-1], sep="")   # give new variables names
             colnames(cont)<-new.names                        
-            data<-data[,-which(names(data)==response.names[nt])]                                                   # remove original variable
+            data<-data[,-which(names(data)==response.names[nt]), drop=FALSE]                                                   # remove original variable
             data<-cbind(data, cont)                                                                                # add new variables to data.frame
             ones<-rep(1, length(response.names))
             ones[which(response.names==response.names[nt])]<-nJ
@@ -304,7 +303,6 @@
     data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", timevar="trait")       # reshape the data into long format 
     data$trait<-factor(response.names[data$trait], response.names)
     data$MCMC_y.additional<-c(y.additional) 
-
     if(MVasUV){
       data$MCMC_family.names<-family.names
     }else{
@@ -398,10 +396,10 @@
         }else{
 
           if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop(paste("V does not exist for G/R structure", r))}
+          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
 	  if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-          if(dim(prior$G[[r]]$V)[1]!=1  | dim(prior$G[[r]]$V)[2]!=1){stop(paste("V is the wrong dimension for G/R structure", r))}
-          if(is.null(prior$G[[r]]$n)){stop(paste("n does not exist for G/R structure", r))}
+          if(dim(prior$G[[r]]$V)[1]!=1  | dim(prior$G[[r]]$V)[2]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
+          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
           GRprior[[nr]]<-prior$G[[r]]
         }
 
@@ -413,7 +411,7 @@
 
           if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
 	  if(is.matrix(start$G[[r]]$V)==FALSE){start$G[[r]]$V<-as.matrix(start$G[[r]]$V)}	
-          if(dim(start$G[[r]])[1]!=1  | dim(start$G[[r]])[2]!=1){stop(paste("starting G/R structure", r, "is the wrong dimension"))}
+          if(dim(start$G[[r]])[1]!=1  | dim(start$G[[r]])[2]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
           if(is.positive.definite(start$G[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
 
           GR[[nr]]<-start$G[[r]]
@@ -452,10 +450,10 @@
         }else{
 
           if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop(paste("V does not exist for G/R structure", r))}
+          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
 	  if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-          if(dim(prior$G[[r]]$V)[1]!=nfl[nr] | dim(prior$G[[r]]$V)[2]!=nfl[nr]){stop(paste("V is the wrong dimension for G/R structure", r))}
-          if(is.null(prior$G[[r]]$n)){stop(paste("n does not exist for G/R structure", r))}
+          if(dim(prior$G[[r]]$V)[1]!=nfl[nr] | dim(prior$G[[r]]$V)[2]!=nfl[nr]){stop("V is the wrong dimension for some priorG/priorR elements")}
+          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
 
           GRprior[[nr]]<-prior$G[[r]]
         }
@@ -486,7 +484,9 @@
 
         nr<-nr+1
       }
-
+      if(NOpriorG==FALSE){
+        if(length(prior$G)>length(rmodel.terms)){stop("priorG/priorR have the wrong number of structures")}
+      }
 ##########################
 # heterogenous variances #
 ##########################
@@ -506,10 +506,10 @@
         variance.names<-c(variance.names, paste(components[2],components[1], levels(data[,components[1]]), sep="."))
         if(NOpriorG==FALSE){
           if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop(paste("V does not exist for G/R structure", r))}
+          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
 	  if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-          if(dim(prior$G[[r]]$V)[1]!=nlevels(data[,components[1]]) | dim(prior$G[[r]]$V)[2]!=nlevels(data[,components[1]])){stop(paste("V is the wrong dimension for G/R structure", r))}
-          if(is.null(prior$G[[r]]$n)){stop(paste("n does not exist for G/R structure", r))}
+          if(dim(prior$G[[r]]$V)[1]!=nlevels(data[,components[1]]) | dim(prior$G[[r]]$V)[2]!=nlevels(data[,components[1]])){stop("V is the wrong dimension for some priorG/priorR elements")}
+          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
         }
         if(NOstartG==FALSE){
           if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
@@ -581,9 +581,9 @@
           }
         }else{
           if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop(paste("V does not exist for G/R structure", r))}
-          if(dim(prior$G[[r]]$V)[1]!=nfl[nr] | dim(prior$G[[r]]$V)[2]!=nfl[nr]){stop(paste("V is the wrong dimension for G/R structure", r))}
-          if(is.null(prior$G[[r]]$n)){stop(paste("n does not exist for G/R structure", r))}
+          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
+          if(dim(prior$G[[r]]$V)[1]!=nfl[nr] | dim(prior$G[[r]]$V)[2]!=nfl[nr]){stop("V is the wrong dimension for some priorG/priorR elements")}
+          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
           GRprior[[nr]]<-prior$G[[r]]
         }
         if(NOstartG==TRUE){
@@ -625,10 +625,10 @@
          GRprior[[nr]]<-list(V=matrix(1), n=0)
        }else{
          if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-         if(is.null(prior$G[[r]]$V)){stop(paste("V does not exist for G/R structure", r))}
+         if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
 	 if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-         if(dim(prior$G[[r]]$V)[1]!=1  | dim(prior$G[[r]]$V)[2]!=1){stop(paste("V is the wrong dimension for G/R structure", r))}
-         if(is.null(prior$G[[r]]$n)){stop(paste("n does not exist for G/R structure", r))}
+         if(dim(prior$G[[r]]$V)[1]!=1  | dim(prior$G[[r]]$V)[2]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
+         if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
          GRprior[[nr]]<-prior$G[[r]]
        }
 
@@ -654,6 +654,10 @@
         nr<-nr+1
       }  		 
     }
+
+############################
+###### BUILD Z matrices ####
+############################
 
      if(length(rmodel.terms)>1){   # random effects exist
        for(i in 1:(length(rmodel.terms)-1)){
@@ -704,7 +708,8 @@
              }else{
                dpol<-dim(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]])[2]
                data_comb<-as.factor(rep(1:dpol, each=dim(data)[1])):as.factor(rep(data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]], dpol))
-               xfactor<-c(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]])
+               xfactor<-data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]]
+               xfactor<-c(xfactor[order(data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]]),])
                xfactor[which(is.na(xfactor))]<-0
              }
            }else{
@@ -1044,7 +1049,7 @@
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
 
         if(DIC==TRUE){
-         deviance<--2*output[[52]][1:nkeep]
+         deviance<-mcmc(-2*output[[52]][1:nkeep])
          DIC<--4*output[[52]][nkeep+1]+2*output[[52]][nkeep+2]
         }else{
          deviance<-NULL
@@ -1057,7 +1062,7 @@
         }
     	options("na.action"="na.omit")
 
-        list(Sol=mcmc(Sol), VCV=mcmc(VCV), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=mcmc(deviance),DIC=DIC)
+        list(Sol=mcmc(Sol), VCV=mcmc(VCV), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC)
 	
 }
 

@@ -349,11 +349,8 @@ cs*     KGinv[nGR];
 
         zstar = cs_spalloc(ny, 1, ny, true, false);
         linky = cs_spalloc(ny, 1, ny, true, false);
-        pred = cs_spalloc(ny, 1, ny, true, false);
 	mupred = cs_spalloc(ny, 1, ny, true, false);
 	mulinky = cs_spalloc(ny, 1, ny, true, false);
-
-        dev = cs_spalloc(ny, 1, ny, true, false);
 
         astar = cs_spalloc(dimAS, 1, dimAS, true, false);
         location = cs_spalloc(dimAS, 1, dimAS, true, false);
@@ -366,12 +363,10 @@ cs*     KGinv[nGR];
         for (i = 0 ; i < ny; i++){   
            zstar->i[i] = i;
            linky->i[i] = i;
-           pred->i[i] = i;
 	   mupred->i[i] = i;
 	   mupred->x[i] = 0.0;
 	   mulinky->i[i] = i;
 	   mulinky->x[i] = 0.0;
-	   dev->i[i] = i;
            linky->x[i] = liabP[i];                         /* this needs to be changed for random regression */
         }
 
@@ -379,14 +374,10 @@ cs*     KGinv[nGR];
         zstar->p[1] = ny;
         linky->p[0] = 0; 
         linky->p[1] = ny;
-        pred->p[0] = 0; 
-        pred->p[1] = ny;
     	mupred->p[0] = 0; 
         mupred->p[1] = ny;
         mulinky->p[0] = 0; 
 	mulinky->p[1] = ny;
-        dev->p[0] = 0; 
-        dev->p[1] = ny;
 
         for (i = 0 ; i < (dimAS-ncolX); i++){
            astar->i[i] = i+ncolX;    
@@ -491,11 +482,6 @@ cs*     KGinv[nGR];
             cs_spfree(pred);
             cs_spfree(dev);
 	    cs_nfree(L);
-            if(Aexists){
-              cs_spfree(tbv);               
-              cs_spfree(bvA);               
-	      cs_spfree(bvAbv);
-	    }                                
           }
 
           for (i = 0 ; i < nGR; i++){
@@ -542,9 +528,7 @@ cs*     KGinv[nGR];
                   for(j=0; j<dimG; j++){
                     Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
                   }
-                  
                   cs_ltsolve(GinvL[k]->L, Grv[k]->x);
-
                   for(j=0; j<dimG; j++){
                     astar->x[j*nlGR[k]+i+cnt] = Grv[k]->x[j];     
                   }
@@ -715,6 +699,9 @@ cs*     KGinv[nGR];
                for(k=0; k<(dimG*dimG); k++){
                  Gtmp[i]->x[k] = bvAbv->x[k] + pG[i]->x[k];
                }
+               cs_spfree(tbv);               
+               cs_spfree(bvA);               
+	       cs_spfree(bvAbv);
              }else{
                for(j=0; j<dimG; j++){
                  for(k=j; k<dimG; k++){
@@ -847,7 +834,7 @@ cs*     KGinv[nGR];
            }
            if(nkeep>0){      // some gaussian observed traits
              if(ncond>0){   // some non-gaussian or non-observed traits
-               dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
+                 dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
              }else{
                dbar += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);                                     // all gaussian observed
              }
@@ -1201,10 +1188,7 @@ cs*     KGinv[nGR];
         if(Aexists){
           cs_spfree(A);               
           cs_spfree(bv);                                                              
-          cs_spfree(bv_tmp);                                
-          cs_spfree(bvA);               
-          cs_spfree(bvAbv);                                                              
-          cs_spfree(tbv);                                
+          cs_spfree(bv_tmp);                                                            
         }
 
 

@@ -1,7 +1,6 @@
-"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data=NULL, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE){
+"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data=NULL, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE){
    
-    options("na.action"="na.pass")
-    row.names(data)=NULL	
+    options("na.action"="na.pass")	
 
     if(is.null(data)){stop("data argument is NULL")}
     if(is.null(fixed)){stop("fixed is NULL")}
@@ -39,38 +38,47 @@
 	  Ai<-inverseA(pedigree, nodes=nodes, scale=scale)
           if(any(data$animal%in%Ai$node.names==FALSE)){stop("individuals in data not appearing in pedigree/phylogeny")}
 	  data$animal<-factor(data$animal, levels=Ai$node.names)                           # add factor levels to animal in data for additional nodes
-	  if(length(unique(data$animal))!=length(Ai$node.names)){
-	    warning(paste("some pedigree/phylogeny nodes not appearing in data: adding",length(Ai$node.names)-length(unique(data$animal)), "missing records"))
-            missing.combinations<-setdiff(levels(data$animal), data$animal)
-            if(length(missing.combinations)>0){
-	      data[dim(data)[1]+1:length(missing.combinations),]<-as.data.frame(NA)
-	      data$animal[dim(data)[1]-(length(missing.combinations)-1):0]<-missing.combinations
-              if(is.null(mev)==FALSE){
-                 mev<-c(mev,rep(1, length(missing.combinations)))
-              }
-	    }	
-	  }
 	}
-        
+
 #######################################################################################################
 # for interactions involving pedigrees/phylogenies or us structures augment with missing combinations #
 #######################################################################################################
 
 	rterms<-strsplit(as.character(random)[2], " *\\+ *")[[1]]
-	
+	nadded<-0  # number of records added
+        data$MCMC_dummy<-as.factor(rep(1, dim(data)[1]))
 	for(i in 1:length(rterms)){
 	  components=NULL
 	  rterms.split<-lapply(rterms, strsplit,"\\(|\\):|:")
-	  if(length(rterms.split[[i]][[1]])==2 & any(rterms.split[[i]][[1]]=="animal")){
-	    components<-rterms.split[[i]][[1]]
+          if(length(rterms.split[[i]][[1]])==1){
+            if(is.na(rterms.split[[i]][[1]])==FALSE){
+              if(rterms.split[[i]][[1]][1]=="animal"){ 
+	        components<-c("MCMC_dummy", "animal")
+              }
+            }
 	  }
-	  if(length(rterms.split[[i]][[1]])==3 & rterms.split[[i]][[1]][1]=="us" & rterms.split[[i]][[1]][2]!="trait"){
-	    components<-rterms.split[[i]][[1]][2:3]
+          if(length(rterms.split[[i]][[1]])==2){
+            if(any(rterms.split[[i]][[1]]=="animal")){
+	      components<-rterms.split[[i]][[1]]
+            }
 	  }
+          if(length(rterms.split[[i]][[1]])==3){
+            if(any(rterms.split[[i]][[1]]=="animal")){
+              if(rterms.split[[i]][[1]][2]=="trait"){ 
+	        components<-c("MCMC_dummy", "animal")
+	      }else{
+  	        components<-rterms.split[[i]][[1]][2:3]
+	      }
+            }else{
+	      if(rterms.split[[i]][[1]][1]=="us" & rterms.split[[i]][[1]][2]!="trait"){ 
+	        components<-rterms.split[[i]][[1]][2:3]
+	      }
+            }
+          }
 	  if(is.null(components)==FALSE){
-	    Ztmp<-model.matrix(formula(paste(response.names[1], "~", components[2], ":", components[1], "-1", sep="")), data)
-		  
-            missing.combinations<-which(colSums(Ztmp, na.rm=TRUE)==0)
+
+            allc<-expand.grid(levels(data[,components[2]]),levels(data[,components[1]]))
+            missing.combinations<-which(paste(allc[,1], allc[,2])%in%paste(data[,components[2]], data[,components[1]])==FALSE)
 		  
             if(length(missing.combinations)>0){
 			  
@@ -104,7 +112,8 @@
 		data[missing.comb12,]<-missing.combinations[1:min(length(missing.comb12), length(missing.combinations[,1])),]
 		missing.combinations<-missing.combinations[-1:min(length(missing.comb12), length(missing.combinations[,1])),,drop=FALSE,]
 	      }			
-	      if(length(missing.combinations)>0){                                                      # add dummy records if still needed
+	      if(length(missing.combinations)>0){       
+                nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
 		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
 		data[,components][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-missing.combinations
                 if(is.null(mev)==FALSE){
@@ -114,7 +123,10 @@
 	    }		  
 	  }
 	}
-
+        if(nadded>0){
+          data$MCMC_dummy<-rep(0,dim(data)[1])
+          data$MCMC_dummy[(dim(data)[1]-nadded+1):dim(data)[1]]<-1   
+        }
 ##############################################################################################
 # if R-structure is of form idh(!=trait) assign new records with arbitrary levels of !-trait #
 ##############################################################################################
@@ -135,7 +147,6 @@
 	   }
 	 }
       
-
     MVasUV=FALSE  # Multivaraite as Univariate
     if(is.null(family)){
        if(is.null(data$family)){
@@ -170,7 +181,6 @@
 	
     nS<-dim(data)[1]                             # number of subjects
     y.additional<-matrix(NA, nS,0)               # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
-
     nt<-1                                        # number of traits (to be iterated because y may change dimension with multinomial/categorical/censored distributions)
     mfac<-c()
 
@@ -186,7 +196,7 @@
       for(i in 1:length(family)){
 
         dist.preffix<-substr(family[i],1,2)                  
-
+        if(nt>length(response.names)){stop("family is the wrong length")}
         if(any(dist.preffix%in%c("ce", "mu", "ca", "tr", "zi"))){
 
 ######################
@@ -282,25 +292,24 @@
 #######################################
 
         }else{
-			if(family.names[nt]=="poisson"){
-				if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
-			}
-			if(family.names[nt]=="exponential"){
-				if(any(data[,response.names[nt]]<0, na.rm=T)){stop("Exponential data must be positive")}
-			}	
+          if(family.names[nt]=="poisson"){
+	    if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
+          }
+	  if(family.names[nt]=="exponential"){
+	    if(any(data[,response.names[nt]]<0, na.rm=T)){stop("Exponential data must be positive")}
+	  }	
           y.additional<-cbind(y.additional,matrix(NA,nS,1))     
           nt<-nt+1
         }
       }	
       nt<-nt-1
     }
-
     if(sum((family.names%in%family.types)==FALSE)!=0){stop(paste(unique(family[which((family.names%in%family.types)==FALSE)]), "not a supported distribution"))}
 
 ###**************************************########################
 
-    data<-data.frame(data, units=as.factor(1:nS))
-    data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", timevar="trait")       # reshape the data into long format 
+    data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", timevar="trait", idvar="units")       # reshape the data into long format 
+    data$units<-as.factor(data$units)
     data$trait<-factor(response.names[data$trait], response.names)
     data$MCMC_y.additional<-c(y.additional) 
     if(MVasUV){
@@ -309,6 +318,7 @@
       if(length(response.names)!=length(family.names)){stop("family must have the same length as the number of responses")}
       data$MCMC_family.names<-rep(family.names, each=nS)       
     }
+
 ###**************************************########################
 
     fixed<-update(fixed,y~.,) 
@@ -741,7 +751,6 @@
      }else{
        Z<-as(matrix(0,1,0), "sparseMatrix")
      }
-
      nR<-nr-nG-1  # number of R structures
      if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
      if(is.null(tune)){
@@ -789,13 +798,20 @@
        }
 
    X<-model.matrix(as.formula(paste("~", paste(fmodel.terms, collapse="+"), sep="")),data)
-   X[which(is.na(X))]<-0 
-   if(any(apply(X,2, function(x){all(x==0)}))){
-     warning(paste("fixed effects ", paste(colnames(X)[which(apply(X,2, function(x){all(x==0)}))], collapse=" "),  " not represented in data and have been deleted"))
-     X<-X[,-which(apply(X,2, function(x){all(x==0)}))] 
-   }		 
+   if(nadded>0){
+     X[which(data$MCMC_dummy==1),]<-0
+   }
+   if(any(is.na(X))){stop("missing values in the fixed predictors")}
+   if(singular.ok==FALSE){
+     if(all(is.na(data$MCMC_y))){stop("all data are missing. Use singular.ok=TRUE to sample these effects, but use an informative prior!")}
+     sing.rm<-lm(data$MCMC_y~X-1, subset=is.na(data$MCMC_y)==FALSE)
+     sing.rm<-which(is.na(sing.rm$coef))
+     if(length(sing.rm)){
+       warning("some fixed effects are not estimable and have been removed. Use singular.ok=TRUE to sample these effects, but use an informative prior!")
+       X<-X[,-sing.rm]
+     }
+   }	
    X<-as(X, "sparseMatrix")
-
    if(is.null(prior$B)){
       prior$B=list(V=diag(dim(X)[2])*1e+10, mu=matrix(0,dim(X)[2],1))
    }else{
@@ -823,7 +839,7 @@
        proposal<-c(proposal, AMtune[i+nG]*((fp==11)*(mp==0 & is.na(mp)==FALSE))[,1])
        missing.pattern<-fp*(is.na(mp)==FALSE) # 0 for missing data 1 for gaussian >1 for other
        # missing data codes: 2 complete gaussian (ignore);
-       #                     1 completely missing (unconditional Gibbs)
+       #             o        1 completely missing (unconditional Gibbs)
        #                     0 partial missing with observed being Guassian (conditional Gibbs)
        #                    -1 partial or fully observed with non-gaussian (MH)  currently 0 & -1 are both MHed. 
 

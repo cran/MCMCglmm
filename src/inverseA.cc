@@ -39,9 +39,6 @@ void inverseA(
   }
 
   Tinv = cs_spalloc(nTinvP[0], nTinvP[0], nzmaxTinvP[0], true, false);  
-  tTinv = cs_spalloc(nTinvP[0], nTinvP[0], nzmaxTinvP[0], true, false);  
-  tTD = cs_spalloc(nTinvP[0], nTinvP[0], nzmaxAP[0], true, false);  
-  A = cs_spalloc(nAP[0], nAP[0], nzmaxAP[0], true, false);  
 
          for (i = 0 ; i < nzmaxTinvP[0] ; i++){
            Tinv->i[i] = iTinvP[i];

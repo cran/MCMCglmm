@@ -11,7 +11,7 @@ and phylogenies. Please read the tutorial: \code{vignette("Tutorial",
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
     data=NULL,start=NULL, prior=NULL, tune=NULL, pedigree=NULL,
     nodes="ALL", scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
-    pl=FALSE, verbose=TRUE, DIC=TRUE)
+    pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
@@ -77,6 +77,7 @@ saved?}
 saved?}
   \item{verbose}{logical: if \code{TRUE} MH diagnostics are printed to screen}
   \item{DIC}{logical: if \code{TRUE} deviance and deviance information criterion are calculated}
+  \item{singular.ok}{logical: if \code{FALSE} linear dependencies in the fixed effects are removed. if \code{TRUE} they are left in an estimated, although all information comes form the prior}
 }
 \details{
 }

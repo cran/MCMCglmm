@@ -11,6 +11,7 @@
     if(dim(pedigree)[2]!=3){stop("pedigree must have three columns: id, dam and sire")}
     if(sum((na.omit(pedigree[,2])%in%pedigree[,1])==FALSE)>0 & any(is.na(pedigree[,2])==FALSE)){stop("individuals appearing as dams but not in pedigree")}
     if(sum((na.omit(pedigree[,3])%in%pedigree[,1])==FALSE)>0 & any(is.na(pedigree[,3])==FALSE)){stop("individuals appearing as sire but not in pedigree")}
+    if(sum(duplicated(pedigree[,1]))>0){stop("some individuals appear more than once in the pedigree")}
 
     numeric.pedigree<-matrix(-998, dim(pedigree)[1], dim(pedigree)[2])
 

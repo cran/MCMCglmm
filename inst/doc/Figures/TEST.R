@@ -201,7 +201,7 @@ prior=list(R=list(V=R, n=100),G=list(G1=list(V=G, n=100)), B=list(mu=0, V=0.0000
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-rep(NA,300)
 data=data.frame(y1=y, fac=fac)
-res12<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior)
+res12<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, singular.ok=TRUE)
 
 
 # Jennys data - once as gaussian once as binomial 32 seconds

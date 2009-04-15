@@ -16,7 +16,6 @@ cs *cs_kroneckerH(const cs *A, int *rl){
     if (!CS_CSC (A)) return (NULL);                         
     C = cs_spalloc (nI, nI, nI, 1, 0) ;	 /* allocate result */
     if (!C ) return (cs_done (C, NULL, NULL, 0));   
-//    if (!C ) error("cs_kroneckerH out of memory");   
 
     for (j = 0 ; j < n ; j++){
       for (i = 0 ; i < rl[j] ; i++){

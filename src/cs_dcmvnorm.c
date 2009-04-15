@@ -18,8 +18,6 @@ double cs_dcmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv, c
   S22 = cs_spalloc (ncond, ncond, ncond*ncond, 1, 0);
   invS22 = cs_spalloc (ncond, ncond, ncond*ncond, 1, 0);
   S12 = cs_spalloc (nkeep, ncond, nkeep*ncond, 1, 0);
-  muC = cs_spalloc (ncond, nkeep, nkeep*ncond, 1, 0);
-  dev = cs_spalloc (nkeep, 1, nkeep, 1, 0);
   cdev = cs_spalloc (ncond, 1, ncond, 1, 0);
 
   cnt = 0;
@@ -73,7 +71,6 @@ double cs_dcmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv, c
   S12->p[ncond] = ncond*nkeep;
 
   muC = cs_multiply(S12, invS22);
-
   dev = cs_multiply(muC, cdev);
  
   for(i = 0; i<nkeep; i++){

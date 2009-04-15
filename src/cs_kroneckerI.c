@@ -10,7 +10,6 @@ cs *cs_kroneckerI(const cs *A, int nI){
     cm = am*nI; cn = an*nI; cnz = anz*nI;
     C = cs_spalloc (cm, cn, cnz, 1, 0) ;	 /* allocate result */
     if (!C ) return (cs_done (C, NULL, NULL, 0));   
-//    if (!C ) error("cs_kroneckerI out of memory");   
 
     Cp = C->p ; Ci = C->i ; Cx = C->x ;   
     cnt = 0;	

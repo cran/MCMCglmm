@@ -812,6 +812,9 @@
      }
    }	
    X<-as(X, "sparseMatrix")
+   if(nadded>0){
+     X[,1][which(data$MCMC_dummy==1)]<-1e-128
+   }
    if(is.null(prior$B)){
       prior$B=list(V=diag(dim(X)[2])*1e+10, mu=matrix(0,dim(X)[2],1))
    }else{

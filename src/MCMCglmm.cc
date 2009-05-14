@@ -148,7 +148,7 @@ double  densityl1,
           zn[k]=0.0;
         }
 
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *pred_tmp, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
 
 csn	*L;
 css     *S;
@@ -349,6 +349,7 @@ cs*     KGinv[nGR];
 
         zstar = cs_spalloc(ny, 1, ny, true, false);
         linky = cs_spalloc(ny, 1, ny, true, false);
+        pred = cs_spalloc(ny, 1, ny, true, false);
 	mupred = cs_spalloc(ny, 1, ny, true, false);
 	mulinky = cs_spalloc(ny, 1, ny, true, false);
 
@@ -365,6 +366,8 @@ cs*     KGinv[nGR];
            linky->i[i] = i;
 	   mupred->i[i] = i;
 	   mupred->x[i] = 0.0;
+	   pred->i[i] = i;
+	   pred->x[i] = 0.0;
 	   mulinky->i[i] = i;
 	   mulinky->x[i] = 0.0;
            linky->x[i] = liabP[i];                         /* this needs to be changed for random regression */
@@ -376,6 +379,8 @@ cs*     KGinv[nGR];
         linky->p[1] = ny;
     	mupred->p[0] = 0; 
         mupred->p[1] = ny;
+    	pred->p[0] = 0; 
+        pred->p[1] = ny;
         mulinky->p[0] = 0; 
 	mulinky->p[1] = ny;
 
@@ -479,7 +484,7 @@ cs*     KGinv[nGR];
             cs_spfree(astar_tmp);
 	    cs_spfree(zstar_tmp);
             cs_spfree(zstar_tmp2);
-            cs_spfree(pred);
+            cs_spfree(pred_tmp);
             cs_spfree(dev);
 	    cs_nfree(L);
           }
@@ -646,7 +651,7 @@ cs*     KGinv[nGR];
 
          zstar_tmp = cs_multiply(W, astar);                     // Za*
          zstar_tmp2 = cs_add(zstar,zstar_tmp, 1.0 ,1.0);        // z* = N(Za*, R \otimes I)
-
+         
          for (i = 0 ; i < ny ; i++){
             zstar->x[i] = linky->x[i] - zstar_tmp2->x[i];       // form y - z*
          }
@@ -675,14 +680,17 @@ cs*     KGinv[nGR];
 	 cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
 
           for (i = 0 ; i < ncolZ ; i++){
-            location->x[i+ncolX]+= astar->x[i];
+            location->x[i+ncolX] += astar->x[i];
          }
 
 /***********************/
 /* sample VCV matrices */
 /***********************/
 
-         pred = cs_multiply(W, location);
+         pred_tmp = cs_multiply(W, location);
+         for (i = 0 ; i < ny ; i++){
+           pred->x[pred_tmp->i[i]] = pred_tmp->x[i];
+         }
          dev = cs_add(linky, pred, 1.0, -1.0);    
          cnt2 = ncolX;
 
@@ -1177,6 +1185,7 @@ cs*     KGinv[nGR];
         cs_spfree(linki);
         cs_spfree(linki_tmp);
         cs_spfree(pred);
+        cs_spfree(pred_tmp);
    	cs_spfree(mupred);
    	cs_spfree(mulinky);
         cs_spfree(predi);

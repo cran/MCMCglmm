@@ -1,5 +1,5 @@
 #source("~/Desktop/MCMCglmmTEST.R")
-#source("~/Work/AManal/MCMCglmm_1.02/R/MCMCglmm.R")
+#source("~/Work/AManal/MCMCglmm_1.10/inst/doc/Figures/TEST.R")
 library(MCMCglmm)
 library(VGAM)
 
@@ -15,7 +15,7 @@ l<-exp(rnorm(100,1,R))
 y<-rpois(100,l)
 data=data.frame(y1=y, y2=y)
 m1<-MCMCglmm(cbind(y1)~1, family="poisson", data=data, prior=prior)
-res1[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res1[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -28,7 +28,7 @@ for(i in 1:nsim){
 y<-rbinom(100,10,inv.logit(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=10-y)
 m1<-MCMCglmm(cbind(y1,y2)~1, family="multinomial2", data=data, prior=prior)
-res2[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res2[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -41,7 +41,7 @@ y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior)
-res3[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res3[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -58,7 +58,7 @@ ffac<-gl(2,150)
 y<-mvrnorm(300, c(-1), R)+mvrnorm(50, c(0), G)[fac]
 data=data.frame(y1=y, fac=fac, ffac=ffac)
 m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior)
-res4[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res4[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -74,7 +74,7 @@ fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, c(-1), R)+mvrnorm(75, c(0), G)[fac]
 data=data.frame(y1=rbinom(300, 1,inv.logit(y)), fac=fac, y2=y)
 m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, family="categorical")
-res4c[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res4c[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -91,7 +91,7 @@ y<-mvrnorm(300, c(-1), R)+rbv(Ped,G)[101:400]
 data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]))
 m1<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior, nitt=25000, thin=20, burnin=5000)
 m2<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior, nitt=25000, thin=20, burnin=5000)
-res5[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res5[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -113,7 +113,7 @@ rmodel.terms<-"fac:facf"
 m1<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior, nitt=100000, thin=8, burnin=20000)
 m2<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior, nitt=100000, thin=8, burnin=20000)
 
-res6[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res6[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -129,7 +129,7 @@ facf<-as.factor(sample(1:2,300,replace=TRUE))
 y<-mvrnorm(300, c(-1), R)+rowSums(mvrnorm(75, c(0,0), G)[fac,]*cbind(facf==1,facf==2))
 data=data.frame(y1=y, fac=fac, facf=facf)
 m1<-MCMCglmm(y1~1,random=~idh(facf):fac,  data=data, prior=prior)
-res7[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res7[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -143,7 +143,7 @@ y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
 data$y1[sample(1:300, 30)]<-NA
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~us(trait):units, data=data, prior=prior)
-res8[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res8[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -157,7 +157,7 @@ y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
 data$y1[sample(1:300, 50)]<-NA
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~idh(trait):units, data=data, prior=prior)
-res9[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res9[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -172,7 +172,7 @@ fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, c(-1,1), R)+mvrnorm(75, c(0,0), G)[fac,]
 data=data.frame(y1=y[,1], y2=y[,2], fac=fac)
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~idh(trait):fac, family=c("gaussian","gaussian"), rcov=~idh(trait):units, data=data, prior=prior)
-res10[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res10[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -189,7 +189,7 @@ y1<-rbinom(300,10,inv.logit(y[,1]))
 y2<-rbinom(300,10,inv.logit(y[,2]))
 data=data.frame(y1s=y1,y1f=10-y1,y2s=y2,y2f=10-y2, fac=fac)
 m1<-MCMCglmm(cbind(y1s,y1f,y2s,y2f)~trait-1, random=~us(trait):fac, family=c("multinomial2","multinomial2"), rcov=~idh(trait):units, data=data, prior=prior)
-res11[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, posterior.mode)
+res11[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -237,8 +237,8 @@ if(file.exists("~/Work/Jenny/Data/Intermediate/ThirdC.R")){
     firstP$nodead<-firstP$total-y
     m1test<-MCMCglmm(l~virus+day, random=~us(virus):line+f2rep, rcov=~idh(virus):units, family=c("gaussian"), data=firstP, prior=prior)
     m1test2<-MCMCglmm(cbind(nodead, noalive)~virus+day, random=~us(virus):line+f2rep, rcov=~idh(virus):units, family=c("multinomial2"), data=firstP, prior=prior)
-    res13[i,]<-apply(cbind(m1test$Sol, m1test$VCV),2, posterior.mode)
-    res14[i,]<-apply(cbind(m1test2$Sol, m1test2$VCV),2, posterior.mode)
+    res13[i,]<-posterior.mode(mcmc(cbind(m1test$Sol, m1test$VCV)))
+    res14[i,]<-posterior.mode(mcmc(cbind(m1test$Sol, m1test2$VCV)))
     print(i)
   }
 
@@ -280,8 +280,8 @@ if(any(y1==-Inf) | any(y2==Inf)){
   m1<-MCMCglmm(ym~1, data=data)
 }
 m2<-MCMCglmm(cbind(y1, y2)~1, data=data, family="cengaussian")
-res17a[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median, na.rm=T)
-res17b[i,]<-apply(mcmc(cbind(m2$Sol, m2$VCV)), 2, median, na.rm=T)
+res17a[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+res17b[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -298,7 +298,7 @@ y1[100]<-l[100]
 y2[100]<-l[100]
 data=data.frame(y1=y1, y2=y2)
 m1<-MCMCglmm(cbind(y1, y2)~1, data=data, family="cenpoisson", prior=prior, pl=TRUE)
-res18[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median, na.rm=T)
+res18[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -313,7 +313,7 @@ l<-mvrnorm(300,c(0,-0.5), R)
 y<-rzipois(300, exp(1+l[,1]), inv.logit(l[,2]))
 data=data.frame(y1=y)
 m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior)
-res19[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
+res19[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -328,7 +328,7 @@ for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=rbinom(300, 1, inv.logit(y[,2])), y3=y[,2])
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","categorical"), rcov=~us(trait):units, data=data, prior=prior)
-res20[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
+res20[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -349,7 +349,7 @@ y<-(-1+int.slope[,1][ind]*0.7071068)+(1+1.224745*time*int.slope[,2][ind])
 y<-y+rnorm(900,0,R)
 data=data.frame(y1=y, time=time, ind=ind)
 m1<-MCMCglmm(y1~time, random=~leg(time,1):ind, data=data, prior=prior)
-res21[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
+res21[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 if(file.exists("~/Work/Boots/Data/Raw/PO.csv")){

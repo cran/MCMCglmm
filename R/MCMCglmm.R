@@ -387,12 +387,12 @@
 
         if(length(grep("\\:", rmodel.terms[r]))>0){
           components<-strsplit(rmodel.terms[r], "\\:")[[1]]
-          if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
-          if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
-	  if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
-	  if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
+          for(i in 1:length(components)){
+            if(is.factor(data[,components[i]])==FALSE){stop(paste(components[i], " is not a factor"))}
+	    if(any(levels(data[,components[i]])%in%unique(data[,components[i]])==FALSE)){stop(paste("some levels not observed in ", components[i]))}
+          }
           rmodel.terms[r]<-paste(components, collapse=".")
-          data[[rmodel.terms[r]]]<-as.factor(paste(data[,components[1]], data[,components[2]], sep=""))
+          data[[rmodel.terms[r]]]<-as.factor(apply(data[,components], 1, paste, collapse=""))
         }
 		  
         if(is.factor(data[,rmodel.terms[r]])==FALSE){stop(paste(rmodel.terms[r], " is not a factor"))}
@@ -812,9 +812,9 @@
      }
    }	
    X<-as(X, "sparseMatrix")
-   if(nadded>0){
-     X[,1][which(data$MCMC_dummy==1)]<-1e-128
-   }
+#   if(nadded>0){
+#     X[,1][which(data$MCMC_dummy==1)]<-1e-128
+#   }
    if(is.null(prior$B)){
       prior$B=list(V=diag(dim(X)[2])*1e+10, mu=matrix(0,dim(X)[2],1))
    }else{
@@ -1068,20 +1068,20 @@
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
 
         if(DIC==TRUE){
-         deviance<-mcmc(-2*output[[52]][1:nkeep])
+         deviance<-mcmc(-2*output[[52]][1:nkeep], start=burnin+1, end=nitt, thin=thin)
          DIC<--4*output[[52]][nkeep+1]+2*output[[52]][nkeep+2]
         }else{
          deviance<-NULL
          DIC<-NULL
         }
         if(pl==TRUE){
-          Liab<-mcmc(t(matrix(output[[41]], length(data$MCMC_y), nkeep)))
+          Liab<-mcmc(t(matrix(output[[41]], length(data$MCMC_y), nkeep)), start=burnin+1, end=nitt, thin=thin)
         }else{
           Liab<-NULL
         }
     	options("na.action"="na.omit")
 
-        list(Sol=mcmc(Sol), VCV=mcmc(VCV), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC)
+        list(Sol=mcmc(Sol, start=burnin+1, end=nitt, thin=thin), VCV=mcmc(VCV, start=burnin+1, end=nitt, thin=thin), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC)
 	
 }
 

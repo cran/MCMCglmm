@@ -58,7 +58,7 @@ We'll start with a simple analysis of PO which was box-cox transformed so that i
 \end{Sinput}
 \end{Schunk}
 
-We've modelled an in intercept \texttt{$\sim$1} and we've modelled family effects \texttt{$\sim$FSfamily}.  \texttt{MCMCglmm} returns the output as \texttt{mcmc} objects from the coda package. The first of these is \texttt{Sol} which returns the fixed effect estimates:
+We've modelled an in intercept \texttt{$\sim$1} and family effects \texttt{$\sim$FSfamily}.  \texttt{MCMCglmm} returns the output as \texttt{mcmc} objects from the coda package. The first of these is \texttt{Sol} which returns the fixed effect estimates:
 
 
 \begin{Schunk}

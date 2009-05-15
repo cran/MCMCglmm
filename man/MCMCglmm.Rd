@@ -116,7 +116,9 @@ phenotype<-phylo.effect+rnorm(dim(phylo.effect)[1], 0, 1)  # add residual with u
 
 test.data<-data.frame(phenotype=phenotype, animal=as.factor(row.names(phenotype)))
 
-model2<-MCMCglmm(phenotype~1, random=~animal, data=test.data, pedigree=bird.families, verbose=FALSE)
+prior<-list(R=list(V=1, n=1), G=list(G1=list(V=1, n=1)))
+
+model2<-MCMCglmm(phenotype~1, random=~animal, data=test.data, pedigree=bird.families, prior=prior, verbose=FALSE)
 plot(model2$VCV)
 
 }

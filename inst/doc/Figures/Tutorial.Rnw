@@ -52,14 +52,13 @@ To demonstrate how to fit and interpret these models we will use some data from 
 data(PlodiaPO)  
 @
 
-
 We'll start with a simple analysis of PO which was box-cox transformed so that it was approximately normal.
 
 <<echo=true>>=
 model1<-MCMCglmm(PO~1, random=~FSfamily, data=PlodiaPO, verbose=FALSE)
 @
 
-We've modelled an in intercept \texttt{$\sim$1} and we've modelled family effects \texttt{$\sim$FSfamily}.  \texttt{MCMCglmm} returns the output as \texttt{mcmc} objects from the coda package. The first of these is \texttt{Sol} which returns the fixed effect estimates:
+We've modelled an in intercept \texttt{$\sim$1} and family effects \texttt{$\sim$FSfamily}.  \texttt{MCMCglmm} returns the output as \texttt{mcmc} objects from the coda package. The first of these is \texttt{Sol} which returns the fixed effect estimates:
 
 
 <<label=model1Sol, echo=TRUE, fig=TRUE, include=FALSE>>=

@@ -3,18 +3,19 @@
 \title{Estimates the marginal parameter modes using kernel density estimation}
 \description{Estimates the marginal parameter modes using kernel density estimation}
 \usage{
-posterior.mode(x)
+posterior.mode(x, ...)
 }
 \arguments{
  \item{x}{mcmc object}
+ \item{...}{other arguments to be passed}
 }
 \value{
   modes of the kernel density estimates
  }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{density}
+\seealso{\code{\link{density}}}
 \examples{
-v<-rIW(10, as.matrix(1), n=1000)
+v<-rIW(as.matrix(1),10, n=1000)
 hist(v)
 abline(v=posterior.mode(mcmc(v)), col="red")
 }

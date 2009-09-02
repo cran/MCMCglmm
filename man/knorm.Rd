@@ -18,7 +18,7 @@ knorm(V, k)
 }
 \references{Schott, J.R.(2003) Journal of Multivariate Analysis 87 (1) 177-190}
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{dnorm}
+\seealso{\code{\link{dnorm}}}
 \examples{
 V<-diag(2)
 knorm(V,2)

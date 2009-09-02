@@ -23,7 +23,7 @@
     snmiss<-which(numeric.pedigree[,3]!=-998)                                    # sires not missing
     bnmiss<-which(numeric.pedigree[,2]!=-998 &  numeric.pedigree[,3]!=-998)      # one present 
 
-    if(length(intersect(numeric.pedigree[,2][dnmiss], numeric.pedigree[,3][snmiss]))>0 & (length(dnmiss)>0) & (length(snmiss)>0)){stop("dams appearing as sires")}
+    if(length(intersect(numeric.pedigree[,2][dnmiss], numeric.pedigree[,3][snmiss]))>0 & (length(dnmiss)>0) & (length(snmiss)>0)){warning("dams appearing as sires")}
     if(any(numeric.pedigree[,2][dnmiss]>numeric.pedigree[,1][dnmiss]) & (length(dnmiss)>0)){stop("dams appearing before their offspring: try orderPed form MasterBayes")}
     if(any(numeric.pedigree[,3][snmiss]>numeric.pedigree[,1][snmiss]) & (length(snmiss)>0) ){stop("sires appearing before their offspring: try orderPed from MasterBayes")}
 
@@ -120,16 +120,14 @@
       }
       inbreeding<-inbreeding/root2tip
     }
-
     Ainv<-Matrix(0, length(dam), length(dam))
     off<-tapply(id, dam,function(x){x})
     off<-off[-which(names(off)=="-998")]
     off<-lapply(off, function(x){sum(1/inbreeding[x], na.rm=T)})
-    diag(Ainv)<-1/inbreeding
+    diag(Ainv)<-as.numeric(1/inbreeding)
     diag(Ainv)[as.numeric(names(off))]<-diag(Ainv)[as.numeric(names(off))]+unlist(off)
     Ainv[(dam[which(dam!="-998")]-1)*dim(Ainv)[1]+id[which(dam!="-998")]]<-(-1/inbreeding[id[which(dam!="-998")]])
     Ainv[(id[which(dam!="-998")]-1)*dim(Ainv)[1]+dam[which(dam!="-998")]]<-(-1/inbreeding[id[which(dam!="-998")]])
-
     if(nodes[1]!="ALL"){
       if(nodes[1]=="TIPS"){
         Ainv<-Ainv[,tips][tips,]-Ainv[,-tips][tips,]%*%as(solve(as.matrix(Ainv[,-tips][-tips,])), "sparseMatrix")%*%Ainv[,tips][-tips,]

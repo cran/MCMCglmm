@@ -64,13 +64,17 @@ void MCMCglmm(
         int *mfacP,          // vector of J-1 levels for each multinomial response 
 	int *observedP,	     // vector of 1 (observed) and 0 (missing)
 	int *diagP,          // is a us matrix in fact diagonal?
-        int *AMtuneP,          // should adaptive Metroplis algorithm be used
-	int *DICP,	   // should DIC be computed
+        int *AMtuneP,        // should adaptive Metroplis algorithm be used
+	int *DICP,	     // should DIC be computed
         double *dbarP,
-        int *proposal      
+        int *proposal,
+        int *ncutpointsP,    // number of cutpoints with -Inf, 0, C1,.... Cncutpoints, Inf
+        int *nordinalP,      // number of ordinal traits  
+        double *stcutpointsP,// starting vector of cutpoints    
+        double *CPP
 ){         
 
-int     i, j, k,l,p,cnt,cnt2,itt,record,dimG,
+int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
 
         nG = nGP[0],          // number of G structures
         nR = nGP[1],          // number of R structures 
@@ -85,17 +89,16 @@ int     i, j, k,l,p,cnt,cnt2,itt,record,dimG,
         nitt = nittP[0], 
         thin = thinP[0], 
         burnin = burninP[0], 
-
         post_cnt = 0,
-        tvc =0; // total number of (co)variance components 
-
+        tvc =0,          // total number of (co)variance components 
+        nordinal = nordinalP[0];
+//Rprintf("Helloa");
 // Multinomial counters 
  
-int     nthmn = 0,        // positionin mfac of  the nth multinomial
-        nthmnl = 1;       // counter for the lth level of nth multinomial
+int     nthmnl = 0;  // counter for the lth level of nth multinomial
 
-double   mndenom1 = 1.0,  // sum( exp(l_{j}) for all j) and l_old
-         mndenom2 = 1.0;  // sum( exp(l_{j}) for all j) and l_new
+double   mndenom1 = 1.0,  // sum(exp(l_{j}) for all j) and l_old
+         mndenom2 = 1.0;  // sum(exp(l_{j}) for all j) and l_new
 
 int     nrowX =  dimXP[0], ncolX =  dimXP[1],  nzmaxX = nzmaxXP[0]; 
 int     nrowZ =  dimZP[0], ncolZ =  dimZP[1],  nzmaxZ = nzmaxZP[0];
@@ -106,6 +109,7 @@ int     nMH = 0;
        
 bool    pr = prP[0];
 bool    pl = prP[1];
+bool    cp = nordinal>0;
 bool    Aexists = FALSE;
 bool    missing = FALSE;
 
@@ -141,14 +145,54 @@ double  densityl1,
         remainder,
         dm = 1.0/PedDimP[1];  // 0.5 for pedigrees 1 for phylogenies for taking averaging of potential bv.
 
+//double inf = std::numeric_limits<double>::max();
+
+        int cumsum_ncutpoints[nordinal+1];
+            cumsum_ncutpoints[0] = 0;
+        int ncutpoints_store = 0;
+
+        if(cp){
+          for(i=0; i<nordinal; i++){          
+            cumsum_ncutpoints[i+1] = ncutpointsP[i]+cumsum_ncutpoints[i];  
+            if(ncutpointsP[i]>3){
+              ncutpoints_store += ncutpointsP[i]-3;
+            }
+          }
+        } 
+
+        double  oldcutpoints[cumsum_ncutpoints[nordinal]],
+                newcutpoints[cumsum_ncutpoints[nordinal]],
+                sdcp[nordinal],
+                wncp[nordinal],
+                zncp[nordinal],
+                accp[nordinal],
+                cutpointMHR[nordinal];
+
+        if(cp){
+          cnt = 0;
+          for(i=0; i<nordinal; i++){
+            sdcp[i] =1.0;
+            wncp[i] =1.0;
+            zncp[i] =1.0;
+            accp[i] =0.0;
+            for(j=0; j<ncutpointsP[i]; j++){
+              oldcutpoints[cnt] = stcutpointsP[cnt];
+              newcutpoints[cnt] = stcutpointsP[cnt];
+              cnt ++;
+            }
+          }
+        }
+
+        if(ncutpoints_store==0){cp=FALSE;}  // even if cutpoints are present they do not need to be updated if there are only 2 categories
+
         for(k=0; k<(nGR*2); k++){
           t[k]=0.0;
           sd[k]=1.0;
           wn[k]=0.0;
           zn[k]=0.0;
         }
-
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *pred_tmp, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
+//Rprintf("Hellob");
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *pred_tmp, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
 
 csn	*L;
 css     *S;
@@ -160,6 +204,7 @@ cs*     propCinv[nGR*2];
 cs*     muC[nGR*2];
 cs*     G[nGR];
 cs*     pG[nGR];
+cs*     CM[nGR];	
 cs*     Gtmp[nGR];
 cs*     Grv[nGR];
 css*    GinvS[nGR];
@@ -247,7 +292,7 @@ cs*     KGinv[nGR];
             bv_tmp->p[dimG] = dimG*PedDimP[0];
 
 // create matrix for breeding values when sampling G (bv'Abv) of dimesion ntXindividuals anlaysed
-
+//Rprintf("Helloc");
             cnt=0;
 
             for (i = 0 ; i < dimG; i++){
@@ -263,7 +308,7 @@ cs*     KGinv[nGR];
           }
         }
  
-// read in G/R matrices 
+// read in G/R and prior matrices
  
         for (k = 0 ; k < nGR; k++){
           dimG = GRdim[k];
@@ -301,6 +346,28 @@ cs*     KGinv[nGR];
           Gtmp[k] = cs_inv(Ginv[k]);  //delete this eventually  
           tvc += dimG*dimG; 
         }
+
+/**************************************/	
+/* Read in any condtional submatrices */
+/**************************************/
+	
+	for (k = 0 ; k < nGR; k++){	
+	   if(splitP[k]<0){
+	     CM[k] = cs_spalloc(1,1,1,true, false);
+           }else{	
+	     cnt = 0;	
+	     CM[k] = cs_spalloc(dimG-splitP[k], dimG-splitP[k], (dimG-splitP[k])*(dimG-splitP[k]), true, false);
+	     for (i = splitP[k] ; i < dimG; i++){
+	        CM[k]->p[i-splitP[k]] = (i-splitP[k])*(dimG-splitP[k]);
+		for (j = splitP[k] ; j < dimG; j++){
+		   CM[k]->i[cnt] = j-splitP[k];
+		   CM[k]->x[cnt] = G[k]->x[i*dimG+j];
+		   cnt++;
+		}
+	      }
+	      CM[k]->p[dimG-splitP[k]] = (dimG-splitP[k])*(dimG-splitP[k]);
+	   }
+	 }
 
 /*********************************/
 /* Read in proposal distribution */
@@ -344,7 +411,7 @@ cs*     KGinv[nGR];
           propCinvS[k+nGR] = cs_schol(1, propCinv[k+nGR]);   
           propCinvL[k+nGR] = cs_chol(propCinv[k+nGR], propCinvS[k+nGR]);
         }
-
+//Rprintf("Helloc");
 // allocate vecotors for pseudo-random effects z* and [0, *a] 
 
         zstar = cs_spalloc(ny, 1, ny, true, false);
@@ -428,7 +495,7 @@ cs*     KGinv[nGR];
           }
         }
         Wt = cs_transpose(W, true);
-
+//Rprintf("Hellod");
         for (k = 0 ; k < nGR ; k++){
            GinvS[k] = cs_schol(1, Ginv[k]);                    // Symbolic factorisation of G
            GinvL[k] = cs_chol(Ginv[k], GinvS[k]);              // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
@@ -443,13 +510,17 @@ cs*     KGinv[nGR];
              KGinv[k] = cs_kroneckerI(Ginv[k],nlGR[k]);      //  form G^{-1} structure
            }
         }
+//Rprintf("Helloe1");
+        KRinv = cs_directsum(KGinv, nG, nGR);
 
-        KRinv = cs_directproduct(KGinv, nG, nGR);
-
-// form WtmKRinv = W^{t}%*%KRinv    
-
+// form WtmKRinv = W^{t}%*%KRinv  and t(t(WtmKRinv)) so its ordered correctly
+        
         WtmKRinv = cs_multiply(Wt, KRinv); 
-
+	WtmKRinvtmp = cs_transpose(WtmKRinv, TRUE); 
+	cs_spfree(WtmKRinv);
+	WtmKRinv = cs_transpose(WtmKRinvtmp, TRUE); 	
+	cs_spfree(WtmKRinvtmp);
+//Rprintf("Hellof1");
 // form M = WtmKRinv%*%W  
    
         M = cs_multiply(WtmKRinv, W);
@@ -459,7 +530,7 @@ cs*     KGinv[nGR];
         Omega = cs_omega(KGinv, nG, pvB);
 
 // form MME = M + Omega; mixed model equations 
-
+//Rprintf("Hellog1");
         MME = cs_add(M, Omega, 1.0, 1.0); 
         S = cs_schol(1, MME);                            // Symbolic factorisation - only has to be done once
 	
@@ -486,13 +557,12 @@ cs*     KGinv[nGR];
             cs_spfree(zstar_tmp2);
             cs_spfree(pred_tmp);
             cs_spfree(dev);
-	    cs_nfree(L);
+  	      cs_nfree(L);
           }
 
           for (i = 0 ; i < nGR; i++){
             if(updateP[i]==1){
 	      cs_nfree(GinvL[i]);
-	      cs_spfree(KGinv[i]);   
             }
           }
 
@@ -504,11 +574,8 @@ cs*     KGinv[nGR];
 	      cs_spfree(propCinv[i+nGR]);   
             }
           }
-
-	  cs_spfree(KRinv);  
 	  cs_spfree(WtmKRinv);     
-	  cs_spfree(M);                   
-	  cs_spfree(Omega);               
+	  cs_spfree(M);                               
 	  cs_spfree(MME);  
 
           for (i = 0 ; i < nGR ; i++){
@@ -527,7 +594,7 @@ cs*     KGinv[nGR];
 /*  pedigrees  */
 /* phylogenies */
 /***************/
- 
+ //Rprintf("Helloe");
               if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar
                 for(i=0; i<nlGR[k]; i++){
                   for(j=0; j<dimG; j++){
@@ -624,24 +691,26 @@ cs*     KGinv[nGR];
 /******************/
 /* form equations */
 /******************/
-
+//Rprintf("Helloe");
         for (k = 0 ; k < nGR; k++){                             
           if(updateP[k]==1){
             if(AtermP[k]==1){
-              KGinv[k] = cs_kroneckerA(Ginv[k],A);              //  form kronecker(G^{-1}, A^{-1}) structure
+				cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
             }else{
-              KGinv[k] = cs_kroneckerI(Ginv[k],nlGR[k]);        //  form G^{-1} structure
+                cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
             }
           }  
         }
 
-         KRinv = cs_directproduct(KGinv, nG, nGR);
+	 cs_directsumupdate(KGinv, nG, nGR, KRinv);
 
-         WtmKRinv = cs_multiply(Wt, KRinv);     
+         WtmKRinv = cs_multiply(Wt, KRinv);   
 
+//		cs_tmultiplyupdate(W, KRinv, WtmKRinv);
+	
          M = cs_multiply(WtmKRinv, W);                          // form M = WtmKRinv%*%W  
 
-         Omega = cs_omega(KGinv, nG, pvB);                      // form Omega = bdiag(0, KGinv) 
+		cs_omegaupdate(KGinv, nG, pvB, Omega);                      // update Omega = bdiag(0, KGinv) 
 
          MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
 
@@ -669,15 +738,15 @@ cs*     KGinv[nGR];
 /*************/
 
          L = cs_chol(MME, S); 
- 
+
          for (i = 0 ; i < dimAS; i++){
             location_tmp->x[i] = 0.0;
          }
 
          cs_ipvec (S->pinv, location->x, location_tmp->x, MME->n);	 // x = P*b 
          cs_lsolve(L->L,location_tmp->x);                                // x = L\x 
-	 cs_ltsolve (L->L, location_tmp->x);		                 // x = L'\x 
-	 cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
+	     cs_ltsolve (L->L, location_tmp->x);		                 // x = L'\x 
+	     cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
 
           for (i = 0 ; i < ncolZ ; i++){
             location->x[i+ncolX] += astar->x[i];
@@ -686,7 +755,7 @@ cs*     KGinv[nGR];
 /***********************/
 /* sample VCV matrices */
 /***********************/
-
+//Rprintf("Hellof");
          pred_tmp = cs_multiply(W, location);
          for (i = 0 ; i < ny ; i++){
            pred->x[pred_tmp->i[i]] = pred_tmp->x[i];
@@ -732,13 +801,8 @@ cs*     KGinv[nGR];
                cs_invR(Gtmp[i], Ginv[i]);
                G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
              }else{
-               for(j=splitP[i]; j<dimG; j++){
-                 for(k=splitP[i]; k<dimG; k++){
-                   Gtmp[i]->x[j*dimG+k] = pG[i]->x[j*dimG+k];
-                 }
-               }
                cs_invR(Gtmp[i], Ginv[i]);
-               G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i]);
+               G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);
              }	
 	     ldet[i] = log(cs_invR(G[i], Ginv[i]));  
            }
@@ -748,6 +812,8 @@ cs*     KGinv[nGR];
 /* Sample R Structure */
 /**********************/
          cnt2=0;
+			
+
          for(i=nG; i<nGR; i++){    
             if(updateP[i]==1){ 
              dimG = GRdim[i];
@@ -781,13 +847,8 @@ cs*     KGinv[nGR];
                cs_invR(Gtmp[i], Ginv[i]);
                G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
              }else{
-               for(j=splitP[i]; j<dimG; j++){
-                 for(k=splitP[i]; k<dimG; k++){
-                   Gtmp[i]->x[j*dimG+k] = pG[i]->x[j*dimG+k];
-                 }
-               }
-               cs_invR(Gtmp[i], Ginv[i]);
-               G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i]);	 
+    	       cs_invR(Gtmp[i], Ginv[i]);
+               G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);	
              }	
              if(diagP[i]==1){
 	       cnt=0;  
@@ -799,13 +860,13 @@ cs*     KGinv[nGR];
 		 }
 	       }	
 	     }		
-             ldet[i] = log(cs_invR(G[i], Ginv[i]));		 
+             ldet[i] = log(cs_invR(G[i], Ginv[i]));		
            }
          }
-
-/***********************/
-/* sample liabilities  */   
-/***********************/
+//Rprintf("Hellog");	
+/**********************/
+/* calculate deviance */   
+/**********************/
      dbar =0.0;
 
      if(DICP[0]==1 && itt>=burnin){
@@ -852,11 +913,56 @@ cs*     KGinv[nGR];
        }
      }
 
+/********************/
+/* update cutpoints */
+/********************/
 
+     if(cp){  
+       for(i=0; i<nordinal; i++){ 
+         for(j=2; j<(ncutpointsP[i]-1); j++){ 
+            newcutpoints[cumsum_ncutpoints[i]+j] = rtnorm(oldcutpoints[cumsum_ncutpoints[i]+j], sdcp[i], newcutpoints[cumsum_ncutpoints[i]+j-1], oldcutpoints[cumsum_ncutpoints[i]+j+1]);
+         } 
+       }
+       cnt2=0;
+       rterm=0;
+
+       for(k=nG; k<nGR; k++){      // Iterate through R-structures
+         for(i=0; i<dimG; i++){    // Iterate through first indiviual to find any ordinal variables
+           dimG = GRdim[k];
+           record=cnt2+nlGR[k]*i;
+           if(familyP[record]==14){
+             nthordinal = mfacP[rterm+i];
+             cutpointMHR[nthordinal] = dcutpoints(linky, yP, observedP, record,record+nlGR[k], oldcutpoints, newcutpoints, cumsum_ncutpoints[nthordinal], ncutpointsP[i], sdcp[nthordinal]);
+             wncp[nthordinal] *= rACCEPT;
+             zncp[nthordinal] *= rACCEPT;
+             wncp[nthordinal] ++;
+
+             if(cutpointMHR[nthordinal]>log(runif(0.0,1.0))){
+               zncp[nthordinal] ++;
+               accp[nthordinal] ++;
+               for(j=2; j<(ncutpointsP[nthordinal]-1); j++){ 
+                 oldcutpoints[cumsum_ncutpoints[nthordinal]+j] = newcutpoints[cumsum_ncutpoints[nthordinal]+j];
+               }
+             } 
+             if(itt<burnin){          
+               sdcp[nthordinal] *= pow(qACCEPT, ((zncp[nthordinal]/wncp[nthordinal])-0.44));
+             }
+	   }	 
+         }
+         rterm += dimG;
+         cnt2+=nlGR[k]*dimG;
+       }
+     }
+//Rprintf("Helloh");
+/***********************/
+/* sample liabilities  */   
+/***********************/
+         
      if(missing){
 
        cnt2=0;
        cnt=0;
+       rterm=0;  // indexes the individual R-level so with the terms in the R-structure (1 1-dimensional, and 1 2 dimensional) {1} + {2, 3}
 
        for(k=nG; k<nGR; k++){      // Iterate through R-structures
 
@@ -872,8 +978,7 @@ cs*     KGinv[nGR];
            densityl1 = 0.0;
            densityl2 = 0.0;
  
-           nthmn = 0;           //variables for the multinomial
-           nthmnl = 1;
+           nthmnl = 0;          //variables for the multinomial
            mndenom1 = 1.0;
            mndenom2 = 1.0;
 
@@ -916,28 +1021,29 @@ cs*     KGinv[nGR];
                    break;
   
                    case 2:  /* Posisson */
+
                      densityl1 += dpois(yP[record], exp(linki->x[i]), true);
                      densityl2 += dpois(yP[record], exp(linki_tmp->x[i]), true);
+
                    break;
 
-                   case 3:  /* Multinomial */
+                   case 3:  /* Nominal Multinomial Logit */
+
                      mndenom1 += exp(linki->x[i]);
                      mndenom2 += exp(linki_tmp->x[i]);
 
                      densityl1 += yP[record]*linki->x[i];
                      densityl2 += yP[record]*linki_tmp->x[i];
 
-                     if(mfacP[nthmn]==nthmnl){ 
+                     if(mfacP[rterm+i]==nthmnl){ 
                        densityl1 -= y2P[record]*log(mndenom1);
                        densityl2 -= y2P[record]*log(mndenom2);
-                       nthmnl = 1;
+                       nthmnl = 0;
                        mndenom1 = 1.0;
                        mndenom2 = 1.0;
                      }else{
-                       nthmn ++;
                        nthmnl++;
                      }
-
                    break;
      
                    case 4: /* Weibull */
@@ -989,11 +1095,10 @@ cs*     KGinv[nGR];
 		   break;
 						 
 		   case 11: /* Zero-inflated Poisson */
-                    if(nthmnl==1){
+
+                     if(mfacP[rterm+i]==0){
                        mndenom1 = dpois(yP[record], exp(linki->x[i]), true);  
                        mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true);  
-		       nthmn ++;
-                       nthmnl++;
                      }else{
 			mndenom1 += log(1.0-exp(linki->x[i])/(1.0+exp(linki->x[i])));
 			mndenom2 += log(1.0-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
@@ -1003,17 +1108,44 @@ cs*     KGinv[nGR];
 			}
                         densityl1 += mndenom1;
                         densityl2 += mndenom2;
-                        nthmnl = 1;
                         mndenom1 = 1.0;
                         mndenom2 = 1.0;
                      }
+
 		   break;
 						 
 		   case 12: /* Zero-inflated Weibull */ 
                    break;                                            
 						 
                    case 13: /* Zero-inflated Exponential */
-		   break;   
+		   break;  
+
+                   case 14: /* Ordered Mulinomial Probit */
+
+                     nthordinal = mfacP[rterm+i];
+
+                     if(int(yP[record])==1 || int(yP[record])==(ncutpointsP[nthordinal]-1)){
+                       if(int(yP[record])==1){
+                         densityl1 += pnorm(-linki->x[i], 0.0, 1.0, true,true);
+                         densityl2 += pnorm(-linki_tmp->x[i], 0.0, 1.0, true,true);
+                       }else{
+                         densityl1 += log(1.0-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false));
+                         densityl2 += log(1.0-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false));
+                       }
+                     }else{
+                       densityl1 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false));
+                       densityl2 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false));
+                     }
+
+
+                   break;
+
+                   case 15: /*  Nominal Multinomial Probit */
+
+                     densityl1 += yP[record]*pnorm(linki->x[i], 0.0, 1.0, true,true)+(y2P[record]-yP[record])*pnorm(linki->x[i], 0.0, 1.0, false,true);
+                     densityl2 += yP[record]*pnorm(linki_tmp->x[i], 0.0, 1.0, true,true)+(y2P[record]-yP[record])*pnorm(linki_tmp->x[i], 0.0, 1.0, false,true);
+
+                   break;
                  }
                }
              }
@@ -1021,10 +1153,8 @@ cs*     KGinv[nGR];
            dbar += densityl1;
 
            if(mvtype[cnt+j]<1){
-			       
              densityl1 += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);
              densityl2 += cs_dmvnorm(linki_tmp, predi, ldet[k], Ginv[k]);
-
              zn[p] *= rACCEPT; 
              wn[p] *= rACCEPT;
              wn[p] ++;
@@ -1063,7 +1193,6 @@ cs*     KGinv[nGR];
              }
            }
          }
-
          if(AMtuneP[k]==1 && itt<burnin){
            for(i=0; i<dimG; i++){
              for(l=0; l<dimG; l++){
@@ -1086,8 +1215,10 @@ cs*     KGinv[nGR];
            zn[k+nGR] = 0.0; 
            wn[k+nGR] = 0.0;
          }
+         rterm += dimG;
          cnt2+=nlGR[k]*dimG;
          cnt+=nlGR[k];
+
        }
      }
 	
@@ -1096,14 +1227,20 @@ cs*     KGinv[nGR];
 /***********************/
 
      if(itt%1000 == 0 && verboseP[0]){
-       Rprintf("\nMCMC iteration = %i\n",itt);
+         Rprintf("\n                      MCMC iteration = %i\n",itt);
        if(nMH>0){
-         Rprintf("\nE[MH acceptance ratio] = %f\n", Eaccl/(nMH*1000.0));
+         Rprintf("\n  Acceptance ratio for latent scores = %f\n", Eaccl/(nMH*1000.0));
          Eaccl = 0.0;
+       }
+       if(cp){
+         for(i=0; i<nordinal; i++){
+           Rprintf(" Acceptance ratio for cutpoint set %i = %f\n", i+1, accp[i]/1000.0);
+           accp[i] = 0.0;
+         }
        }
      }
 
-     if(DICP[0]==1 & itt>=burnin){
+     if(DICP[0]==1 && itt>=burnin){
        mdbar *= (itt-burnin);
        mdbar += dbar;
        mdbar /= (itt-burnin+1.0);
@@ -1129,6 +1266,15 @@ cs*     KGinv[nGR];
        if(DICP[0]==1){
          dbarP[post_cnt] = dbar;
        }
+       if(cp){
+         cnt =0;
+         for(i=0; i<nordinal; i++){ 
+           for(j=2; j<(ncutpointsP[i]-1); j++){ 
+             CPP[cnt+post_cnt*ncutpoints_store] = oldcutpoints[cumsum_ncutpoints[i]+j];
+             cnt++;
+           }
+         }
+       }
        if(pr){
          for (i = 0 ; i < dimAS ; i++){
            LocP[i+post_cnt*dimAS] = location->x[i];
@@ -1138,7 +1284,7 @@ cs*     KGinv[nGR];
            LocP[i+post_cnt*ncolX] = location->x[i];
          }
        } 
-       if(pl){
+       if(pl==1){
          for (i = 0 ; i < ny; i++){
            PLiabP[i+post_cnt*ny]  = linky->x[i];
          }
@@ -1211,6 +1357,7 @@ cs*     KGinv[nGR];
 	    cs_spfree(Gtmp[i]);
  	    cs_spfree(Grv[i]);
 	    cs_spfree(pG[i]);
+	    cs_spfree(CM[i]);
 	    cs_sfree(GinvS[i]);
 	    cs_nfree(GinvL[i]);
             cs_spfree(KGinv[i]);

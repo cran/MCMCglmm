@@ -39,9 +39,9 @@ extern "C"{
 }
 #endif
 
-#ifndef _CS_DIRECTPRODUCT_H
+#ifndef _CS_DIRECTSUM_H
 extern "C"{
-#include "cs_directproduct.h"
+#include "cs_directsum.h"
 }
 #endif
 
@@ -81,4 +81,21 @@ extern "C"{
 }
 #endif
 
+#ifndef _CS_TMULTIPLYUPDATE_H
+extern "C"{
+#include "cs_tmultiplyupdate.h"
+}
+#endif
+
+#ifndef _DCUTPOINTS_H
+extern "C"{
+#include "dcutpoints.h"
+}
+#endif
+
+#ifndef _RTNORM_H
+extern "C"{
+#include "rtnorm.h"
+}
+#endif
 

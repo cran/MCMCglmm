@@ -4,7 +4,7 @@
 \title{Multivariate Generalised Linear Mixed Models}
 \description{
  MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov 
-chain Monte Carlo techniques. Most commonly used distributions like the normal 
+chain Monte Carlo techniques (Hadfield 2009). Most commonly used distributions like the normal 
 and the Poisson are supported together with some useful but less popular ones 
 like the zero-inflated Poisson and the multinomial. Missing values and left, 
 right and interval censoring are accommodated for all traits. The package also 
@@ -27,10 +27,15 @@ matrices.
 Please read the tutorial: \code{vignette("Tutorial", "MCMCglmm")}
 }
 \references{
-Sorensen & Gianola (2002) Likelihood, Bayesian and MCMC Methods in Quantitative 
-Genetics
-Davis (2006) Direct Methods for Sparse Linear Systems 
-Rice (2004) Evolutionary Theory: Mathematical and Conceptual Foundations
+	Hadfield, J.D. (2009) MCMC methods for Multi-response Generalised 
+Linear Mixed Models: The MCMCglmm R Package, \emph{submitted}
+
+	Sorensen, D. & Gianola, D. (2002) Likelihood, Bayesian and MCMC Methods in Quantitative 
+Genetics, Springer
+
+	Davis, T.A. (2006) Direct Methods for Sparse Linear Systems, SIAM
+	
+	Rice (2004) Evolutionary Theory: Mathematical and Conceptual Foundations, Sinauer
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 

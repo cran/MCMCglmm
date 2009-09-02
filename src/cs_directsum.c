@@ -1,6 +1,6 @@
-#include "cs_directproduct.h"
+#include "cs_directsum.h"
 
-cs *cs_directproduct(cs **KGinv, int nG, int nGR){
+cs *cs_directsum(cs **KGinv, int nG, int nGR){
 
     int i, j, *Cp, *Ap, *Ci, *Ai, an, anz, cn=0, cnz=0, nlG=0, nlE=0, cnt=0, cnt2=0;
     double *Cx, *Ax;
@@ -14,7 +14,7 @@ cs *cs_directproduct(cs **KGinv, int nG, int nGR){
     C = cs_spalloc (cn, cn, cnz, 1, 0) ;	 /* allocate result */
 
     if (!C ) return (cs_done (C, NULL, NULL, 0));   
-//     if (!C ) error("cs_directproduct out of memory");  
+//     if (!C ) error("cs_directsum out of memory");  
 
     Cp = C->p ; Ci = C->i ; Cx = C->x;
    

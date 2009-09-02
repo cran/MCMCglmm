@@ -18,7 +18,7 @@ terms in x}
    tensor 
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{Dtensor, D}
+\seealso{\code{\link{Dtensor}}, \code{\link{D}}}
 \examples{
 f<-expression(beta_1 + time*beta_2+u)
 Df<-Dtensor(f, eval=FALSE, m=2)

@@ -17,7 +17,7 @@ kunif(min, max, k)
   kth central moment
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{dunif}
+\seealso{\code{\link{dunif}}}
 \examples{
 kunif(-1,1,4)
 y<-runif(1000,-1,1)

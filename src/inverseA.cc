@@ -29,7 +29,7 @@ void inverseA(
   double  ai;
   double  AN[nAP[0]];
   double  li[nAP[0]];
-  cs *Tinv, *D, *tTinv, *tTD, *A;
+  cs *Tinv, *D, *tTinv, *tTD, *A, *tA;
 
   for(i=0; i<nAP[0]; i++){
      li[i]=0.0;               // set l to zero
@@ -119,7 +119,8 @@ void inverseA(
   }
 
   tTD = cs_multiply(tTinv, D);
-  A = cs_multiply(tTD, Tinv);
+  tA = cs_multiply(tTD, Tinv);
+  A = cs_transpose(tA, TRUE);
 
   for (i = 0 ; i < A->nzmax; i++){
     iAP[i] = A->i[i];
@@ -134,5 +135,6 @@ void inverseA(
   cs_spfree(D);
   cs_spfree(tTD);
   cs_spfree(A);
+  cs_spfree(tA);
 }
 }

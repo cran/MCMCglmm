@@ -67,6 +67,14 @@ double cs_invR(const cs *C, const cs *A){
 	  CN *= cs_norm(A);
 	
 	  if (1/CN < Ctol || det < Dtol){
+		  Rprintf("M<-matrix(c(");
+		  for(i = 0; i<n; i++){
+			   for(j = 0; j<n; j++){
+				   Rprintf("%f, ", C->x[i*n+j]);
+			   }
+			  Rprintf("\n");
+		  }
+		  Rprintf("),3,3)");
 		error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
 	  }
 	

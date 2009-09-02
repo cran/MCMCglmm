@@ -26,9 +26,11 @@ to unit length (distance from root to tip)?}}
   \item{pedigree}{pedigree/pedigree representation of phylogeny}
 }
 \references{
-Henderson (1976) Biometrics 32 (1) 69:83
-Meuwissen and Luo (1992) 24 (4) 305:313
-Hadfield and Nakagawa (2009) submitted
+	Henderson, C.R. (1976) Biometrics 32 (1) 69:83
+	
+	Meuwissen, T.H.E, and Luo, Z. (1992) 24 (4) 305:313
+	
+	Hadfield, J.D.  and Nakagawa, S. (2009) \emph{submitted}
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 \examples{

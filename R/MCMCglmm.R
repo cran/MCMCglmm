@@ -1,15 +1,16 @@
 "MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data=NULL, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE){
    
+    orig.na.action<-options("na.action")[[1]]
     options("na.action"="na.pass")	
 
     if(is.null(data)){stop("data argument is NULL")}
     if(is.null(fixed)){stop("fixed is NULL")}
 
-    if(any(names(data)%in%c("units", "trait", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))){
-      stop(paste(names(data)[which(names(data)%in%c("units", "trait", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))], " is a reserved variable please rename it"))
+    if(any(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))){
+      stop(paste(names(data)[which(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))], " is a reserved variable please rename it"))
     }
 
-    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential")
+    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal")
 
     if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
     if(((is.null(prior$G) & is.null(random)==FALSE) & is.null(prior$R)==FALSE) | (is.null(prior$R) & is.null(prior$G)==FALSE)){stop("either both or neither R and G structures need a prior")}
@@ -27,7 +28,6 @@
 
     response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
 
-    if(length(grep("\\+", rcov))>0){stop("R-structure must currently be defined by a single component")}
 
 ######################################################################################
 # for phyloegnetic/pedigree analyses form A and augment with missing nodes if needed #
@@ -40,46 +40,22 @@
 	  data$animal<-factor(data$animal, levels=Ai$node.names)                           # add factor levels to animal in data for additional nodes
 	}
 
-#######################################################################################################
-# for interactions involving pedigrees/phylogenies or us structures augment with missing combinations #
-#######################################################################################################
+##############################################################################################
+# if R-structure is of form idh(!=trait) assign new records with arbitrary levels of !-trait #
+##############################################################################################
 
-	rterms<-strsplit(as.character(random)[2], " *\\+ *")[[1]]
-	nadded<-0  # number of records added
-        data$MCMC_dummy<-as.factor(rep(1, dim(data)[1]))
+      nadded<-0  # number of records added
+if(TRUE){
+      if(is.null(random)==FALSE){	
+	rterms<-split.direct.sum(as.character(random)[2])
+        data$MCMC_dummy<-as.factor(rep(1,dim(data)[1]))
 	for(i in 1:length(rterms)){
-	  components=NULL
-	  rterms.split<-lapply(rterms, strsplit,"\\(|\\):|:")
-          if(length(rterms.split[[i]][[1]])==1){
-            if(is.na(rterms.split[[i]][[1]])==FALSE){
-              if(rterms.split[[i]][[1]][1]=="animal"){ 
-	        components<-c("MCMC_dummy", "animal")
-              }
-            }
-	  }
-          if(length(rterms.split[[i]][[1]])==2){
-            if(any(rterms.split[[i]][[1]]=="animal")){
-	      components<-rterms.split[[i]][[1]]
-            }
-	  }
-          if(length(rterms.split[[i]][[1]])==3){
-            if(any(rterms.split[[i]][[1]]=="animal")){
-              if(rterms.split[[i]][[1]][2]=="trait"){ 
-	        components<-c("MCMC_dummy", "animal")
-	      }else{
-  	        components<-rterms.split[[i]][[1]][2:3]
-	      }
-            }else{
-	      if(rterms.split[[i]][[1]][1]=="us" & rterms.split[[i]][[1]][2]!="trait"){ 
-	        components<-rterms.split[[i]][[1]][2:3]
-	      }
-            }
-          }
+	  components<-find.components(rterms[i], data)
 	  if(is.null(components)==FALSE){
 
             allc<-expand.grid(levels(data[,components[2]]),levels(data[,components[1]]))
             missing.combinations<-which(paste(allc[,1], allc[,2])%in%paste(data[,components[2]], data[,components[1]])==FALSE)
-		  
+
             if(length(missing.combinations)>0){
 			  
 	      warning(paste("some combinations in", rterms[i], "do not exist and", length(missing.combinations), "missing records have been generated"))
@@ -94,7 +70,8 @@
 	      missing.comb2<-which(is.na(data[,components[1]])==FALSE & is.na(data[,components[2]]))
 	      missing.comb12<-which(is.na(data[,components[1]]) & is.na(data[,components[2]]))
 			  
-	      matching<-match(unique(missing.combinations[,2]), data[,components[2]][missing.comb1])			
+	      matching<-match(unique(missing.combinations[,2]), data[,components[2]][missing.comb1])
+			
 	      while(any(is.na(matching)==FALSE)){
 	        data[,components[1]][missing.comb1[na.omit(matching)]]<-missing.combinations[,1][match(data[,components[2]][missing.comb1[na.omit(matching)]],missing.combinations[,2])]
        	        missing.comb1<-missing.comb1[-match(data[,components[2]][missing.comb1[na.omit(matching)]],missing.combinations[,2])]	
@@ -112,6 +89,7 @@
 		data[missing.comb12,]<-missing.combinations[1:min(length(missing.comb12), length(missing.combinations[,1])),]
 		missing.combinations<-missing.combinations[-1:min(length(missing.comb12), length(missing.combinations[,1])),,drop=FALSE,]
 	      }			
+
 	      if(length(missing.combinations)>0){       
                 nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
 		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
@@ -123,14 +101,13 @@
 	    }		  
 	  }
 	}
-        if(nadded>0){
-          data$MCMC_dummy<-rep(0,dim(data)[1])
-          data$MCMC_dummy[(dim(data)[1]-nadded+1):dim(data)[1]]<-1   
-        }
-##############################################################################################
-# if R-structure is of form idh(!=trait) assign new records with arbitrary levels of !-trait #
-##############################################################################################
-	
+      }
+      data$MCMC_dummy<-rep(0,dim(data)[1])
+      if(nadded>0){
+        data$MCMC_dummy[(dim(data)[1]-nadded+1):dim(data)[1]]<-1   
+      }
+}
+
 	 rterms.split<-lapply(strsplit(as.character(rcov)[2], " *\\+ *")[[1]], strsplit,"\\(|\\):|:")[[1]][[1]]
 
   	 components=NULL
@@ -152,6 +129,16 @@
        if(is.null(data$family)){
          stop("no family specified")
        }else{
+         if(is.null(data$trait)){
+           stop("data.frame needs to have a column indexing traits if fitting multivaraite models as univariate")
+         }else{
+           if(is.factor(data$trait)==FALSE){
+             stop("trait must be a factor")
+           }
+           if(any(tapply(data$family, data$trait, function(x){length(unique(x))})!=1)){
+             stop("all data from the same trait must come from the same distribution")
+           }
+         }           
          if(length(unique(data$family))==1){
            family.names<-as.character(data$family[1])
          }else{     
@@ -159,7 +146,7 @@
            MVasUV=TRUE
          }
          if(length(grep("cen|multinomial|zi", family.names))>0){ 
-           stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column (i.e. censored, multinomial, zero-inflated): set it up as multivariate using cbind(...)")
+           stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
        }
     }else{
@@ -173,26 +160,51 @@
     # zero-infalted and multinomial>2 need to be preserved in the same R-structure even if idh 
 	
     if(length(grep("zi|multinomial[3:19]", family.names))>0){ 
-      rcov=as.formula(paste(gsub("idh\\(", "us\\(", rcov), collapse=""))
+      if(length(grep("idh\\(|us\\(", rcov))==0){
+        stop("please use idh() or us() error structure")
+      }else{
+        rcov=as.formula(paste(gsub("idh\\(", "us\\(", rcov), collapse=""))
+      }
       diagR=TRUE	  
     }else{
       diagR=FALSE
     }
 	
-    nS<-dim(data)[1]                             # number of subjects
-    y.additional<-matrix(NA, nS,0)               # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
-    nt<-1                                        # number of traits (to be iterated because y may change dimension with multinomial/categorical/censored distributions)
-    mfac<-c()
+    nS<-dim(data)[1]                               # number of subjects
+    y.additional<-matrix(NA, nS,0)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
+    nt<-1                                          # number of traits (to be iterated because y may change dimension with multinomial/categorical/censored distributions)
 
     if(MVasUV){
+      mfac<-rep(0, nlevels(data$trait))
       if(any(family.names=="categorical")){
+        ncat<-tapply(data[,response.names][which(family.names=="categorical")], data$trait[which(family.names=="categorical")], function(x){length(unique(x))})
+        if(any(ncat)>2){
+           stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
+         }
         y.additional<-matrix(NA, nS,1)
         y.additional[which(family.names=="categorical")]<-1
         family.names[which(family.names=="categorical")]<-"multinomial"
         family.names[which(is.na(family.names))]<-"gaussian"
-        mfac<-1
+      }
+      if(any(family.names=="ordinal")){
+        ordinal.traits<-unique(as.numeric(data$trait)[which(family.names=="ordinal")])
+        mfac[ordinal.traits]<-0:(length(ordinal.traits)-1)
+        ncutpoints<-tapply(data[,response.names][which(family.names=="ordinal")], data$trait[which(family.names=="ordinal")], function(x){length(unique(x))})+2
+      }else{
+        ncutpoints<-c()
       }
     }else{
+      if(any(names(data)=="trait")){
+        stop("trait is a reserved variable please remove or rename this column in the data.frame")
+      }
+      mfac<-c()                                    # stores additional information for each R-structure term. For multinomial models it stores the number of k-2 categories
+                                                   # for zero inflated models it indicates whether the R-structure term is for the Poisson part (0) or zero infaltion part (1)
+                                                   # for ordinal responses it indicates whether its the i^th ordinal response. For example R-structure terms for data A:E with 
+                                                   # multinomialA, multinomialA, multinomialB, ordinalC, zero-inflationD, zero-infaltionD, ordinalE: mfac=c(1,1,0,0,0,1,1) other 
+                                                   # traits all have 0
+      ncutpoints<-c()                              # number of cutpoints for ordinal variables = k+1
+      ordinal.names<-c()
+
       for(i in 1:length(family)){
 
         dist.preffix<-substr(family[i],1,2)                  
@@ -202,14 +214,22 @@
 ######################
 # categorical traits #
 ######################
+
           if(dist.preffix=="ca"){
             cont<-as.matrix(model.matrix(~ as.factor(data[[response.names[nt]]]))[,-1])                            # form new J-1 variable   
-            nJ<-dim(cont)[2]                                                                                       # number of J-1 categories 
-            mfac<-c(mfac, rep(nJ,nJ))             
+            nJ<-dim(cont)[2]                                                                                       # number of J-1 categories    
+            if(length(grep("idh\\(|us\\(", rcov))==0 & nJ>1){
+               stop("please use idh() or us() error structure for categorical traits with more than 2 categories")
+            }else{
+               rcov=as.formula(paste(gsub("idh\\(", "us\\(", rcov), collapse=""))
+               diagR=TRUE
+            }
+            mfac<-c(mfac, rep(nJ-1,nJ))             
             new.names<-paste(response.names[nt], ".", levels(as.factor(data[[response.names[nt]]]))[-1], sep="")   # give new variables names
-            colnames(cont)<-new.names                        
-            data<-data[,-which(names(data)==response.names[nt]), drop=FALSE]                                                   # remove original variable
-            data<-cbind(data, cont)                                                                                # add new variables to data.frame
+            colnames(cont)<-new.names  
+            data<-data[,-which(names(data)==response.names[nt]), drop=FALSE]    # remove original variable
+	    row.names(data)<-row.names(cont)
+            data<-cbind(data, cont)     # add new variables to data.frame
             ones<-rep(1, length(response.names))
             ones[which(response.names==response.names[nt])]<-nJ
             response.names<-rep(response.names, ones)
@@ -226,9 +246,9 @@
 
          if(dist.preffix=="mu"){
            nJ<-as.numeric(substr(family[i],12,nchar(family[i])))-1                                                                            # number of J-1 categories
-		   if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
-           mfac<-c(mfac, rep(nJ,nJ))  
-		   if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){stop("multinomial data must be positive integers")}
+	   if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
+           mfac<-c(mfac, rep(nJ-1,nJ))  
+           if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){stop("multinomial data must be positive integers")}
            y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
            data<-data[,-which(names(data)==response.names[nt+nJ]),drop=FALSE]                                                                      # remove first category
            response.names<-response.names[-(nt+nJ)]
@@ -237,11 +257,13 @@
            nt<-nt+nJ
          }
 
+			
 ###################
 # censored traits #
 ###################
 
-         if(dist.preffix=="ce"){         
+         if(dist.preffix=="ce"){       
+           mfac<-c(mfac, 0)  
            if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
            y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                               # get upper interval
            if(family.names[nt]=="cenpoisson"){
@@ -261,6 +283,7 @@
 ###################
 		  
 	 if(dist.preffix=="tr"){   
+           mfac<-c(mfac, 0)  
 	   y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                     # get upper interval
 	   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                      # remove upper interval from the response
 	   response.names<-response.names[-(nt+1)]
@@ -277,7 +300,7 @@
 	   cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
 	   colnames(cont)<-paste("zi", response.names[nt], sep=".")
 	   data<-cbind(data, cont)
-	   mfac<-c(mfac, rep(1,1))
+	   mfac<-c(mfac, c(0,1))
 	   ones<-rep(1, length(response.names))
 	   ones[which(response.names==response.names[nt])]<-2
 	   response.names<-rep(response.names, ones)
@@ -286,17 +309,24 @@
 	   response.names[which(response.names==response.names[nt])]<-c(response.names[nt], paste("zi", response.names[nt], sep="."))
 	   nt<-nt+2			  
 	 }
-		  
+
 #######################################
 # gaussian/poisson/exponential traits #
 #######################################
 
         }else{
-          if(family.names[nt]=="poisson"){
+          mfac<-c(mfac, 0)  
+          if(family.names[nt]=="poisson"){ 
 	    if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
           }
-	  if(family.names[nt]=="exponential"){
+	  if(family.names[nt]=="exponential"){ 
 	    if(any(data[,response.names[nt]]<0, na.rm=T)){stop("Exponential data must be positive")}
+	  }	
+	  if(family.names[nt]=="ordinal"){
+            mfac[length(mfac)]<-length(ncutpoints)  
+            data[,response.names[nt]]<-as.numeric(data[,response.names[nt]])
+            ncutpoints<-c(ncutpoints, max(data[,response.names[nt]])+1)         
+            ordinal.names<-c(ordinal.names, response.names[nt])     
 	  }	
           y.additional<-cbind(y.additional,matrix(NA,nS,1))     
           nt<-nt+1
@@ -308,20 +338,17 @@
 
 ###**************************************########################
 
-    data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", timevar="trait", idvar="units")       # reshape the data into long format 
-    data$units<-as.factor(data$units)
-    data$trait<-factor(response.names[data$trait], response.names)
-    data$MCMC_y.additional<-c(y.additional) 
     if(MVasUV){
+      data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", idvar="units")       # reshape the data into long format 
       data$MCMC_family.names<-family.names
     }else{
+      data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", timevar="trait", idvar="units")       # reshape the data into long format 
+      data$trait<-factor(response.names[data$trait], response.names)
       if(length(response.names)!=length(family.names)){stop("family must have the same length as the number of responses")}
       data$MCMC_family.names<-rep(family.names, each=nS)       
     }
-
-###**************************************########################
-
-    fixed<-update(fixed,y~.,) 
+    data$units<-as.factor(data$units)
+    data$MCMC_y.additional<-c(y.additional) 
 
 ######################################################
 # for (random) meta-analysis add weights/model terms #
@@ -329,26 +356,27 @@
 
     if(is.null(mev)==FALSE){
       if(any(dim(mev)!=dim(y.additional))){stop("mev has to be the same dimension as y")}
-      data$MCMC_mev<-sqrt(mev)*sqrt(2/3)  # needs to be multiplied by sqrt(2/3) because legendre polynomial slope is sqrt(3/2)
+      data$MCMC_mev<-sqrt(mev)	
       data$MCMC_meta<-factor(1:dim(data)[1], levels=1:dim(data)[1])
       if(is.null(random)){
-        random = ~leg(MCMC_mev, -1):MCMC_meta
+        random = ~us(leg(MCMC_mev, -1, FALSE)):MCMC_meta
         if(is.null(prior$R)==FALSE){
-          prior$G<-list(G1=list(V=as.matrix(1), n=1, fix=1))
+          prior$G<-list(G1=list(V=as.matrix(1), nu=1, fix=1))
         }
       }else{
-        random<-update(random,~.+leg(MCMC_mev, -1):MCMC_meta)
+        random<-update(random,~.+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta)
         if(is.null(start$G)==FALSE){
           start$G[[length(start$G)+1]]<-as.matrix(1)
         }
         if(is.null(prior$G)==FALSE){
-          prior$G[[length(prior$G)+1]]<-list(V=as.matrix(1), n=1, fix=1)
+          prior$G[[length(prior$G)+1]]<-list(V=as.matrix(1), nu=1, fix=1)
         }
       } 
     }
 
-    rmodel.terms<-strsplit(as.character(random)[2], " *\\+ *")[[1]]
-    rmodel.terms<-c(na.omit(rmodel.terms), strsplit(as.character(rcov)[2], " *\\+ *")[[1]]) 
+    rmodel.terms<-split.direct.sum(as.character(random)[2])
+    ngstructures<-length(rmodel.terms)
+    rmodel.terms<-c(rmodel.terms, strsplit(as.character(rcov)[2], " *\\+ *")[[1]]) 
  
     nfl<-c()                                                       # number of fixed levels the random term is structured by
     nrl<-c()                                                       # number of random levels
@@ -356,7 +384,9 @@
     GR<-list()
     GRprior<-list()
     Aterm<-c()
-
+    ordering<-c()
+    trait.ordering<-c()
+    missing<-c()
 
     if(is.null(start$R)){
       NOstartG=TRUE
@@ -371,440 +401,170 @@
       prior$G[[length(prior$G)+1]]<-prior$R
     }
 
+##########################
+# Build Z ################
+##########################
+
     nr<-1
 
     for(r in 1:length(rmodel.terms)){
- 
-      if(r==length(rmodel.terms)){nG<-nr-1}  # number of G structures
 
-#########################
-# normal random effects #
-#########################
+       if(r==(ngstructures+1)){nG<-nr-1}  # number of (new) G structures
 
-      if(length(grep("\\(", rmodel.terms[r]))==0){
-        
-        nfl[nr]<-1
-
-        if(length(grep("\\:", rmodel.terms[r]))>0){
-          components<-strsplit(rmodel.terms[r], "\\:")[[1]]
-          for(i in 1:length(components)){
-            if(is.factor(data[,components[i]])==FALSE){stop(paste(components[i], " is not a factor"))}
-	    if(any(levels(data[,components[i]])%in%unique(data[,components[i]])==FALSE)){stop(paste("some levels not observed in ", components[i]))}
-          }
-          rmodel.terms[r]<-paste(components, collapse=".")
-          data[[rmodel.terms[r]]]<-as.factor(apply(data[,components], 1, paste, collapse=""))
-        }
-		  
-        if(is.factor(data[,rmodel.terms[r]])==FALSE){stop(paste(rmodel.terms[r], " is not a factor"))}
-	if(any(levels(data[,rmodel.terms[r]])%in%unique(data[,rmodel.terms[r]])==FALSE)){stop(paste("some levels not observed in ", rmodel.terms[r]))}		  
-		  
-        nrl[nr]<-nlevels(data[,rmodel.terms[r]])
-        variance.names<-c(variance.names, rmodel.terms[r])
-		  
-        if(NOpriorG==TRUE){
-            GRprior[[nr]]<-list(V=matrix(1), n=0)
-        }else{
-
-          if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
-	  if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-          if(dim(prior$G[[r]]$V)[1]!=1  | dim(prior$G[[r]]$V)[2]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
-          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
-          GRprior[[nr]]<-prior$G[[r]]
-        }
-
-        if(NOstartG==TRUE){
-
-          GR[[nr]]<-GRprior[[nr]]$V
-
-        }else{
-
-          if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
-	  if(is.matrix(start$G[[r]]$V)==FALSE){start$G[[r]]$V<-as.matrix(start$G[[r]]$V)}	
-          if(dim(start$G[[r]])[1]!=1  | dim(start$G[[r]])[2]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
-          if(is.positive.definite(start$G[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
-
-          GR[[nr]]<-start$G[[r]]
-        }
-
-
-        if(length(grep("animal", rmodel.terms[r]))>0){
-          Aterm[nr]<-1
-        }else{
-          Aterm[nr]<-0
-        }
-
-        nr<-nr+1
-      }
-
-#######################################################################
-# checking all combination of factors exist for us and cor structures #
-#######################################################################
-
-      if(length(c(grep("us\\(", rmodel.terms[r]), grep("cor\\(", rmodel.terms[r])))>0){
-        components<-strsplit(rmodel.terms[r], "\\(|\\)\\:")[[1]][2:3]                               # find component terms
-         if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
-         if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
- 	 if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
-	 if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
-
-		  
-         nfl[nr]<-nlevels(data[,components[1]]) 
-         nrl[nr]<-nlevels(data[,components[2]]) 
-         variance.names<-c(variance.names, paste(components[2],components[1], expand.grid(levels(data[,components[1]]), levels(data[,components[1]]))[,1], expand.grid(levels(data[,components[1]]), levels(data[,components[1]]))[,2], sep="."))
-	rmodel.terms[r]<-paste(rev(components), collapse=":")
-
-
-        if(NOpriorG==TRUE){
-          GRprior[[nr]]<-list(V=diag(nfl[nr]), n=0)
-        }else{
-
-          if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
-	  if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-          if(dim(prior$G[[r]]$V)[1]!=nfl[nr] | dim(prior$G[[r]]$V)[2]!=nfl[nr]){stop("V is the wrong dimension for some priorG/priorR elements")}
-          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
-
-          GRprior[[nr]]<-prior$G[[r]]
-        }
-
-        if(NOstartG==TRUE){
-
-          GR[[nr]]<-GRprior[[nr]]$V
-
-        }else{
-
-          if(length(start$G)<r){stop("starting G has the wrong number of structures")}
-	  if(is.matrix(start$G[[r]]$V)==FALSE){start$G[[r]]$V<-as.matrix(start$G[[r]]$V)}	
-          if(dim(start$G[[r]])[1]!=nfl[nr]  | dim(start$G[[r]])[2]!=nfl[nr]){stop(paste("starting G structure", r, "is the wrong dimension"))}
-          if(is.positive.definite(start$G[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
-
-          GR[[nr]]<-start$G[[r]]
-        }
-
-        if(r==length(rmodel.terms)){                                                                         # rearrange data to match R-structure
-         data<-data[order(100000000*as.numeric(data[,components[1]])+as.numeric(data[,components[2]])),]
-        }
-
-        if(length(grep("animal", rmodel.terms[r]))>0){
-          Aterm[nr]<-1
-        }else{
-          Aterm[nr]<-0
-        }
-
-        nr<-nr+1
-      }
-      if(NOpriorG==FALSE){
-        if(length(prior$G)>length(rmodel.terms)){stop("priorG/priorR have the wrong number of structures")}
-      }
-##########################
-# heterogenous variances #
-##########################
-
-      if(length(c(grep("id\\(", rmodel.terms[r]), grep("idh\\(", rmodel.terms[r])))>0){
-
-	if(length(grep("id\\(", rmodel.terms[r]))>0){fixed.variance=TRUE}else{fixed.variance=FALSE}
-        components<-strsplit(rmodel.terms[r], "\\(|\\)\\:")[[1]][2:3]                               # find component terms
-        if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
-        if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
-        if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
-	if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
-
-        nfl[nr+1:nlevels(data[,components[1]])-1]<-1
-        nrl[nr+1:nlevels(data[,components[1]])-1]<-colSums(table(data[,components[2]],  data[,components[1]])>0)
-        rmodel.terms[r]<-paste(rev(components), collapse=":")
-        variance.names<-c(variance.names, paste(components[2],components[1], levels(data[,components[1]]), sep="."))
-        if(NOpriorG==FALSE){
-          if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
-	  if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-          if(dim(prior$G[[r]]$V)[1]!=nlevels(data[,components[1]]) | dim(prior$G[[r]]$V)[2]!=nlevels(data[,components[1]])){stop("V is the wrong dimension for some priorG/priorR elements")}
-          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
-        }
-        if(NOstartG==FALSE){
-          if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
-	  if(is.matrix(start$G[[r]]$V)==FALSE){start$G[[r]]$V<-as.matrix(start$G[[r]]$V)}	
-          if(dim(start$G[[r]])[1]!=nlevels(data[,components[1]])  | dim(start$G[[r]])[2]!=nlevels(data[,components[1]])){stop(paste("starting G/R structure", r, "is the wrong dimension"))}
-          if(is.positive.definite(start$G[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
-        }
-
-        for(l in 1:nlevels(data[,components[1]])){
-
-          if(NOpriorG==TRUE){
-            GRprior[[nr]]<-list(V=matrix(1), n=0)
-          }else{
-            GRprior[[nr]]<-list(V=as.matrix(diag(prior$G[[r]]$V)[l]), n=prior$G[[r]]$n-(nlevels(data[,components[1]])-1))
-            if(is.null(prior$G[[r]]$fix)==FALSE){
-              if(l>=prior$G[[r]]$fix){
-                GRprior[[nr]]$fix<-1
-              }
-            }
-          }
-          if(NOstartG==TRUE){
-            GR[[nr]]<-GRprior[[nr]]$V
-          }else{
-            GR[[nr]]<-as.matrix(diag(start$G[[r]])[l])
-          }
- 
-          if(length(grep("animal", rmodel.terms[r]))>0){
-            Aterm[nr]<-1
-          }else{
-            Aterm[nr]<-0
-          }
-          nr<-nr+1
-        }
-        if(r==length(rmodel.terms)){         
-          data<-data[order(100000000*as.numeric(data[,components[1]])+as.numeric(data[,components[2]])),]   # rearrange data to match R-structure
-        }
-      }
-
-#########################
-# forming pol structure #
-#########################
-
-      if(length(grep("leg\\(", rmodel.terms[r]))>0){
-        rr.covariate<-strsplit(rmodel.terms[r], "\\(|\\)|\\,|\\:")[[1]][c(2:3,5)]            # find component terms and order of polynomial
-        legvar.name<-paste("leg", rr.covariate[1], abs(as.numeric(rr.covariate[2])), sep=".")
-        if(legvar.name%in%names(data)==FALSE){
-          lp<-legendre.polynomials(abs(as.numeric(rr.covariate[2])), TRUE)	
-          if(as.numeric(rr.covariate[2])<0){
-            lp<-lp[-1]
-          }			
-          legvar<-sapply(lp,function(lp){as.function(lp)(data[,rr.covariate[1]])})
-          data$legvar<-legvar
-          names(data)[which(names(data)=="legvar")]<-legvar.name
-        }
-        if(is.factor(data[,rr.covariate[3]])==FALSE){stop(paste(rr.covariate[3], " is not a factor"))}
-	if(any(levels(data[,rr.covariate[3]])%in%unique(data[,rr.covariate[3]])==FALSE)){stop(paste("some levels not observed in ",rr.covariate[3]))}
-
-        rmodel.terms[r]<-paste(rr.covariate[3], ":", legvar.name, sep="")
-        nfl[nr]<-abs(as.numeric(rr.covariate[2]))+(as.numeric(rr.covariate[2])>0)
-        nrl[nr]<-nlevels(data[,rr.covariate[3]])
-        pol.order<-(0+(as.numeric(rr.covariate[2])<0)):abs(as.numeric(rr.covariate[2]))
-        variance.names<-c(variance.names, paste(rr.covariate[3],rr.covariate[1], expand.grid(pol.order, pol.order)[,1], expand.grid(pol.order, pol.order)[,2], sep="."))
-
-        if(NOpriorG==TRUE){
-          if(rr.covariate[1]=="MCMC_mev"){
-             GRprior[[nr]]<-list(V=diag(nfl[nr]), n=0, fix=1)
-          }else{
-             GRprior[[nr]]<-list(V=diag(nfl[nr]), n=0)
-          }
-        }else{
-          if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-          if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
-          if(dim(prior$G[[r]]$V)[1]!=nfl[nr] | dim(prior$G[[r]]$V)[2]!=nfl[nr]){stop("V is the wrong dimension for some priorG/priorR elements")}
-          if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
-          GRprior[[nr]]<-prior$G[[r]]
-        }
-        if(NOstartG==TRUE){
-          GR[[nr]]<-GRprior[[nr]]$V
-        }else{
-          if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
-          if(dim(start$G[[r]])[1]!=nfl[nr]  | dim(start$G[[r]])[2]!=nfl[nr]){stop(paste("starting G/R structure", r, "is the wrong dimension"))}
-          GR[[nr]]<-start$G[[r]]
-        }
-
-        if(length(grep("animal", rmodel.terms[r]))>0){
-          Aterm[nr]<-1
-        }else{
-          Aterm[nr]<-0
-        }
-        nr<-nr+1
-      }
-
-###########################
-# forming group structure #
-###########################
-
-      if(length(grep("group\\(", rmodel.terms[r]))>0){
-
-       components<-strsplit(rmodel.terms[r],"group\\( *| *, *| *\\)")[[1]][2:3]
-
-       if(is.factor(data[,components[1]])==FALSE){stop(paste(components[1], " is not a factor"))}
-       if(is.factor(data[,components[2]])==FALSE){stop(paste(components[2], " is not a factor"))}
-       if(any(levels(data[,components[1]])%in%unique(data[,components[1]])==FALSE)){stop(paste("some levels not observed in ", components[1]))}
-       if(any(levels(data[,components[2]])%in%unique(data[,components[2]])==FALSE)){stop(paste("some levels not observed in ", components[2]))}
-       rmodel.terms[r]<-paste(components, collapse=".group_MCMC.")
- 		  
-       nfl[nr]<-1
-       nrl[nr]<-nlevels(data[,components[2]])
-
-       variance.names<-c(variance.names, rmodel.terms[r])
-		  
-       if(NOpriorG==TRUE){
-         GRprior[[nr]]<-list(V=matrix(1), n=0)
+       if(r<length(rmodel.terms)){
+         Zlist<-buildZ(rmodel.terms[r], data=data)
        }else{
-         if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
-         if(is.null(prior$G[[r]]$V)){stop("V not specified for some priorG/priorR elements")}
-	 if(is.matrix(prior$G[[r]]$V)==FALSE){prior$G[[r]]$V<-as.matrix(prior$G[[r]]$V)}	
-         if(dim(prior$G[[r]]$V)[1]!=1  | dim(prior$G[[r]]$V)[2]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
-         if(is.null(prior$G[[r]]$n)){stop("n not specified for some priorG/priorR elements")}
-         GRprior[[nr]]<-prior$G[[r]]
+         Zlist<-buildZ(rmodel.terms[r], data=data, formZ=FALSE, add.missing=FALSE)
+
+         if(Zlist$missing!=0){                 # haven't been using this any more - seems to slow the cholesky factorisation up
+           missing.rows<-data[dim(data)[1],]
+           missing.rows$MCMC_y<-NA
+           data[dim(data)[1]+1:Zlist$missing,]<-missing.rows
+           Z<-rBind(Z, t(Matrix(missing, ncol(Z), Zlist$missing)))
+           nadded<-TRUE
+         }
+         Zlist$missing<-NULL
+       }
+
+       nfl<-c(nfl,Zlist$nfl)
+       nrl<-c(nrl,Zlist$nrl)
+       Aterm<-c(Aterm, Zlist$Aterm)
+       variance.names<-c(variance.names, Zlist$vnames)
+       ordering<-c(ordering ,Zlist$ordering)
+       trait.ordering<-c(trait.ordering ,Zlist$trait.ordering)
+       missing<-c(missing ,Zlist$missing)
+
+       if(NOpriorG==TRUE){
+         GRprior[[nr]]<-list(V=diag(sum(Zlist$nfl)), nu=0)
+       }else{
+         if(r<=ngstructures){
+           if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
+           GRprior[[nr]]<-prior$G[[r]]
+         }else{
+           GRprior[[nr]]<-prior$R
+         }
+         if(is.null(GRprior[[nr]]$V)){stop("V not specified for some priorG/priorR elements")}
+         if(is.matrix(GRprior[[nr]]$V)==FALSE){GRprior[[nr]]$V<-as.matrix(GRprior[[nr]]$V)}
+         if(dim(GRprior[[nr]]$V)[1]!=sum(Zlist$nfl)  | dim(GRprior[[nr]]$V)[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some priorG/priorR elements")}
+         if(is.positive.definite(GRprior[[nr]]$V)==FALSE){stop("V is not positive definite for some priorG/priorR elements")}
+         if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
+         if(is.null(GRprior[[nr]]$fix)==FALSE){
+           if(GRprior[[nr]]$fix!=1){
+             CM<-GRprior[[nr]]$V[GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1],GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1]]
+             if(sum(CM!=0)>dim(GRprior[[nr]]$V)[1]){stop("sorry - matrices to be conditioned on must be diagonal")}
+           }
+         }
        }
 
        if(NOstartG==TRUE){
+         GR[[nr]]<-GRprior[[nr]]$V
+       }else{
+         GR[[nr]]<-start$G[[r]]
+         if(r<=ngstructures){
+           if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
+           GR[[nr]]<-start$G[[r]]
+         }else{
+           GR[[nr]]<-start$R
+         }
+	 if(is.matrix(GR[[r]]$V)==FALSE){GR[[r]]$V<-as.matrix(GR[[r]]$V)}	
+         if(dim(GR[[r]])[1]!=sum(Zlist$nfl)  | dim(GR[[r]])[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some priorG/priorR elements")}
+         if(is.positive.definite(GR[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
+       }
+       if(Zlist$vtype[1]=="idh"){
 
-          GR[[nr]]<-GRprior[[nr]]$V
+         for(l in 1:length(Zlist$nfl)){
 
-        }else{
+           if(NOpriorG==TRUE){
+             GRprior[[nr]]<-list(V=matrix(1), nu=0)
+           }else{
+             if(r<=ngstructures){
+               if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
+               GRprior[[nr]]<-list(V=as.matrix(prior$G[[r]]$V)[l,l,drop=FALSE], nu=prior$G[[r]]$n-(sum(Zlist$nfl)-1), fix=prior$G[[r]]$fix)
+             }else{
+               GRprior[[nr]]<-list(V=as.matrix(prior$R$V)[l,l,drop=FALSE], nu=prior$R$n-(sum(Zlist$nfl)-1), fix=prior$R$fix)
+             }
+             if(is.null(GRprior[[nr]]$fix)==FALSE){
+               if(l>=GRprior[[nr]]$fix){
+                 GRprior[[nr]]$fix<-1
+               }else{
+                 GRprior[[nr]]$fix<-NULL
+               }
+             }
+           }
+           if(NOstartG==TRUE){
+             GR[[nr]]<-GRprior[[nr]]$V
+           }else{
+             if(r<=ngstructures){
+               GR[[nr]]<-as.matrix(diag(start$G[[r]])[l])
+             }else{
+               GR[[nr]]<-as.matrix(diag(start$R[[r]])[l])
+             }
+           } 
+           nr<-nr+1
+         }
+       }else{
+         nr<-nr+1
+       }
+       if(r<=ngstructures){
+         if(r==1){
+           Z<-Zlist$Z
+         }else{
+           Z<-cBind(Z, Zlist$Z)     
+         }     
+       }
+     }
 
-          if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
-	  if(is.matrix(start$G[[r]]$V)==FALSE){start$G[[r]]$V<-as.matrix(start$G[[r]]$V)}	
-          if(dim(start$G[[r]])[1]!=1  | dim(start$G[[r]])[2]!=1){stop(paste("starting G/R structure", r, "is the wrong dimension"))}
-          if(is.positive.definite(start$G[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
+    if(any(duplicated(ordering))){stop("R-structure miss-specified: each residual must be unique to a data point")}
+    if(any(range(ordering)!=c(1, dim(data)[1]))){stop("R-structure miss-specified: each data point must have a residual")}
 
-          GR[[nr]]<-start$G[[r]]
-        }
+    data<-data[ordering,]         
 
-        if(length(grep("animal", rmodel.terms[r]))>0){
-          Aterm[nr]<-1
-        }else{
-          Aterm[nr]<-0
-        }
-        nr<-nr+1
-      }  		 
+    if(length(rmodel.terms)==1){
+       Z<-as(matrix(0,1,0), "sparseMatrix")
+    }else{                                                     # rearrange data to match R-structure
+       Z<-Z[ordering,]                                                     
     }
 
-############################
-###### BUILD Z matrices ####
-############################
+    mfac<-mfac[trait.ordering]
 
-     if(length(rmodel.terms)>1){   # random effects exist
-       for(i in 1:(length(rmodel.terms)-1)){
-         if(length(grep("\\.group_MCMC\\.", rmodel.terms[i]))>0){
-           components<-strsplit(rmodel.terms[i],"\\.group_MCMC\\.")[[1]]
-           data_comb<-data[,components[1]]
-           xfactor<-rep(1,length(na.omit(data_comb)))
-           rlevels<-levels(data_comb)
-           data_pos<-match(data_comb,rlevels)
-           Ztmp<-Matrix(0,dim(data)[1],length(table(data_pos)), dimnames=list(as.character(1:dim(data)[1]), paste(rmodel.terms[i], rlevels[as.numeric(names(table(data_pos)))], sep=".")))
-           Ztmp[,1][2]<-1              # force it out of vbeing upper triangle!!!!
-           Ztmp@p<-as.integer(c(0,cumsum(table(data_pos))))    
-           cnt<-0
-           for(j in 1:length(rlevels)){
-             hit<-which(data_pos==j)
-             hit<-hit-dim(data)[1]*(ceiling(hit/dim(data)[1])-1)
-             if(length(hit)>0){
-               Ztmp@i[cnt+1:length(hit)]<-as.integer(hit-1)
-               cnt<-cnt+length(hit)
-             }
-           }  
-           Ztmp@x<-xfactor
- 
-           Ztmp2<-Matrix(0,nlevels(data[,components[2]]),nlevels(data[,components[1]]))
-           Ztmp2[,1][2]<-1              # force it out of vbeing upper triangle!!!!
-           data_comb2<-data[,components[2]]
-           xfactor2<-rep(1,length(na.omit(data_comb2)))
-           rlevels2<-levels(data_comb2)
-
-           cnt<-0
-           cnt2<-1
-           for(j in rlevels){
-             hit<-which(rlevels2%in%data_comb2[which(data_comb==j)])
-             if(length(hit)>0){
-               Ztmp2@i[cnt+1:length(hit)]<-as.integer(hit-1)
-               cnt<-cnt+length(hit)
-             }
-             cnt2<-cnt2+1
-             Ztmp2@p[cnt2]<-as.integer(cnt)
-           }  
-           Ztmp2@x<-xfactor
-           Ztmp<-Ztmp%*%t(Ztmp2)
-         }else{
-           if(length(grep("\\:", rmodel.terms[i]))>0){
-             if(is.factor(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]])){
-               data_comb<-data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]]:data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]]
-               xfactor<-rep(1,length(na.omit(data_comb)))
-             }else{
-               dpol<-dim(data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]])[2]
-               data_comb<-as.factor(rep(1:dpol, each=dim(data)[1])):as.factor(rep(data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]], dpol))
-               xfactor<-data[,strsplit(rmodel.terms[i], "\\:")[[1]][2]]
-               xfactor<-c(xfactor[order(data[,strsplit(rmodel.terms[i], "\\:")[[1]][1]]),])
-               xfactor[which(is.na(xfactor))]<-0
-             }
-           }else{
-             data_comb<-data[,rmodel.terms[i]]
-             xfactor<-rep(1,length(na.omit(data_comb)))
-           }
-           rlevels<-levels(data_comb)
-           data_pos<-match(data_comb,rlevels)
-           Ztmp<-Matrix(0,dim(data)[1],length(table(data_pos)), dimnames=list(as.character(1:dim(data)[1]), paste(rmodel.terms[i], rlevels[as.numeric(names(table(data_pos)))], sep=".")))
-           Ztmp[,1][2]<-1              # force it out of vbeing upper triangle!!!!
-           Ztmp@p<-as.integer(c(0,cumsum(table(data_pos))))    
-           cnt<-0
-           for(j in 1:length(rlevels)){
-             hit<-which(data_pos==j)
-             hit<-hit-dim(data)[1]*(ceiling(hit/dim(data)[1])-1)
-             if(length(hit)>0){
-               Ztmp@i[cnt+1:length(hit)]<-as.integer(hit-1)
-               cnt<-cnt+length(hit)
-             }
-           }  
-           Ztmp@x<-xfactor
-         }
-         if(i==1){
-           Z<-Ztmp
-         }else{
-           Z<-cBind(Z, Ztmp)          
-         }
-       }
-     }else{
-       Z<-as(matrix(0,1,0), "sparseMatrix")
-     }
-     nR<-nr-nG-1  # number of R structures
-     if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
-     if(is.null(tune)){
-       AMtune=c(rep(FALSE, nG), rep(TRUE, nR))
-       for(i in 1:nR){
-         tune[[i]] = diag(nfl[nG+i])
-       }
-     }else{
-       AMtune=rep(FALSE, nR+nG)
-       if(nR>1){
-         tune<-sapply(diag(tune), as.matrix, simplify=FALSE)
-       }else{
-         tune<-list(tune)
-       }
-       for(i in 1:nR){
-         if(dim(tune[[i]])[1]!= dim(tune[[i]])[2] |  dim(tune[[i]])[2]!= nfl[nG+i]){stop(paste("proposal distribution ", i, " is the wrong dimension"))}
-         if(is.positive.definite(tune[[i]])==FALSE){stop(paste("proposal distribution ", i, " is not positive definite"))}
-       }
-     }	
+    nR<-nr-nG-1  # number of R structures
+    if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
+    if(is.null(tune)){
+      AMtune=c(rep(FALSE, nG), rep(TRUE, nR))
+      for(i in 1:nR){
+        tune[[i]] = diag(nfl[nG+i])
+      }
+    }else{
+      AMtune=rep(FALSE, nR+nG)
+      if(nR>1){
+        tune<-sapply(diag(tune), as.matrix, simplify=FALSE)
+      }else{
+        tune<-list(tune)
+      }
+      for(i in 1:nR){
+        if(dim(tune[[i]])[1]!= dim(tune[[i]])[2] |  dim(tune[[i]])[2]!= nfl[nG+i]){stop(paste("proposal distribution ", i, " is the wrong dimension"))}
+        if(is.positive.definite(tune[[i]])==FALSE){stop(paste("proposal distribution ", i, " is not positive definite"))}
+      }
+    }	
 
 ############################
 # Build Fixed Effect Model #
 ############################
 
-       fmodel.terms<-strsplit(as.character(fixed)[3], " *\\+ *")[[1]]
-       for(r in 1:length(fmodel.terms)){          
-         if(length(grep("leg\\(", fmodel.terms[r]))>0){
-           rr.covariate<-strsplit(fmodel.terms[r], "\\(|\\)|\\,|\\):")[[1]][c(2:4)]     
-           legvar.name<-paste("leg", rr.covariate[1],  abs(as.numeric(rr.covariate[2])),sep=".")
-           if(legvar.name%in%names(data)==FALSE){
-             lp<-legendre.polynomials(abs(as.numeric(rr.covariate[2])), TRUE)
-             if(as.numeric(rr.covariate[2])<0){
-               lp<-lp[-1]
-             }			
-             legvar<-sapply(lp,function(lp){as.function(lp)(data[,rr.covariate[1]])})
-             data$legvar<-legvar
-             names(data)[which(names(data)=="legvar")]<-legvar.name
-           }
-           if(is.na(rr.covariate[3])){
-             fmodel.terms[r]<-legvar.name
-           }else{
-             fmodel.terms[r]<-paste(legvar.name,rr.covariate[3],sep=":")
-           }
-         }
-       }
+   fixed<-as.formula(paste("~",as.character(fixed)[3]))
 
-   X<-model.matrix(as.formula(paste("~", paste(fmodel.terms, collapse="+"), sep="")),data)
+   X<-model.matrix(fixed,data)
+
    if(nadded>0){
      X[which(data$MCMC_dummy==1),]<-0
+#      X[ncol(X),]<-0
    }
    if(any(is.na(X))){stop("missing values in the fixed predictors")}
    if(singular.ok==FALSE){
      if(all(is.na(data$MCMC_y))){stop("all data are missing. Use singular.ok=TRUE to sample these effects, but use an informative prior!")}
+
      sing.rm<-lm(data$MCMC_y~X-1, subset=is.na(data$MCMC_y)==FALSE)
+
      sing.rm<-which(is.na(sing.rm$coef))
      if(length(sing.rm)){
        warning("some fixed effects are not estimable and have been removed. Use singular.ok=TRUE to sample these effects, but use an informative prior!")
@@ -812,9 +572,14 @@
      }
    }	
    X<-as(X, "sparseMatrix")
-#   if(nadded>0){
-#     X[,1][which(data$MCMC_dummy==1)]<-1e-128
-#   }
+   if(any(rowSums(X)==0)){
+     X[,1][which(rowSums(X)==0)]<-1e-18
+   }
+
+#####################################
+# Check prior for the fixed effects #
+#####################################
+
    if(is.null(prior$B)){
       prior$B=list(V=diag(dim(X)[2])*1e+10, mu=matrix(0,dim(X)[2],1))
    }else{
@@ -853,7 +618,8 @@
        mvtype<-c(mvtype,mvtype_tmp) 
        cnt<-cnt+nfl[i+nG]*nrl[i+nG]
     }
-	
+
+    stcutpoints<-c()	
     if(is.null(start$liab)){
        data$MCMC_liab<-rep(NA, length(data$MCMC_y)) 
        if(QUASI==TRUE){ 
@@ -866,7 +632,7 @@
             v<-1
             data$MCMC_liab[trait_set]<-rnorm(length(trait_set), mu,v)
           }else{
-            if(data_tmp$MCMC_family.names[1]=="poisson" | data_tmp$MCMC_family.names[1]=="cenpoisson" ){
+            if(data_tmp$MCMC_family.names[1]=="poisson" | data_tmp$MCMC_family.names[1]=="cenpoisson"){
               mu<-mean((data_tmp$MCMC_y+1), na.rm=TRUE)
               v<-abs(log(((var(data_tmp$MCMC_y+1, na.rm=TRUE)-mu)/(mu^2))+1))
               mu<-log(mu)-0.5*v
@@ -886,6 +652,15 @@
               v<-abs((as.numeric(m1$dispersion[1])-1)/2)
               mu<-as.numeric(m1$coef[1])
             }
+            if(data_tmp$MCMC_family.names[1]=="ordinal"){
+              v<-1
+              cps<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(2))
+              mu<-cps[2]
+              cps<-cps-cps[2]
+              cps[1]<--1e+64
+              cps[length(cps)]<-1e+64
+              stcutpoints<-c(stcutpoints, cps)              
+            }
             if(data_tmp$MCMC_family.names[1]=="cengaussian"){ 
               v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){min(abs(x))}) , na.rm=T)
               mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){min(abs(x))}) , na.rm=T)
@@ -895,7 +670,7 @@
               mu<-mean(data_tmp$MCMC_y, na.rm=T)
             }
             if(data_tmp$MCMC_family.names[1]=="zipoisson"){
-              if(max(data_tmp$MCMC_y)==1){
+              if(max(data_tmp$MCMC_y, na.rm=T)==1){
                 mu<-logit(mean(data_tmp$MCMC_y==1))
                 v<-diag(GRprior[[nR]]$V)[length(diag(GRprior[[nR]]$V))]
               }else{
@@ -943,13 +718,6 @@
 
     GRinv<-unlist(lapply(GR, function(x){c(solve(x))}))
     GRvpP<-lapply(GRprior, function(x){(x$V)*(x$n)})
-    for(i in 1:length(GRprior)){
-      if(is.null(GRprior[[i]]$fix)==FALSE){
-        Crows<-GRprior[[i]]$fix:dim(GRprior[[i]]$V)[1]
-        GRvpP[[i]][Crows,Crows]<-GRprior[[i]]$V[Crows,Crows,drop=FALSE]*(nrl[i]+GRprior[[i]]$n)
-      }
-    }
-
     GRvpP<-unlist(GRvpP)
     GRnpP<-unlist(lapply(GRprior, function(x){c(x$n)}))
     BvpP<-c(solve(prior$B$V))
@@ -959,17 +727,31 @@
     if(diagR){
       diagP[length(nfl)]<-1
     }
+
+    nordinal<-length(ncutpoints)
+    if(nordinal==0){
+      ncutpoints<-1
+      stcutpoints<-1
+    }  # no cutpoints need to be estimated if cutpoints=3 (standard binary)
+    ncutpoints_store<-sum((ncutpoints-3)*(ncutpoints>3))
+
     data$MCMC_family.names<-match(data$MCMC_family.names, family.types)     # add measurement error variances and y.additional 
 
     if(nitt%%1!=0){stop("nitt must be integer")}
     if(thin%%1!=0){stop("thin must be integer")}
     if(burnin%%1!=0){stop("burnin must be integer")}
 
-    nkeep<-ceiling((nitt-burnin)/thin)
+    nkeep<-floor((nitt-burnin)/thin)
 
     if(nkeep<1){stop("burnin is equal to, or greater than number of iterations")}
 
     Loc<-1:((sum((nfl*nrl)[1:nG])*pr+dim(X)[2])*nkeep)
+
+    if(ncutpoints_store>0){
+      CP<-1:(ncutpoints_store*nkeep)
+    }else{
+      CP<-1
+    }
     dbar<-1:(2+nkeep)
 
     if(pl==TRUE){
@@ -997,8 +779,6 @@
       PedDim<-c(1,1)
     }
 
-    if(length(mfac)==0){mfac=-999}
-    	
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
         as.double(data$MCMC_y.additional),
@@ -1052,36 +832,53 @@
         as.integer(AMtune),
 	as.integer(DIC),
         as.double(dbar),	  
-        as.integer(proposal) 
+        as.integer(proposal),
+        as.integer(ncutpoints),
+        as.integer(nordinal),
+        as.double(stcutpoints),
+        as.double(CP)
         )
 
-        Sol<-t(matrix(output[[39]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
-        if(pr){      
-          colnames(Sol)<-c(colnames(X),colnames(Z))
-        }else{
-          colnames(Sol)<-c(colnames(X))
-        }
-        colnames(Sol)<-gsub("MCMC_", "", colnames(Sol))
+        if(ncutpoints_store==0){
+          Sol<-t(matrix(output[[39]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
+          if(pr){      
+            colnames(Sol)<-c(colnames(X),colnames(Z))
+          }else{
+            colnames(Sol)<-c(colnames(X))
+          }
+          colnames(Sol)<-gsub("MCMC_", "", colnames(Sol))
+       }else{
+          Sol<-matrix(0,nkeep, sum((nfl*nrl)[1:nG])*pr+dim(X)[2]+ncutpoints_store)
+          Sol[,1:ncutpoints_store]<-t(matrix(output[[57]],ncutpoints_store, nkeep))
+          Sol[,ncutpoints_store+1:(sum((nfl*nrl)[1:nG])*pr+dim(X)[2])]<-t(matrix(output[[39]],sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
+          if(pr){      
+            colnames(Sol)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){1:x})), sep=""), colnames(X),colnames(Z))
+          }else{
+            colnames(Sol)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){1:x})), sep=""), colnames(X))
+          }
+          colnames(Sol)<-gsub("MCMC_", "", colnames(Sol))
+       }
 
         VCV<-t(matrix(output[[40]], length(GRinv), nkeep))
         colnames(VCV)<-variance.names
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
 
         if(DIC==TRUE){
-         deviance<-mcmc(-2*output[[52]][1:nkeep], start=burnin+1, end=nitt, thin=thin)
+         deviance<-mcmc(-2*output[[52]][1:nkeep], start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
          DIC<--4*output[[52]][nkeep+1]+2*output[[52]][nkeep+2]
         }else{
          deviance<-NULL
          DIC<-NULL
         }
         if(pl==TRUE){
-          Liab<-mcmc(t(matrix(output[[41]], length(data$MCMC_y), nkeep)), start=burnin+1, end=nitt, thin=thin)
+          Liab<-mcmc(t(matrix(output[[41]], length(data$MCMC_y), nkeep)), start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
         }else{
           Liab<-NULL
         }
-    	options("na.action"="na.omit")
 
-        list(Sol=mcmc(Sol, start=burnin+1, end=nitt, thin=thin), VCV=mcmc(VCV, start=burnin+1, end=nitt, thin=thin), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC)
+    	options("na.action"=orig.na.action)
+
+        list(Sol=mcmc(Sol, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin), VCV=mcmc(VCV, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC)
 	
 }
 

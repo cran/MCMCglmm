@@ -15,7 +15,7 @@ the full-sib family identifiers in PlodiaPO}
 \source{Tidbury H & Boots M (2007) University of Sheffield}
 \references{
 }
-\seealso{PlodiaRB, PlodiaPO}
+\seealso{\link{PlodiaRB}, \link{PlodiaPO}}
 \keyword{datasets}
 
 

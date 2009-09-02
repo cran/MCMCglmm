@@ -11,7 +11,7 @@ full-sib family (\code{FSfamily}), phenoloxidase measures (\code{PO}), and plate
 \source{Tidbury H & Boots M (2007) University of Sheffield}
 \references{
 }
-\seealso{PlodiaR, PlodiaRB}
+\seealso{\link{PlodiaR}, \link{PlodiaRB}}
 \keyword{datasets}
 
 

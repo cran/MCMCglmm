@@ -1,10 +1,7 @@
 \name{list2bdiag}
 \alias{list2bdiag}
-\title{Forms the direct product from a list of matrices}
-\description{
- Forms a block-diagonal matrix through the direct product from a list of 
-matrices
- }
+\title{Forms the direct sum from a list of matrices}
+\description{Forms a block-diagonal matrix from a list of matrices}
 \usage{
 list2bdiag(x)
 }
@@ -19,7 +16,7 @@ list2bdiag(x)
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{}
 \examples{
-M<-list(rIW(10, diag(3)), rIW(10, diag(2)))
+M<-list(rIW(diag(3), 10), rIW(diag(2), 10))
 list2bdiag(M)
 }
 \keyword{manip}

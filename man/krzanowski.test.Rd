@@ -28,8 +28,8 @@ a value of \code{length(vecsA)} for identical subspaces}
 \note{}
 \seealso{}
 \examples{
-CA<-rIW(10, diag(5), n=1)
-CB<-rIW(10, diag(5), n=1)
+CA<-rIW(diag(5),10, n=1)
+CB<-rIW(diag(5),10, n=1)
 krzanowski.test(CA, CB, vecsA=1:2, vecsB=1:2)
 krzanowski.test(CA, CA, vecsA=1:2, vecsB=1:2)
 }

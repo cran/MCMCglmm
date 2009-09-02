@@ -9,4 +9,5 @@ extern "C"{
 #include "R.h" 
 #include "Rmath.h" 
 #include <iostream>
-
+#include <limits>
+using namespace std;

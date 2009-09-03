@@ -15,7 +15,7 @@ binomial variable has been expanded into a binary variable for each individual.}
 \source{Tidbury H & Boots M (2007) University of Sheffield}
 \references{
 }
-\seealso{PlodiaR, PlodiaPO}
+\seealso{\link{PlodiaR}, \link{PlodiaPO}}
 \keyword{datasets}
 
 

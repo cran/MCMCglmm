@@ -28,7 +28,7 @@
 \newpage
 
 
-MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov chain Monte Carlo techniques \citep{Hadfield.2009b}. Most commonly used distributions like the normal and the Poisson are supported together with some useful but less popular ones like the zero-inflated Poisson and the multinomial. Missing values and left, right and interval censoring are accommodated for all traits. The package also supports multi-trait models where the multiple responses can follow different types of distribution.  The package allows various residual and random-effect variance structures to be specified including heterogeneous variances, unstructured covariance matrices and random regression (e.g. random slope models).  Three special types of variance structure that can be specified are those associated with pedigrees (animal models), phylogenies (the comparative method) and measurement error (meta-analysis).  The package makes heavy use of results in \citet{Sorensen.2002} and \citet{Davis.2006} which taken together result in what is hopefully a fast and efficient routine. Most small to medium sized problems should take seconds to a few minutes, but large problems (> 20,000 records) are possible.  My interest is in evolutionary biology so there are also several functions for applying tensor analysis \citep{Rice.2004} to real data and functions for visualising and comparing matrices.
+MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov chain Monte Carlo techniques \citep{Hadfield.2009b}. Most commonly used distributions are supported together with some useful but less popular ones such as the zero-inflated Poisson and the ordinal or nominal multinomial. Missing values and left, right and interval censoring are accommodated for all traits. The package also supports multi-response models where the responses can follow different types of distribution.  The package allows various residual and random-effect variance structures to be specified including heterogeneous variances, unstructured covariance matrices and random regression (e.g. random slope models).  Three special types of variance structure that can be specified are those associated with pedigrees (animal models), phylogenies (the comparative method) and measurement error (meta-analysis).  The package makes heavy use of results in \citet{Sorensen.2002} and \citet{Davis.2006} which taken together result in what is hopefully a fast and efficient routine. Most small to medium sized problems should take seconds to a few minutes, but large problems (> 20,000 records) are possible.  My interest is in evolutionary biology so there are also several functions for applying tensor analysis \citep{Rice.2004} to real data and functions for visualising and comparing matrices.
 
 
 \begin{Schunk}
@@ -36,7 +36,6 @@ MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov c
 > library("MCMCglmm")
 \end{Sinput}
 \end{Schunk}
-
 
 \section{An Empirical Example}
 
@@ -47,7 +46,6 @@ To demonstrate how to fit and interpret these models we will use some data from 
 > data(PlodiaPO)
 \end{Sinput}
 \end{Schunk}
-
 
 We'll start with a simple analysis of PO which was box-cox transformed so that it was approximately normal.
 
@@ -83,7 +81,8 @@ On the left of Figure \ref{model1Sol-fig} is a time series of the parameter as t
 > posterior.mode(model1$Sol)
 \end{Sinput}
 \begin{Soutput}
-[1] 1.163622
+(Intercept) 
+   1.163132 
 \end{Soutput}
 \end{Schunk}
 
@@ -95,7 +94,7 @@ The probability that the intercept is greater than 1.15 is simply the proportion
 \end{Sinput}
 \begin{Soutput}
 FALSE  TRUE 
-0.188 0.812 
+0.202 0.798 
 \end{Soutput}
 \end{Schunk}
 
@@ -107,7 +106,7 @@ and the region of 95\% support can be obtained by finding the interval with the 
 \end{Sinput}
 \begin{Soutput}
                lower    upper
-(Intercept) 1.131230 1.195282
+(Intercept) 1.135162 1.197875
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -122,12 +121,12 @@ However, these metrics are only an accurate description of the true posterior di
 \begin{Soutput}
 , , (Intercept)
 
-       (Intercept)
-Lag 0   1.00000000
-Lag 1  -0.01300480
-Lag 5   0.01733648
-Lag 10  0.01776713
-Lag 50 -0.02985370
+        (Intercept)
+Lag 0    1.00000000
+Lag 10  -0.05060955
+Lag 50  -0.01527613
+Lag 100 -0.05677407
+Lag 500  0.03530793
 \end{Soutput}
 \end{Schunk}
 
@@ -159,7 +158,7 @@ There are two variances, one associated with family effects and one associated w
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.1290778 0.3210156
+var1 0.1295410 0.3242785
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -167,12 +166,12 @@ attr(,"Probability")
 
 A valid posterior for any transformation of model parameters can be obtained by applying that transformation to each sample and analysing the result.\\
 
-This model was fitted without explicitly specifying a prior and the default priors were used. In certain circumstances this can lead to inferential and numerical problems\footnote{When this results in numerical problems (variances close to zero or correlations close to -1 or 1) MCMCglmm can fail, although I've tried make it do so nicely.} and Section \ref{prior-subsec} should be read carefully. To assess the sensitivity of the analysis to alternative prior specifications lets have a weak prior (n=1) equal to half the variance in PO for each variance component:
+This model was fitted without explicitly specifying a prior and the default priors were used. In certain circumstances this can lead to inferential and numerical problems\footnote{When this results in numerical problems (variances close to zero or correlations close to -1 or 1) MCMCglmm can fail, although I've tried make it do so nicely.} and Section \ref{prior-subsec} should be read carefully. To assess the sensitivity of the analysis to alternative prior specifications lets have a weak prior (nu=1) equal to half the variance in PO for each variance component:
 
 \begin{Schunk}
 \begin{Sinput}
 > halfV <- var(PlodiaPO$PO)/2
-> prior = list(R = list(n = 1, V = halfV), G = list(G1 = list(n = 1, 
+> prior = list(R = list(nu = 1, V = halfV), G = list(G1 = list(nu = 1, 
 +     V = halfV)))
 > model2 <- MCMCglmm(PO ~ 1, random = ~FSfamily, data = PlodiaPO, 
 +     verbose = FALSE, prior = prior)
@@ -184,7 +183,7 @@ This model was fitted without explicitly specifying a prior and the default prio
 \begin{center}
 \includegraphics{Tutorial-015}
 \end{center}
-\caption{MCMC output from  \texttt{model1} (black trace) which was fitted without a prior on the variance components (n=0) and \texttt{model2} in which a weak but proper prior (n=1, V=0.02) was used (red trace) }
+\caption{MCMC output from  \texttt{model1} (black trace) which was fitted without a prior on the variance components (nu=0) and \texttt{model2} in which a weak but proper prior (nu=1, V=0.02) was used (red trace) }
 \label{model2VCV-fig}
 \end{figure}
 
@@ -254,19 +253,19 @@ There is another way we could have fitted \texttt{model3}, and that is by expand
 \begin{Schunk}
 \begin{Sinput}
 > data(PlodiaRB)
-> prior = list(R = list(V = 1, n = 0, fix = 1), G = list(G1 = list(V = 1, 
-+     n = 0)))
+> prior = list(R = list(V = 1, nu = 0, fix = 1), G = list(G1 = list(V = 1, 
++     nu = 0)))
 > model4 <- MCMCglmm(Pupated ~ 1, random = ~FSfamily, family = "categorical", 
 +     data = PlodiaRB, prior = prior, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
-Binary responses (or other responses that are discrete) are of the family \texttt{"categorical"}.  They pose a special problem because the residual variance cannot be estimated because the variance is uniquely determined by the mean. When proper priors are used this does not pose a problem to a Bayesian analyst, but we do have to be aware that all the information regarding the parameter is coming from the prior.  Because of this it is usual to fix these parameters at some value (conventionally one for variances and 0 for covariances) and this can be done by specifying \texttt{fix=1} in the appropriate prior element.  An identical procedure for simple models such as this would be to specify a very informative prior (\texttt{n} is large) around \texttt{V}:
+Binary responses (or other responses that are discrete) are of the family \texttt{"categorical"}.  They pose a special problem because the residual variance cannot be estimated because the variance is uniquely determined by the mean. When proper priors are used this does not pose a problem to a Bayesian analyst, but we do have to be aware that all the information regarding the parameter is coming from the prior.  Because of this it is usual to fix these parameters at some value (I use 1 for variances and 0 for covariances) and this can be done by specifying \texttt{fix=1} in the appropriate prior element.  An identical procedure for simple models such as this would be to specify a very informative prior (\texttt{n} is large) around \texttt{V}:
 
 \begin{Schunk}
 \begin{Sinput}
-> prior = list(R = list(V = 1, n = 1e+06), G = list(G1 = list(V = 1, 
-+     n = 0)))
+> prior = list(R = list(V = 1, nu = 1e+06), G = list(G1 = list(V = 1, 
++     nu = 0)))
 \end{Sinput}
 \end{Schunk}
 
@@ -291,12 +290,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-     0.2976256      0.0259197      0.0008197      0.0009884 
+     0.2956265      0.0246688      0.0007801      0.0006351 
 
 2. Quantiles for each variable:
 
   2.5%    25%    50%    75%  97.5% 
-0.2493 0.2793 0.2974 0.3140 0.3503 
+0.2491 0.2788 0.2949 0.3120 0.3444 
 \end{Soutput}
 \begin{Sinput}
 > summary(mu.model4)
@@ -311,12 +310,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-      0.294072       0.026090       0.000825       0.001039 
+     0.2939079      0.0265516      0.0008396      0.0012199 
 
 2. Quantiles for each variable:
 
   2.5%    25%    50%    75%  97.5% 
-0.2473 0.2774 0.2926 0.3093 0.3506 
+0.2446 0.2759 0.2929 0.3106 0.3479 
 \end{Soutput}
 \end{Schunk}
 
@@ -339,8 +338,8 @@ Fitting a sensible model to bivariate data requires a bit more work, because usu
  
 \begin{Schunk}
 \begin{Sinput}
-> prior = list(R = list(V = diag(2), n = 0, fix = 2), G = list(G1 = list(V = diag(2), 
-+     n = 1)))
+> prior = list(R = list(V = diag(2), nu = 0, fix = 2), G = list(G1 = list(V = diag(2), 
++     nu = 1)))
 > model5 <- MCMCglmm(cbind(PO, Pupated) ~ trait - 1, random = ~us(trait):FSfamily, 
 +     rcov = ~idh(trait):units, family = c("gaussian", "categorical"), 
 +     data = PlodiaPORB, prior = prior, verbose = FALSE)
@@ -444,25 +443,25 @@ A warning message appears saying that missing records have been added. This is b
 \begin{Soutput}
 , , animal
 
-            animal        units
-Lag 0   1.00000000 -0.779125329
-Lag 1   0.62893205 -0.577521640
-Lag 5   0.02671291 -0.004937284
-Lag 10 -0.04527634  0.046379767
-Lag 50 -0.12431376  0.098593830
+             animal       units
+Lag 0    1.00000000 -0.86763896
+Lag 10   0.78517294 -0.74248076
+Lag 50   0.37191247 -0.33150660
+Lag 100  0.10782276 -0.08179846
+Lag 500 -0.01659453  0.02127845
 
 , , units
 
-            animal        units
-Lag 0  -0.77912533  1.000000000
-Lag 1  -0.54949653  0.508155180
-Lag 5  -0.01988529 -0.008323217
-Lag 10  0.05968535 -0.047905166
-Lag 50  0.07254662 -0.060898826
+             animal       units
+Lag 0   -0.86763896  1.00000000
+Lag 10  -0.74358025  0.69515408
+Lag 50  -0.33737790  0.30138629
+Lag 100 -0.09836561  0.06664480
+Lag 500  0.03351761 -0.03014689
 \end{Soutput}
 \end{Schunk}
 
-That being said the two analyses give the same answer we just have to run the second for longer to get the same degree of accuracy\footnote{note that they are not perfectly identical because the default prior of \texttt{n=0} is not uninformative. For a single variance component \texttt{V=0, n=-2} is uninformative and using these priors the two methods give indistinguishable results at moderate heritabilities.}(Figure \ref{model6H2-fig}):
+That being said the two analyses give the same answer we just have to run the second for longer to get the same degree of accuracy\footnote{note that they are not perfectly identical because the default prior of \texttt{nu=0} is not uninformative. For a single variance component \texttt{V=0, nu=-2} is uninformative and using these priors the two methods give indistinguishable results at moderate heritabilities.}(Figure \ref{model6H2-fig}):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -622,9 +621,7 @@ Another variation on the simple mixed effect model is random regression.  In sta
 \end{equation}
 
 
-where the first and second columns are associated with the (random) intercept's for families 1 and 2, and the third and fourth columns are associated with the (random) slopes for families 1 and 2. \texttt{leg(time,1):family} fits a random intercept-slope model across families for the covariate time. \texttt{n} specifies the order of the polynomial with \texttt{n=1} having intercept and slope, and \texttt{n=2} having an intercept, slope and quadratic term\footnote{The design matrix ${\bf Z}$ is not actually 1's for the intercept and \texttt{time} for the slope because I use normailsed Legendre polynmials rather than ordinary polynomials. \texttt{legendre.polynomials(n, TRUE)} will give the appropriate scalings.}.  An unstructured (co)variance matrix is fitted, meaning that the covariance between intercept and slope is always estimated.
-
-
+where the first and second columns are associated with the (random) intercept's for families 1 and 2, and the third and fourth columns are associated with the (random) slopes for families 1 and 2. \texttt{us(1+time):FSfamily} fits a random intercept-slope model across families for the covariate time. The \texttt{us()} structure fits the covariance between intercept and slope but this could be set to zero using either \texttt{idh(1+time):FSfamily} or alternatively \texttt{idh(time):FSfamily+FSfamily}. Higher order polynomials can be fitted using either using the \texttt{poly} or \texttt{leg} functions; \texttt{us(1+time):FSfamily}, \texttt{us(leg(time,1,normalized=FALSE)):FSfamily} and \texttt{us(1+poly(time,1,raw=TRUE)):FSfamily} are all equivalent.
 
 \subsection{Priors}
 \label{prior-subsec}
@@ -633,11 +630,12 @@ The prior specification is passed to \texttt{MCMCglmm} by the \texttt{prior} arg
 
 \begin{Schunk}
 \begin{Sinput}
-> prior = list(R = list(V = diag(3), n = 3))
+> prior = list(R = list(V = diag(3), nu = 3))
 \end{Sinput}
 \end{Schunk}
 
-which is inverse Wishart distributed with inverse scale matrix \texttt{solve(n*V)} and degree of belief parameter \texttt{n}.  You can get a feel for this using the \texttt{rIW} function which generates random samples from the distribution. The default prior is \texttt{n=0} and is not proper, but it is informative. The specification \texttt{V=diag(k)*0, n=k-1} where \texttt{k} is the dimension of \texttt{V} is uninformative, but I strongly recommend you use proper priors where \texttt{n} is greater than or equal to \texttt{k}. If nothing else, \texttt{MCMCglmmm} may baulk after many iterations if the parameters are not well identified.  When \texttt{idh()} structures are used each diagonal element of the matrix is independently distributed \emph{a priori}. The distribution of the diagonal element has the same marginal distribution as that element would have in the standard inverse-Wishart distribution (i.e. $\sim IW(n-k+1, (n\sigma^{2})^{-1})$) such that the prior specification above would actually be equivalent to three priors on each diagonal element with \texttt{V=1} and \texttt{n=1}.\\  
+which is inverse Wishart distributed with inverse scale matrix \texttt{solve(n*V)} and degree of belief parameter \texttt{n}.  You can get a feel for this using the \texttt{plotprior} function which generates random samples from the distribution and plots the resulting histogram. The default prior is \texttt{nu=0} and is not proper, but it is informative. The specification \texttt{V=diag(k)*0, nu=k-1} where \texttt{k} is the dimension of \texttt{V} is uninformative, but I strongly recommend you use proper priors where \texttt{n} is greater than or equal to \texttt{k}. If nothing else, \texttt{MCMCglmm} may baulk after many iterations if the parameters are not well identified. When \texttt{idh()} structures are used each diagonal element of the matrix is independently distributed \emph{a priori}. The distribution of the diagonal element has the same marginal distribution as that element would have in the standard inverse-Wishart distribution (i.e. $\sim IW(n-k+1, (n\sigma^{2})^{-1})$) such that the prior specification above would actually be equivalent to three priors on each diagonal element with \texttt{V=1} and \texttt{nu=1}.\\  
+It is also worth noting that in the univariate case the prior specification \texttt{V=1} and \texttt{n=0.002} is equivalent to an inverse gamma distribution with $\alpha=\beta=0.001$, which is often used in WinBUGS.\\  
 
 The fixed effects have a multivariate normal distribution equal in dimension to the number of fixed effects. \texttt{B} has two arguments a mean vector \texttt{mu} and a (co)variance matrix \texttt{V}. The default has a zero mean vector and a diagonal variance matrix with large variances (1e+10). 
 
@@ -647,7 +645,7 @@ In meta-analysis we fix the variance component to one because we are assuming we
 
 \begin{Schunk}
 \begin{Sinput}
-> prior = list(R = list(V = diag(3), n = 3, fix = 2))
+> prior = list(R = list(V = diag(3), nu = 3, fix = 2))
 \end{Sinput}
 \end{Schunk}
  
@@ -672,7 +670,7 @@ Starting values are passed to \texttt{MCMCglmm} by the \texttt{start} argument. 
 
 \subsection{Tuning parameters}
 
-For certain types and combinations of distribution the liabilities have to be sampled using Metropolis-Hastings (MH) updates rather than Gibbs sampling.  The choice of proposal distribution for the MH sampler can strongly effect the rate of convergence and the mixing properties of the chain.  By default an adaptive MH sampler is used which modifies the proposal distribution so it has an efficient rate of jumping. Once the burnin period is over this proposal distribution is fixed so as to ensure that the posterior distribution is valid. Alternatively, a matrix equal in dimension to the R-structure can be passed to the tune argument, and this will serve as the covariance matrix for the proposal distribution centred on the previous value of the liabilities.
+For certain types and combinations of distribution the liabilities have to be sampled using Metropolis-Hastings (MH) updates rather than Gibbs sampling.  The choice of proposal distribution for the MH sampler can strongly effect the rate of convergence and the mixing properties of the chain.  By default an adaptive MH sampler is used which modifies the proposal distribution so it has an efficient rate of jumping. Once the burnin period is over this proposal distribution is fixed so as to ensure that the posterior distribution is valid. Alternatively, a matrix equal in dimension to the R-structure can be passed to the tune argument, and this will serve as the covariance matrix for the proposal distribution centered on the previous value of the liabilities.
 
 \subsection{Distributions}
 
@@ -690,6 +688,7 @@ Distribution   &    No. Data       &         No. liability       &      Recommen
    \texttt{"poisson"}        &  1  &   1 &     standard &     none \\   
    \texttt{"categorical"}        &  1  &   $k$-1  &   \texttt{us(trait):units} &    \texttt{fix=1, V=}$0.5({\bf I}+{\bf J})$ \\   
    \texttt{"multinomial$k$"}  &  $k$    &  $k$-1  & standard  &    none \\   
+   \texttt{"ordinal"}         &  1      &  1      & standard  &   \texttt{fix=1, V=1} \\   
    \texttt{"exponential"}         &  1  &   1  &     standard &    none \\   
 \hline\\
    \texttt{"cengaussian"}        &  2 &   1  &     standard &    none \\   
@@ -697,7 +696,7 @@ Distribution   &    No. Data       &         No. liability       &      Recommen
    \texttt{"cenexponential"}     &2    &  1  &   standard  &     none \\    
 \hline\\
         &    &     &      &   \texttt{fix=2,}\\   
-   \texttt{"zipoisson"}        &  1  &   2  &    \texttt{idh(trait):units} &   \texttt{V=as.matrix(c(a,0,0,1),2,2)}\\   
+   \texttt{"zipoisson"}        &  1  &   2  &     \texttt{idh(trait):units} &   \texttt{V=as.matrix(c(a,0,0,1),2,2)}\\   
 \hline\\
 \end{tabular}
 \caption{Distribution types that can fitted using \texttt{MCMCglmm}; their dimension and recommended residual variance structures.  For multi-trait analyses there are no hard and fast rules although \texttt{us(trait):units} is often a good starting point for the residual variance structure. The prefix \texttt{"cen"} standards for censored, and the prefix \texttt{"zi"} stands for zero-inflated. $k$ stands for the number of categories in the multinomial/categorical distributions and this must be specified in the family argument for the multinomial distribution. ${\bf I}$ is the identity matrix and ${\bf J}$ the unit matrix of all ones. In this context they both have dimension $k-1$}
@@ -705,11 +704,11 @@ Distribution   &    No. Data       &         No. liability       &      Recommen
 \label{Dist-tab}
 \end{table}
 
-Multinomial and categorical models are parametrised in $k-1$ dimensions where $k$ is the number of categories. For multinomial data that only have a single count the data can be represented by a column of factors. If they are passed in this way then the baseline category is the first factor level. I've done this so that if a binary trait is passed, the model is predicting ones not zeros as is usual.  If the distribution is specified as multinomial$k$ then the data is expected to have $k$ columns. In this instance the final column is treated as the baseline category in keeping with the usual binomial specification \texttt{cbind(successes, failures)} where the model is predicting successes (not failures).\\    
+Multinomial and categorical models are parameterised in $k-1$ dimensions where $k$ is the number of categories. For multinomial data that only have a single count the data can be represented by a column of factors. If they are passed in this way then the baseline category is the first factor level. I've done this so that if a binary trait is passed, the model is predicting ones not zeros as is usual.  If the distribution is specified as multinomial$k$ then the data is expected to have $k$ columns. In this instance the final column is treated as the baseline category in keeping with the usual binomial specification \texttt{cbind(successes, failures)} where the model is predicting successes (not failures).\\    
 
 For censored responses two data columns must be passed. The first column should contain the minimum value the data could take and the second column the maximum. If these values are finite the data are said to be interval censored. For left censored data use \texttt{-Inf} in the first column and for right censored data use \texttt{Inf} in the second column. If a particular data point is not censored have the same value in both columns.\\   
 
-Although only a single column of data is passed for the zero-inflated Poisson, the response is actually expanded to form a bivariate model. The first \texttt{trait} is the Poisson part of the model and the residual variance can be estimated (to account for over-disperion) but the second \texttt{trait} is the zero-inflation and as with a binary model the residual variance cannot be estimated. In addition the residual (co)variance between the Poisson term and the zero-infaltion term cannot be estimated because we can't observe both processes in a single individual.  Nevertheless this does not mean that these covariances cannot be estimated at the level of some random effect.
+Although only a single column of data is passed for the zero-inflated Poisson, the response is actually expanded to form a bivariate model. The first \texttt{trait} is the Poisson part of the model and the residual variance can be estimated (to account for over-dispersion) but the second \texttt{trait} is the zero-inflation and as with a binary model the residual variance cannot be estimated. In addition the residual (co)variance between the Poisson term and the zero-inflation term cannot be estimated because we can't observe both processes in a single individual.  Nevertheless this does not mean that these covariances cannot be estimated at the level of some random effect.
 
 \subsection{Deviance and DIC}
 
@@ -744,7 +743,7 @@ Models with lower DIC are preferred.
 
 \section{Acknowledgements}
 
-This work would not have been possible without the CSparse library written by Tim Davis and the comprehensive book on MCMC and mixed models by Sorensen \& Gianola.   I am grateful to Loeske Kruuk for providing funding for this work through the Leverhulme Trust, and Hannah Tidbury and Mike Boots for allowing me to use their data to demonstrate the package. Laura Ross did battle with the tutorial.
+This work would not have been possible without the CSparse library written by Tim Davis and the comprehensive book on MCMC and mixed models by Sorensen \& Gianola.   I am grateful to Loeske Kruuk for providing funding for this work through the Leverhulme Trust, and Hannah Tidbury and Mike Boots for allowing me to use their data to demonstrate the package. Laura Ross did battle with the tutorial, and serveral people have pointed out bugs with earlier versions; Gregor Gorjanc, Julien Martin, Michael Morrisey,  Shinichi Nakagawa, Matt Robinson, \& Sha Tao to name a few.  
 
 \bibliographystyle{plainnat}
 

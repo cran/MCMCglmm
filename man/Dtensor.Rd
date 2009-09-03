@@ -22,7 +22,7 @@ a tensor if \code{evaluate=TRUE}}
 \references{Rice, S.H. (2004) Evolutionary Theory: Mathematical and Conceptual 
 Foundations. Sinauer (MA) USA.}
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{evalDtensor, Dexpresions, D}
+\seealso{\code{\link{evalDtensor}}, \code{\link{Dexpressions}}, \code{\link{D}}}
 \examples{
 f<-expression(beta_1 + time * beta_2 + u)
 Dtensor(f,eval=FALSE)

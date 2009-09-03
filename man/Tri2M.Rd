@@ -23,7 +23,7 @@ elements.}
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 \examples{
-M<-rIW(10, diag(3))
+M<-rIW(diag(3), 10)
 x<-Tri2M(M)
 x
 Tri2M(x, reverse=TRUE)

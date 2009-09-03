@@ -38,9 +38,13 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
     snmiss<-which(sire!=-998)                   # sires not missing
     bnmiss<-which(dam!=-999 & sire!=-998)       # neither missing
 
-    if(length(intersect(dam[dnmiss], sire[snmiss]))>0 & (length(dnmiss)>0) & (length(snmiss)>0)){stop("dams appearing as sires")}
-    if(sum(dam[dnmiss]-id[dnmiss])>=0 & (length(dnmiss)>0)){stop("dams appearing before their offspring: try orderPed from MasterBayes")}
-    if(sum(sire[snmiss]-id[snmiss])>=0 & (length(snmiss)>0)){stop("sires appearing before their offspring: try orderPed from MasterBayes")}
+    if(length(intersect(dam[dnmiss], sire[snmiss]))>0 & (length(dnmiss)>0) & (length(snmiss)>0)){warning("dams appearing as sires")}
+    if(any(dam[dnmiss]>id[dnmiss]) & (length(dnmiss)>0)){stop("dams appearing before their offspring: try orderPed from MasterBayes")}
+    if(any(sire[snmiss]>id[snmiss]) & (length(snmiss)>0)){stop("sires appearing before their offspring: try orderPed from MasterBayes")}
+
+    n<-dim(pedigree)[1]
+    nA<-n+2*length(dnmiss)+2*length(snmiss)                                                               # parent-offspring elements
+    nA<-nA+2*sum(duplicated(paste(pedigree[,2], pedigree[,3])[bnmiss])==FALSE)            # add spouse elements
 
     d<-rep(1,length(id))
     
@@ -74,10 +78,9 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
     ngroups<-1
     ggroups<-rep(1, length(id))
     gmeans<-rep(0, dim(G)[1])
+    nA<-1
   }
 
- 
-  
    rbv<-rep(0, dim(G)[1]*length(id))
 
    output<-.C("rbv",
@@ -92,7 +95,8 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
         as.integer(ped),
         as.integer(ggroups-1),
         as.double(c(gmeans)),
-        as.integer(ngroups)
+        as.integer(ngroups),
+        as.integer(nA)
    )       
  
    rbv<-matrix(output[[5]], length(id),  dim(G)[1])

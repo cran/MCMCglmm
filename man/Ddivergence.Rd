@@ -15,13 +15,13 @@ Ddivergence(CA=NULL, CB=NULL, n=10000)
 \value{
   \item{}{d-divergence}
 }
-\references{Ovaskainen et. al. (2008) Proc. Roy. Soc - B (275) 1635 593-750}
+\references{Ovaskainen, O.  et. al. (2008) Proc. Roy. Soc - B (275) 1635 593-750}
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 \note{}
 \seealso{}
 \examples{
-CA<-rIW(10, diag(2), n=1)
-CB<-rIW(10, diag(2), n=1)
+CA<-rIW(diag(2),10, n=1)
+CB<-rIW(diag(2),10, n=1)
 Ddivergence(CA, CB)
 }
 \keyword{multivariate}

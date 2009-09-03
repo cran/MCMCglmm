@@ -4,7 +4,7 @@
 \description{
  Markov chain Monte Carlo Sampler for Multivariate Generalised Linear Mixed 
 Models with special emphasis on correlated random effects arising from pedigrees 
-and phylogenies. Please read the tutorial: \code{vignette("Tutorial", 
+and phylogenies (Hadfield 2009). Please read the tutorial: \code{vignette("Tutorial", 
 "MCMCglmm")}
 }
 \usage{
@@ -16,23 +16,16 @@ MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL,
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
 are passed as a matrix using cbind}
-  \item{random}{\code{\link{formula}} for the random effects. There are three 
-reserved variables: \code{units} which indexes rows of the response variable, 
-\code{trait} which indexes columns of the response variable and \code{animal} 
-which is associated with a pedigree or phylogeny. \code{~rfactor} fits a single 
-variance across all levels of \code{rfactor}, \code{idh(factor):rfactor} fits 
-different \code{rfactor} variances for each level of \code{factor}, and 
-\code{us(factor):rfactor} fits different variances and covariances terms. Random 
-regression using Legendre polynomials is possible using \code{leg(covariate, 
-n):rfactor} where \code{n} is the order of the polynomial. \code{-n} fits an n-
-order polynomial but without the intercept.}
+  \item{random}{\code{\link{formula}} for the random effects. Multiple random terms
+can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):random.term}.
+Currently, the only \code{variance.functions} available are \code{idh} and \code{us}. Both fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.term} effects. For simple random effects the \code{variance.function(formula)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are three reserved variables: \code{units} which index rows of the response variable, \code{trait} which index columns of the response variable and \code{animal} which is associated with a pedigree or phylogeny.} 
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has 
 to be set up so that each data point is associated with a unique residual. For 
-example a multi-trait model might have the R-structure defined by 
+example a multi-response model might have the R-structure defined by 
 \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
-\code{"multinomial"},  \code{"exponential"},  \code{"cengaussian"},  
+\code{"multinomial"},  \code{"ordinal"}, \code{"ordinal"}, \code{"exponential"},  \code{"cengaussian"},  
 \code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"} are 
 supported, where the prefix \code{"cen"} means censored and the prefix 
 \code{"zi"} means zero inflated. If \code{NULL} \code{data} needs to contain a 
@@ -43,18 +36,18 @@ for random effect meta-analysis.}
   \item{start}{optional list having 4 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables 
 or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random 
-effect components. The fourth element \code{QUASI} shoudl be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
+effect components. The fourth element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
   \item{prior}{optional list of prior specifications having 3 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). Each 
 element is a list containing the expected (co)variances (\code{V}) and a degree 
-of belief parameter (\code{n}) for the variance structures (\code{R} and 
+of belief parameter (\code{nu}) for the variance structures (\code{R} and 
 \code{G}). \code{B} is a list containing the expected value (\code{mu}) and a 
 (co)variance matrix (\code{V}) representing the strength of belief. Defaults to 
 \code{n=0} and \code{B$V<-I*1e+8}, where I is an identity matrix of appropriate 
 dimension.}
   \item{tune}{optional (co)variance matrix defining the proposal distribution 
 for the latent variables. If NULL an adaptive algorithm is used which ceases to 
-adapt once the burnin phase has finished.}
+adapt once the burn-in phase has finished.}
   \item{pedigree}{ordered pedigree with 3 columns id, dam and sire or a 
 \code{phylo} object.}
   \item{nodes}{pedigree/phylogeny nodes to be estimated. The default, 
@@ -93,32 +86,39 @@ saved?}
 
 }
 \references{
-For phylogenetic analyses: Hadfield & Nakagawa (2009) \emph{submitted}
-For other analyses: Hadfield  \emph{in prep}
-Sorensen \& Gianola (2004) Springer
+	General analyses: Hadfield, J.D. (2009) \emph{submitted}
+	
+	Phylogenetic analyses: Hadfield, J.D.  and Nakagawa, S. (2009) \emph{submitted}
+	
+	Background Sorensen, D. \& Gianola, D. (2002) Springer
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{mcmc}
+\seealso{\code{\link[coda]{mcmc}}}
 \examples{
 
-# Example 1: univariate gaussian model with standard random effect
+# Example 1: univariate Gaussian model with standard random effect
  
 data(PlodiaPO)  
 model1<-MCMCglmm(PO~1, random=~FSfamily, data=PlodiaPO, verbose=FALSE)
 plot(model1$VCV)
 
-# Example 2: univariate gaussian model with phylogenetically correlated random effect
+# Example 2: univariate Gaussian model with phylogenetically correlated
+# random effect
 
 data(bird.families) 
 
-phylo.effect<-rbv(bird.families, 1, nodes="TIPS") # simulate phylogenetic effects with unit variance
-phenotype<-phylo.effect+rnorm(dim(phylo.effect)[1], 0, 1)  # add residual with unit variance
+phylo.effect<-rbv(bird.families, 1, nodes="TIPS") 
+phenotype<-phylo.effect+rnorm(dim(phylo.effect)[1], 0, 1)  
 
-test.data<-data.frame(phenotype=phenotype, animal=as.factor(row.names(phenotype)))
+# simulate phylogenetic and residual effects with unit variance
 
-prior<-list(R=list(V=1, n=1), G=list(G1=list(V=1, n=1)))
+test.data<-data.frame(phenotype=phenotype, animal=row.names(phenotype))
 
-model2<-MCMCglmm(phenotype~1, random=~animal, data=test.data, pedigree=bird.families, prior=prior, verbose=FALSE)
+prior<-list(R=list(V=1, nu=1), G=list(G1=list(V=1, nu=1)))
+
+model2<-MCMCglmm(phenotype~1, random=~animal, data=test.data, 
+pedigree=bird.families, prior=prior, verbose=FALSE)
+
 plot(model2$VCV)
 
 }

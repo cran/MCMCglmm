@@ -19,7 +19,8 @@ void rbv(
         int *pedigree,
         int *ggroups,
         double *gmeans,
-        int *ngroupP
+        int *ngroupP,
+        int *nA
 ){         
 
   int     i, j, k, cnt, sj, dj;
@@ -27,8 +28,8 @@ void rbv(
   int ngroup = ngroupP[0];
   double  f[nid];
   double  ai;
-  double  AN[nid];
-  double  li[nid];
+  double  AN[nA[0]];
+  double  li[nA[0]];
 
   int dimG = GdimP[0];
 
@@ -60,11 +61,11 @@ void rbv(
   GetRNGstate();
   
   if(pedigree[0]==1){
-
-    for(i=0; i<nid; i++){
+    
+    for(i=0; i<nA[0]; i++){
        li[i]=0.0;               // set l to zero
     }
-    for(i=0; i<100; i++){
+    for(i=0; i<nA[0]; i++){
        AN[i]=-1;               // set AN to zero
     }
          
@@ -105,7 +106,7 @@ void rbv(
         }  
       }else{
         for(j=0; j<dimG; j++){
-          rbv[j*nid+i] += 0.5*gmeans[ggroups[i]];
+          rbv[j*nid+i] += 0.5*gmeans[ggroups[i]+j*ngroup];
         } 
       }
 

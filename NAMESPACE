@@ -1,19 +1,19 @@
 useDynLib(MCMCglmm)
-#import(limma)
 #import(MASS)
 #import(corpcor)
-#import(bayesm)
 #import(combinat)
 #import(mvtnorm)
 #import(orthopolynom)
-#import(survival)
 #import(tensorA)
-#import(Matrix)
-#import(coda)
-#import(bayesSurv)
-#import(nlme)
 import(Matrix)
+#export(merge.level)
+#export(at.level)
+#export(leg)
+#import(coda)
 export(
+#  buildZ,
+#  find.components,
+#  split.direct.sum
   commutation,
   Dtensor,
   evalDtensor,
@@ -26,6 +26,7 @@ export(
   MCMCglmm,
   posterior.mode,
   plotsubspace,
+  plotprior,
   Ptensor,
   Tri2M,
   rbv,
@@ -34,7 +35,10 @@ export(
   Dexpressions,
   inverseA,
   sm2asreml,
-  list2bdiag
+  list2bdiag,
+  at.set,
+  at.level,
+  leg
 ) 
 
 

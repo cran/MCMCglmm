@@ -7,8 +7,8 @@ Covariance matrices of dimension greater than 3 are plotted on the subspace
 defined by the first three eigenvectors.
 }
 \usage{
-  plotsubspace(CA, CB=NULL, corr = FALSE, shadeCA = TRUE, shadeCB = TRUE,
-      axes.lab = FALSE, ...)
+  plotsubspace(CA, CB=NULL, corr = FALSE, shadeCA = TRUE, 
+      shadeCB = TRUE, axes.lab = FALSE, ...)
 }
 \arguments{
   \item{CA}{Matrix}
@@ -29,10 +29,10 @@ variance for each matrix along these three dimensions is given in the plot
 title. 
 }
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk} with code taken from the \code{rgl} package}
-\seealso{rgl}
+\seealso{\code{\link[rgl]{rgl}}}
 \examples{
  if(require(rgl)!=FALSE){
-   G1<-rIW(10, diag(4))
+   G1<-rIW(diag(4),10)
    G2<-G1*1.2
    plotsubspace(G1, G2, shadeCB=FALSE)
  } 

@@ -16,7 +16,7 @@
 #include "R.h" 
 #include "Rmath.h" 
 
-cs *cs_rCinvwishart(const cs *A, double nu, int split);
+cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM);
 
 /* This Function samples from the conditional inverse wishart where A is the inverse sum of squares and split defines the matrix partion. For example: */
 /*                                                                                                                                                     */

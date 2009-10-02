@@ -626,7 +626,7 @@ where the first and second columns are associated with the (random) intercept's 
 \subsection{Priors}
 \label{prior-subsec}
 
-The prior specification is passed to \texttt{MCMCglmm} by the \texttt{prior} argument. It takes a list of 3 elements: \texttt{R}, \texttt{G} and \texttt{B}, which specify the priors for the R-structure, G-structure and the fixed effects.  \texttt{G} is also a list with an element for each random effect. The covariance matrices are assumed to be (conditional)  inverse-Wishart distributed and individual elements for each variance structure take the arguments \texttt{V}, \texttt{n} and \texttt{split} which specify the (co)variance matrix, the degree of freedom parameter, and the partition to condition on.  For example, the residual error structure for a trivariate model may look something like:
+The prior specification is passed to \texttt{MCMCglmm} by the \texttt{prior} argument. It takes a list of 3 elements: \texttt{R}, \texttt{G} and \texttt{B}, which specify the priors for the R-structure, G-structure and the fixed effects.  \texttt{G} is also a list with an element for each random effect. The covariance matrices are assumed to be (conditional)  inverse-Wishart distributed and individual elements for each variance structure take the arguments \texttt{V}, \texttt{n} and \texttt{fix} which specify the (co)variance matrix, the degree of freedom parameter, and the partition to condition on.  For example, the residual error structure for a trivariate model may look something like:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -634,8 +634,7 @@ The prior specification is passed to \texttt{MCMCglmm} by the \texttt{prior} arg
 \end{Sinput}
 \end{Schunk}
 
-which is inverse Wishart distributed with inverse scale matrix \texttt{solve(n*V)} and degree of belief parameter \texttt{n}.  You can get a feel for this using the \texttt{plotprior} function which generates random samples from the distribution and plots the resulting histogram. The default prior is \texttt{nu=0} and is not proper, but it is informative. The specification \texttt{V=diag(k)*0, nu=k-1} where \texttt{k} is the dimension of \texttt{V} is uninformative, but I strongly recommend you use proper priors where \texttt{n} is greater than or equal to \texttt{k}. If nothing else, \texttt{MCMCglmm} may baulk after many iterations if the parameters are not well identified. When \texttt{idh()} structures are used each diagonal element of the matrix is independently distributed \emph{a priori}. The distribution of the diagonal element has the same marginal distribution as that element would have in the standard inverse-Wishart distribution (i.e. $\sim IW(n-k+1, (n\sigma^{2})^{-1})$) such that the prior specification above would actually be equivalent to three priors on each diagonal element with \texttt{V=1} and \texttt{nu=1}.\\  
-It is also worth noting that in the univariate case the prior specification \texttt{V=1} and \texttt{n=0.002} is equivalent to an inverse gamma distribution with $\alpha=\beta=0.001$, which is often used in WinBUGS.\\  
+which is inverse Wishart distributed with inverse scale matrix \texttt{solve(n*V)} and degree of belief parameter \texttt{n}.  You can get a feel for this using the \texttt{plotprior} function which generates random samples from the distribution and plots the resulting histogram. The default prior is \texttt{nu=0} and is not proper, but it is informative. The specification \texttt{V=diag(k)*0, nu=-(k+1)} where \texttt{k} is the dimension of \texttt{V} is uninformative, but I strongly recommend you use proper priors where \texttt{n} is greater than $k-1$ (or more if some (co)variances cannot be identified from the likelihood). If nothing else, \texttt{MCMCglmm} may baulk after many iterations if the parameters are not well identified. When \texttt{idh()} structures are used each diagonal element of the matrix is independently distributed \emph{a priori}. The distribution of the diagonal element has the same marginal distribution as that element would have in the standard inverse-Wishart distribution (i.e. $\sim IW(n-k+1, (n\sigma^{2})^{-1})$) such that the prior specification above would actually be equivalent to three priors on each diagonal element with \texttt{V=1} and \texttt{nu=1}.  It is also worth noting that in the univariate case the prior specification \texttt{V=1} and \texttt{n=0.002} is equivalent to an inverse gamma distribution with $\alpha=\beta=0.001$, which is often used in WinBUGS.\\  
 
 The fixed effects have a multivariate normal distribution equal in dimension to the number of fixed effects. \texttt{B} has two arguments a mean vector \texttt{mu} and a (co)variance matrix \texttt{V}. The default has a zero mean vector and a diagonal variance matrix with large variances (1e+10). 
 
@@ -686,7 +685,7 @@ Distribution   &    No. Data       &         No. liability       &      Recommen
 \hline\\
    \texttt{"gaussian"}        &  1  &   1  &    standard &    none  \\   
    \texttt{"poisson"}        &  1  &   1 &     standard &     none \\   
-   \texttt{"categorical"}        &  1  &   $k$-1  &   \texttt{us(trait):units} &    \texttt{fix=1, V=}$0.5({\bf I}+{\bf J})$ \\   
+   \texttt{"categorical"}        &  1  &   $k$-1  &   \texttt{us(trait):units} &    \texttt{fix=1, V=}$\frac{1}{k}({\bf I}+{\bf J})$ \\   
    \texttt{"multinomial$k$"}  &  $k$    &  $k$-1  & standard  &    none \\   
    \texttt{"ordinal"}         &  1      &  1      & standard  &   \texttt{fix=1, V=1} \\   
    \texttt{"exponential"}         &  1  &   1  &     standard &    none \\   

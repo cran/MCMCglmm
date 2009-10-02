@@ -51,29 +51,29 @@ plotsubspace<-function(CA, CB=NULL, corr=FALSE, shadeCA=TRUE, shadeCB=TRUE, axes
     wire3d(s1, col = "red")
   } 
 
-	if(is.null(CB)==FALSE){
-      if(dim(CA)[1]==3){
-        Bvec<-eigen(CB)$vectors
-        Bval<-2*sqrt(eigen(CB)$values)
-      }else{
-        Bproj<-t(Avec)%*%CB%*%Avec
-        Bvec<-eigen(Bproj)$vectors
-        Bval<-eigen(Bproj)$values
-        propB<-round(100*sum(Bval)/sum(eigen(CB)$values),0)
-        Bval<-2*sqrt(Bval)
-      }
-	}	
 
-  s2 <- ellipsoid3d(Bval[1], Bval[2],  Bval[3], qmesh = TRUE, trans = diag(4))
-  s2<-rotate3d(s2, matrix=t(Bvec))
+  if(is.null(CB)==FALSE){
+    if(dim(CA)[1]==3){
+      Bvec<-eigen(CB)$vectors
+      Bval<-2*sqrt(eigen(CB)$values)
+    }else{
+      Bproj<-t(Avec)%*%CB%*%Avec
+      Bvec<-eigen(Bproj)$vectors
+      Bval<-eigen(Bproj)$values
+      propB<-round(100*sum(Bval)/sum(eigen(CB)$values),0)
+      Bval<-2*sqrt(Bval)
+    }	
+    s2 <- ellipsoid3d(Bval[1], Bval[2],  Bval[3], qmesh = TRUE, trans = diag(4))
+    s2<-rotate3d(s2, matrix=t(Bvec))
 
-  if(shadeCB==TRUE){
-    shade3d(s2, col = "blue")
-  }else{
-    wire3d(s2, col = "blue")
-  }
+    if(shadeCB==TRUE){
+      shade3d(s2, col = "blue")
+    }else{
+      wire3d(s2, col = "blue")
+    }
+   }
 
-   if(dim(CA)[1]==dim(CB)[1] & dim(CA)[1]==3){
+   if(dim(CA)[1]<4){
      xvec<-colnames(CA)[1]
      yvec<-colnames(CA)[2]
      zvec<-colnames(CA)[3]
@@ -86,9 +86,12 @@ plotsubspace<-function(CA, CB=NULL, corr=FALSE, shadeCA=TRUE, shadeCB=TRUE, axes
    nameA<-as.character(substitute(CA))
    nameA<-nameA[length(nameA)]
 
-   nameB<-as.character(substitute(CB))
-   nameB<-nameB[length(nameB)]
- 
+   if(is.null(CB)){
+     nameB<-NULL
+   }else{
+     nameB<-as.character(substitute(CB))
+     nameB<-nameB[length(nameB)]
+   }
    axes3d()
    if(dim(CA)[1]!=3){
       mvec<-paste(paste(nameA, "=", propA , "%", sep=""), paste(nameB, "=", propB, "%",sep=""), sep="    ")

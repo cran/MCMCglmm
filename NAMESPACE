@@ -25,6 +25,8 @@ export(
   list2bdiag,
   MCMCglmm,
   posterior.mode,
+  posterior.cor,
+  posterior.evals,
   plotsubspace,
   plotprior,
   Ptensor,

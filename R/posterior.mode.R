@@ -1,15 +1,14 @@
-"posterior.mode"<-function(x, ...){
+"posterior.mode"<-function(x, adjust=0.01, ...){
+
+   if(is.mcmc(x)==FALSE){
+     warning("posterior.mode expecting mcmc object")
+   }
 
   find.mode<-function(x,...){
     dx<-density(x, ...)
     dx$x[which.max(dx$y)]
   }
 
-   if(is.mcmc(x)==FALSE){
-     stop("posterior.mode expecting mcmc object")
-   }else{
-     apply(as.matrix(x), 2, find.mode)
-   }
-
- }
+  apply(as.matrix(x), 2, find.mode, ...)
+}
 

@@ -1,6 +1,10 @@
 "rIW"<-function(V,nu,fix=NULL, n=1, CM=NULL){
  
   if(is.matrix(V)==FALSE){stop("V must be a matrix")}
+
+  # IMPORTANT #
+  # Don't coerce scalar V's to a matrix - nu and V were swapped position from old version <1.10
+
   if(dim(V)[1]!=dim(V)[2]){stop("V must be square")}
   if(is.positive.definite(V, tol=1e-11)==FALSE){stop("V must be positive definite")}
   if(nu<=0){stop("nu must be greater than zero")}

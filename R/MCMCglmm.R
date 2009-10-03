@@ -1,4 +1,4 @@
-"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data=NULL, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE){
+"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=FALSE, saveZ=FALSE){
    
     orig.na.action<-options("na.action")[[1]]
     options("na.action"="na.pass")	
@@ -38,67 +38,88 @@
 	  Ai<-inverseA(pedigree, nodes=nodes, scale=scale)
           if(any(data$animal%in%Ai$node.names==FALSE)){stop("individuals in data not appearing in pedigree/phylogeny")}
 	  data$animal<-factor(data$animal, levels=Ai$node.names)                           # add factor levels to animal in data for additional nodes
-	}
+	}else{
+          if(any(colnames(data)=="animal") & length(grep("animal", as.character(random))>0)){
+            stop("animal is a reserved variable for pedigrees/phylogenies only, please rename")
+          }
+        }
 
 ##############################################################################################
 # if R-structure is of form idh(!=trait) assign new records with arbitrary levels of !-trait #
 ##############################################################################################
 
       nadded<-0  # number of records added
-if(TRUE){
+
       if(is.null(random)==FALSE){	
 	rterms<-split.direct.sum(as.character(random)[2])
         data$MCMC_dummy<-as.factor(rep(1,dim(data)[1]))
+
 	for(i in 1:length(rterms)){
+
 	  components<-find.components(rterms[i], data)
-	  if(is.null(components)==FALSE){
 
-            allc<-expand.grid(levels(data[,components[2]]),levels(data[,components[1]]))
-            missing.combinations<-which(paste(allc[,1], allc[,2])%in%paste(data[,components[2]], data[,components[1]])==FALSE)
+	  if(is.null(components[[1]])==FALSE | length(components[[2]])>0){
 
-            if(length(missing.combinations)>0){
+            for(j in 1:length(components[[2]])){                                                                                
+
+              MCMC_components1<-interaction(data[,components[[1]]], sep=".MCMC.", drop=TRUE*(length(components[[1]])>1))  	# random effect factors 
+              MCMC_components2<-interaction(data[,components[[2]][[j]]], sep=".MCMC.", drop=FALSE)  	                        # fixed effect factors
+              allc<-expand.grid(levels(MCMC_components1),levels(MCMC_components2))  						# all pairwise combinations
+              missing.combinations<-allc[which(paste(allc[,1], allc[,2])%in%paste(MCMC_components1, MCMC_components2)==FALSE),]   # missing pairwise combinations
+
+              if(dim(missing.combinations)[1]>0){
 			  
-	      warning(paste("some combinations in", rterms[i], "do not exist and", length(missing.combinations), "missing records have been generated"))
-			  
-              missing.fixed<-ceiling(missing.combinations/nlevels(data[,components[2]]))
-	      missing.random<-missing.combinations-nlevels(data[,components[2]])*(missing.fixed-1)
-	      missing.fixed<-levels(data[,components[1]])[missing.fixed]
-	      missing.random<-levels(data[,components[2]])[missing.random]
-	      missing.combinations<-cbind(missing.fixed, missing.random)
-			  
-	      missing.comb1<-which(is.na(data[,components[1]]) & is.na(data[,components[2]])==FALSE)
-	      missing.comb2<-which(is.na(data[,components[1]])==FALSE & is.na(data[,components[2]]))
-	      missing.comb12<-which(is.na(data[,components[1]]) & is.na(data[,components[2]]))
-			  
-	      matching<-match(unique(missing.combinations[,2]), data[,components[2]][missing.comb1])
+     	        warning(paste("some combinations in", rterms[i], "do not exist and", dim(missing.combinations)[1], "missing records have been generated"))
+
+              ###################################
+              # find if there are already holes #
+              #    in the missing records       #
+              ###################################
+			  			  
+	        missing.comb1<-which(is.na(MCMC_components1) & is.na(MCMC_components2)==FALSE)  # na's for random but have fixed
+	        missing.comb2<-which(is.na(MCMC_components1)==FALSE & is.na(MCMC_components2))  # na's for fixed bt have random
+	        missing.comb12<-which(is.na(MCMC_components1) & is.na(MCMC_components2))        # na's for both
+
+	        matching<-match(unique(missing.combinations[,2]), MCMC_components2[missing.comb1])  # some places that can be filled
 			
-	      while(any(is.na(matching)==FALSE)){
-	        data[,components[1]][missing.comb1[na.omit(matching)]]<-missing.combinations[,1][match(data[,components[2]][missing.comb1[na.omit(matching)]],missing.combinations[,2])]
-       	        missing.comb1<-missing.comb1[-match(data[,components[2]][missing.comb1[na.omit(matching)]],missing.combinations[,2])]	
-		missing.combinations<-missing.combinations[-match(data[,components[2]][missing.comb1[na.omit(matching)]],missing.combinations[,2]),, drop=FALSE]
-		matching<-match(unique(missing.combinations[,2]), data[,components[2]][missing.comb1]) 
-	      }
-	      matching<-match(unique(missing.combinations[,1]), data[,components[1]][missing.comb2])
-	      while(any(is.na(matching)==FALSE)){
-		data[,components[2]][missing.comb2[na.omit(matching)]]<-missing.combinations[,2][match(data[,components[1]][missing.comb2[na.omit(matching)]],missing.combinations[,1])]
-		missing.comb2<-missing.comb2[-match(data[,components[1]][missing.comb2[na.omit(matching)]],missing.combinations[,1])]	
-		missing.combinations<-missing.combinations[-match(data[,components[1]][missing.comb2[na.omit(matching)]],missing.combinations[,1]),, drop=FALSE]
-		matching<-match(unique(missing.combinations[,1]), data[,components[1]][missing.comb2]) 
-	      }
-	      if(length(missing.comb12)>0 & length(missing.combinations)>0){
-		data[missing.comb12,]<-missing.combinations[1:min(length(missing.comb12), length(missing.combinations[,1])),]
-		missing.combinations<-missing.combinations[-1:min(length(missing.comb12), length(missing.combinations[,1])),,drop=FALSE,]
-	      }			
+	        while(any(is.na(matching)==FALSE)){
+                  a.match<-match(MCMC_components2[missing.comb1[na.omit(matching)]],missing.combinations[,2])  # missing combinations to be placed
+	          data[missing.comb1[na.omit(matching)],unlist(components[[1]])]<-as.matrix(apply(missing.combinations[a.match,1,drop=FALSE], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
+                  MCMC_components1[missing.comb1[na.omit(matching)]]<-missing.combinations[a.match,1]   # fill in data columns and MCMC_componenets1
+       	          missing.comb1<-missing.comb1[-na.omit(matching)]	
+	     	  missing.combinations<-missing.combinations[-a.match,, drop=FALSE]
+	          matching<-match(unique(missing.combinations[,2]), MCMC_components2[missing.comb1])
+	        }
 
-	      if(length(missing.combinations)>0){       
-                nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
-		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
-		data[,components][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-missing.combinations
-                if(is.null(mev)==FALSE){
-                   mev<-c(mev,rep(1, length(missing.combinations)))
-                }
+	        matching<-match(unique(missing.combinations[,1]), MCMC_components1[missing.comb2])  # some places that can be filled
+			
+	        while(any(is.na(matching)==FALSE)){
+                  a.match<-match(MCMC_components1[missing.comb2[na.omit(matching)]],missing.combinations[,1])  # missing combinations to be placed
+	          data[missing.comb2[na.omit(matching)],unlist(components[[2]][[j]])]<-as.matrix(apply(missing.combinations[a.match,2,drop=FALSE], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
+                  MCMC_components2[missing.comb2[na.omit(matching)]]<-missing.combinations[a.match,2]   # fill in data columns and MCMC_componenets1
+       	          missing.comb2<-missing.comb2[-na.omit(matching)]	
+   		  missing.combinations<-missing.combinations[-a.match,, drop=FALSE]
+	          matching<-match(unique(missing.combinations[,1]), MCMC_components1[missing.comb2])
+	        }
+
+                n.rm<-min(length(missing.comb12), dim(missing.combinations)[1])
+
+	        if(n.rm>0){
+	          data[missing.comb12,c(components[[1]], components[[2]][[j]])]<-t(apply(missing.combinations[1:n.rm,], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
+                  MCMC_components1[missing.comb12][1:n.rm]<-missing.combinations[,1][1:n.rm]
+                  MCMC_components2[missing.comb12][1:n.rm]<-missing.combinations[,2][1:n.rm]
+	        }	
+
+	        if(length(missing.combinations)>0){       
+                  nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
+		  data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
+		  data[,c(components[[1]], components[[2]][[j]])][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-t(apply(missing.combinations, 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
+                  if(is.null(mev)==FALSE){
+                     mev<-c(mev,rep(1, dim(missing.combinations)[1]))
+                  }
+	        }
 	      }
-	    }		  
+            }		  
 	  }
 	}
       }
@@ -106,7 +127,6 @@ if(TRUE){
       if(nadded>0){
         data$MCMC_dummy[(dim(data)[1]-nadded+1):dim(data)[1]]<-1   
       }
-}
 
 	 rterms.split<-lapply(strsplit(as.character(rcov)[2], " *\\+ *")[[1]], strsplit,"\\(|\\):|:")[[1]][[1]]
 
@@ -158,16 +178,18 @@ if(TRUE){
     }
 
     # zero-infalted and multinomial>2 need to be preserved in the same R-structure even if idh 
+
+    diagR=FALSE  # should the residual structure be diagonal even if us is sued?
 	
     if(length(grep("zi|multinomial[3:19]", family.names))>0){ 
       if(length(grep("idh\\(|us\\(", rcov))==0){
         stop("please use idh() or us() error structure")
       }else{
+        if(length(grep("idh\\(", rcov))>0){
+          diagR=TRUE
+        }
         rcov=as.formula(paste(gsub("idh\\(", "us\\(", rcov), collapse=""))
-      }
-      diagR=TRUE	  
-    }else{
-      diagR=FALSE
+      }	  
     }
 	
     nS<-dim(data)[1]                               # number of subjects
@@ -310,9 +332,9 @@ if(TRUE){
 	   nt<-nt+2			  
 	 }
 
-#######################################
-# gaussian/poisson/exponential traits #
-#######################################
+###############################################
+# gaussian/poisson/exponential/ordinal traits #
+###############################################
 
         }else{
           mfac<-c(mfac, 0)  
@@ -324,7 +346,7 @@ if(TRUE){
 	  }	
 	  if(family.names[nt]=="ordinal"){
             mfac[length(mfac)]<-length(ncutpoints)  
-            data[,response.names[nt]]<-as.numeric(data[,response.names[nt]])
+            data[,response.names[nt]]<-as.numeric(as.factor(data[,response.names[nt]]))
             ncutpoints<-c(ncutpoints, max(data[,response.names[nt]])+1)         
             ordinal.names<-c(ordinal.names, response.names[nt])     
 	  }	
@@ -447,17 +469,26 @@ if(TRUE){
          if(is.matrix(GRprior[[nr]]$V)==FALSE){GRprior[[nr]]$V<-as.matrix(GRprior[[nr]]$V)}
          if(dim(GRprior[[nr]]$V)[1]!=sum(Zlist$nfl)  | dim(GRprior[[nr]]$V)[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some priorG/priorR elements")}
          if(is.positive.definite(GRprior[[nr]]$V)==FALSE){stop("V is not positive definite for some priorG/priorR elements")}
-         if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
          if(is.null(GRprior[[nr]]$fix)==FALSE){
-           if(GRprior[[nr]]$fix!=1){
-             CM<-GRprior[[nr]]$V[GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1],GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1]]
-             if(sum(CM!=0)>dim(GRprior[[nr]]$V)[1]){stop("sorry - matrices to be conditioned on must be diagonal")}
+           CM<-GRprior[[nr]]$V[GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1],GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1]]
+           if(is.null(GRprior[[nr]]$fix)==FALSE){
+              if(sum(CM!=0)>dim(GRprior[[nr]]$V)[1] & GRprior[[nr]]$fix>1){stop("sorry - matrices to be conditioned on must be diagonal")}
            }
+           if(GRprior[[nr]]$fix!=1){
+             if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
+           }else{
+             GRprior[[nr]]$nu=1
+           }
+         }else{
+           if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
          }
        }
-
        if(NOstartG==TRUE){
-         GR[[nr]]<-GRprior[[nr]]$V
+         if(det(GRprior[[nr]]$V)<1e-8){
+           GR[[nr]]<-GRprior[[nr]]$V+diag(dim(GRprior[[nr]]$V)[1])
+         }else{
+           GR[[nr]]<-GRprior[[nr]]$V
+         }
        }else{
          GR[[nr]]<-start$G[[r]]
          if(r<=ngstructures){
@@ -486,13 +517,19 @@ if(TRUE){
              if(is.null(GRprior[[nr]]$fix)==FALSE){
                if(l>=GRprior[[nr]]$fix){
                  GRprior[[nr]]$fix<-1
+                 GRprior[[nr]]$nu<-1
                }else{
                  GRprior[[nr]]$fix<-NULL
                }
              }
            }
+
            if(NOstartG==TRUE){
-             GR[[nr]]<-GRprior[[nr]]$V
+             if(det(GRprior[[nr]]$V)<1e-8){
+               GR[[nr]]<-GRprior[[nr]]$V+diag(dim(GRprior[[nr]]$V)[1])
+             }else{
+               GR[[nr]]<-GRprior[[nr]]$V
+             }
            }else{
              if(r<=ngstructures){
                GR[[nr]]<-as.matrix(diag(start$G[[r]])[l])
@@ -875,10 +912,16 @@ if(TRUE){
         }else{
           Liab<-NULL
         }
+        if(saveX==FALSE){
+          X<-NULL
+        }
+        if(saveZ==FALSE){
+          Z<-NULL
+        }
 
     	options("na.action"=orig.na.action)
 
-        list(Sol=mcmc(Sol, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin), VCV=mcmc(VCV, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC)
+        list(Sol=mcmc(Sol, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin), VCV=mcmc(VCV, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin), Liab=Liab, Fixed=original.fixed, Random=original.random, Residual=original.rcov, Deviance=deviance,DIC=DIC, X=X, Z=Z)
 	
 }
 

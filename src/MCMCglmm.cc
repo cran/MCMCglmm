@@ -739,14 +739,18 @@ cs*     KGinv[nGR];
 
          L = cs_chol(MME, S); 
 
+         if(L==NULL){
+           error("Mixed model equations singular: use a (stronger) prior\n");
+         }
+
          for (i = 0 ; i < dimAS; i++){
             location_tmp->x[i] = 0.0;
          }
 
          cs_ipvec (S->pinv, location->x, location_tmp->x, MME->n);	 // x = P*b 
          cs_lsolve(L->L,location_tmp->x);                                // x = L\x 
-	     cs_ltsolve (L->L, location_tmp->x);		                 // x = L'\x 
-	     cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
+         cs_ltsolve (L->L, location_tmp->x);		                 // x = L'\x 
+         cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
 
           for (i = 0 ; i < ncolZ ; i++){
             location->x[i+ncolX] += astar->x[i];

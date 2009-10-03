@@ -3,10 +3,11 @@
 \title{Estimates the marginal parameter modes using kernel density estimation}
 \description{Estimates the marginal parameter modes using kernel density estimation}
 \usage{
-posterior.mode(x, ...)
+posterior.mode(x, adjust=0.01, ...)
 }
 \arguments{
  \item{x}{mcmc object}
+ \item{adjust}{numeric, passed to \code{\link{density}} to adjust the bandwidth of the kernal density}
  \item{...}{other arguments to be passed}
 }
 \value{

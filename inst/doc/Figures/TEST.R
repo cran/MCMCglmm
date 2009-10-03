@@ -217,7 +217,7 @@ print(i)
 print("res9")
 res9<-matrix(NA, nsim,4)
 R=matrix(c(1,0,0,2),2,2)
-prior=list(R=list(V=R, n=1))
+prior=list(R=list(V=R, n=2))
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
@@ -403,10 +403,10 @@ print(i)
 print("res19")
 res19<-matrix(0, nsim, 6)
 R<-diag(2)
-prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(10000000000,0,0,3.06),2,2)))
+prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
 tune=list(diag(2))
 for(i in 1:nsim){
-l<-mvrnorm(300,c(0,-0.5), R)
+l<-mvrnorm(300,c(0,-1), R)
 y<-rzipois(300, exp(1+l[,1]), inv.logit(l[,2]))
 data=data.frame(y1=y)
 m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
@@ -580,7 +580,7 @@ y1<-1:300
 for(j in 1:300){
   y1[j]<-which(rmultinom(1, 1, pr[j,])==1)
 }
-y1<-as.factor(y1)
+
 table(y1)
 cp<-qnorm(cumsum(c(0,table(y1)/length(y1))), 0, sqrt(1+R))
 cp-cp[2]

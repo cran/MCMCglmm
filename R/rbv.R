@@ -67,6 +67,7 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
     sire<--998
 
     if(scale){
+      if(is.ultrametric(pedigree)==FALSE & scale==TRUE){stop("can't scale non-ultrametric trees")}
       root2tip<-0
       ind<-id[length(id)]
       while(ind!=-998){

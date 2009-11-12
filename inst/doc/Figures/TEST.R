@@ -661,28 +661,23 @@ print(i)
 }
 
 
+print("res26")
+res26<-matrix(NA, nsim,3)
+R<-diag(1)
+G<-diag(1)
+prior=list(R=list(V=R, nu=1),G=list(G1=list(V=G, nu=1)))
+for(i in 1:nsim){
+fac1<-as.factor(sample(1:75,300,replace=TRUE))
+fac2<-as.factor(sample(1:75,300,replace=TRUE))
+y<-mvrnorm(300, 0, R)+mvrnorm(75, 0, G)[fac1]+mvrnorm(75, 0, G)[fac2]
+data=data.frame(y=y, fac1=fac1,fac2=fac2)
+m1<-MCMCglmm(y~1,random=~idv(fac1+fac2), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(plotit){
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
 
-#wid<-rpois(12594,5)+1
-#women<-as.factor(rep(1:12594, wid))
-#baseline<-as.factor(sample(1:5,sum(wid), TRUE))
-#age<-rnorm(sum(wid))
-#pill<-as.factor(sample(1:2,sum(wid), TRUE))
-#education<-as.factor(sample(1:3,sum(wid), TRUE))
-#residence<-as.factor(sample(1:2,sum(wid), TRUE))
-#status<-as.factor(sample(1:3,sum(wid), TRUE))
-#y<-rbinom(sum(wid), 1, 0.5)
-#df<-data.frame("y"=y, "women"=women, "baseline"=baseline, "age"=age, "pill"=pill, "education"=education, "residence"=residence, "status"=status)
-#prior=list(R=list(V=1, n=1, fix=1), G=list(G1=list(V=1, n=1)))
-#m1<-MCMCglmm(y~baseline+age+pill+education+residence+status, random=~women,data=df, family="categorical", prior=prior)
+res26[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
 
-
-# source("~/Work/AManal/MCMCglmm_1.11/R/buildZ.R")
-# data<-data.frame(x=runif(10), trait=gl(2,1,10), random=as.factor(c(NA,1:9)))
-# x<-"us(at.level(trait,1:2)):random"
-# Z<-buildZ(x, data)
-
-
-# Ztry<-model.matrix(~us(leg(x,1)):random:trait-1, data)
-# Ztry<-Ztry[,-which(colSums(Ztry)==0)]
-# Ztry<-as(Ztry, "sparseMatrix")
 

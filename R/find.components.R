@@ -12,9 +12,12 @@ find.components<-function(x, data){
   if(length(grep("^cor\\(", x))>0){
     vtype<-"cor"
   }
+  if(length(grep("^idv\\(", x))>0){
+    vtype<-"idv"
+  }
 
+  fformula<-gsub("^(us|cor|corh|idh|idv)\\(", "", x)
 
-  fformula<-gsub("^(us|cor|corh|idh)\\(", "", x)
   openB<-gregexpr("\\(", fformula)[[1]]
   closeB<-gregexpr("\\)", fformula)[[1]]
 
@@ -31,6 +34,7 @@ find.components<-function(x, data){
 
   fformula<-substr(fformula,1,closeB-1)
   fformula<-gsub(" ", "", fformula)
+
   interact<-strsplit(fformula, "\\+")[[1]]
   interact<-interact[grep(":|\\*",interact)]
   interact<-strsplit(interact, ":|\\*")
@@ -58,7 +62,7 @@ find.components<-function(x, data){
        fformula<-"MCMC_dummy"
      }
   }else{
-    if(is.null(fformula) | vtype=="idh"){
+    if(is.null(fformula) | vtype=="idh"| vtype=="idv"){
       rterms<-NULL
       fformula=NULL
     }

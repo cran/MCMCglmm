@@ -10,8 +10,11 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
   if(length(grep("^cor\\(", x))>0){
     vtype<-"cor"
   }
+  if(length(grep("^idv\\(", x))>0){
+    vtype<-"idv"
+  }
 
-  fformula<-gsub("^(us|cor|corh|idh)\\(", "", x)
+  fformula<-gsub("^(us|cor|corh|idh|idv)\\(", "", x)
 
   openB<-gregexpr("\\(", fformula)[[1]]
   closeB<-gregexpr("\\)", fformula)[[1]]
@@ -50,7 +53,11 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
 
   X<-as(X, "sparseMatrix")
 
-  rfactor<-interaction(data[,rterms], drop=(Aterm==0))  # random effects are dropped if they are not animal 
+  if(length(rterms)==0){
+    rfactor<-rep(as.factor(1), dim(data)[1]) 	
+  }else{
+    rfactor<-interaction(data[,rterms], drop=(Aterm==0))  # random effects are dropped if they are not animal 
+  }
   nfl<-ncol(X)
   nrl<-nlevels(rfactor)
   nd<-length(rfactor)
@@ -103,7 +110,7 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
         colnames(Z)<-paste(paste(rterms, collapse=":"), colnames(X)[i], colnames(Z),sep=".") 
         Zmissing<-rep(0,ncol(Z))
         Zmissing[which(colSums(Z)==0)]<-1
-        if(vtype=="idh" & Aterm==0){
+        if((vtype=="idh" | vtype=="idv") & Aterm==0){
           if(any(Zmissing!=0)){
             Z<-Z[,-which(Zmissing==1),drop=FALSE]
             Zmissing<-Zmissing[-which(Zmissing==1)]
@@ -123,8 +130,14 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
         vtype<-rep(vtype, nfl)
         nfl<-rep(1, nfl)
       }
+      if(vtype[1]=="idv"){
+        nrl<-nfl*nrl[1]
+	nfl<-1
+	vnames<-vnames[1]  
+      }
       return(list(Z=Zsave, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=NULL, trait.ordering=NULL, missing=missing))
     }
+
   }else{
 
     if(nfl==0){
@@ -147,7 +160,13 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
         nfl<-rep(1, nfl)
         nrl<-colSums(X)
       }else{
-        vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=".")
+        if(vtype=="idv"){
+          nrl<-nfl*nrl[1]
+	  nfl<-1
+	  vnames<-vnames[1]  
+        }else{
+          vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=".")
+        }
       }
       if(add.missing){
         nrl[1]<-nrl[1]+1

@@ -3,7 +3,7 @@
 \title{Estimates the marginal parameter modes using kernel density estimation}
 \description{Estimates the marginal parameter modes using kernel density estimation}
 \usage{
-posterior.mode(x, adjust=0.01, ...)
+posterior.mode(x, adjust=0.1, ...)
 }
 \arguments{
  \item{x}{mcmc object}

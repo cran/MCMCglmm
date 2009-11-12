@@ -102,6 +102,7 @@
     node.names[-tips]<-paste("a", 1:(length(id)-length(tips)), sep="")
 
     inbreeding<-pedigree$edge.length[reorder]
+    if(any(inbreeding<1e-16)){stop("some phylogeny edge.lengths are zero")}
 
     dam<-match(pedigree$edge[,1][reorder], id)
     id<-match(id, id)
@@ -109,7 +110,6 @@
     pedigree<-cbind(node.names, node.names[dam], rep(NA, length(node.names)))
 
     dam[which(is.na(dam))]<--998
-
 
     if(scale){
       root2tip<-0
@@ -120,6 +120,7 @@
       }
       inbreeding<-inbreeding/root2tip
     }
+
     Ainv<-Matrix(0, length(dam), length(dam))
     off<-tapply(id, dam,function(x){x})
     off<-off[-which(names(off)=="-998")]

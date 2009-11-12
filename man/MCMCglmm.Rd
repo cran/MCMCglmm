@@ -18,11 +18,8 @@ MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL,
 are passed as a matrix using cbind}
   \item{random}{\code{\link{formula}} for the random effects. Multiple random terms
 can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):random.term}.
-Currently, the only \code{variance.functions} available are \code{idh} and \code{us}. Both fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.term} effects. For simple random effects the \code{variance.function(formula)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are three reserved variables: \code{units} which index rows of the response variable, \code{trait} which index columns of the response variable and \code{animal} which is associated with a pedigree or phylogeny.} 
-  \item{rcov}{\code{\link{formula}} for residual covariance structure. This has 
-to be set up so that each data point is associated with a unique residual. For 
-example a multi-response model might have the R-structure defined by 
-\code{~us(trait):units}}
+Currently, the only \code{variance.functions} available are \code{idv}, \code{idh} and \code{us}. \code{idv} fits a constant variance across all components in \code{formula}. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.term} effects. For simple random effects the \code{variance.function(formula)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are three reserved variables: \code{units} which index rows of the response variable, \code{trait} which index columns of the response variable and \code{animal} which is associated with a pedigree or phylogeny.} 
+  \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
 \code{"multinomial"},  \code{"ordinal"}, \code{"ordinal"}, \code{"exponential"},  \code{"cengaussian"},  
@@ -34,9 +31,7 @@ supported, where the prefix \code{"cen"} means censored and the prefix
 for random effect meta-analysis.}
   \item{data}{\code{data.frame}}
   \item{start}{optional list having 4 possible elements: 
-\code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables 
-or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random 
-effect components. The fourth element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
+\code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random effect components. The fourth element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
   \item{prior}{optional list of prior specifications having 3 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). Each 
 element is a list containing the expected (co)variances (\code{V}) and a degree 

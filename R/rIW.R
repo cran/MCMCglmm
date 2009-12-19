@@ -36,7 +36,7 @@
   }else{
     output<-.C("rIW",
       as.double(nu),
-	  as.double(c(solve(V*nu))),
+      as.double(c(solve(V*nu))),
       as.double(c(CM)),			   
       as.integer(dim(V)[1]),
       as.integer(fix-1),

@@ -59,6 +59,22 @@ res3[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
+# categorical test J=1 test with slice sampling 0.9 seconds OK
+print("res3b")
+res3<-matrix(NA, nsim,2)
+prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
+for(i in 1:nsim){
+y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
+data=data.frame(y1=y, y2=1-y)
+prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
+m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, slice=TRUE)
+if(plotit){
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+res3[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
+
 
 # gauss with blocked random  1.5 seconds OK
 print("res4")
@@ -249,7 +265,6 @@ print(i)
 }
 
 # bivariate binoimal + random 5.9 seconds
-print("res11")
 res11<-matrix(NA, nsim,8)
 R=matrix(c(1,0,0,2),2,2)
 G=matrix(c(2,0.5,0.5,1),2,2)
@@ -677,6 +692,33 @@ plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
 
 res26[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
+
+#source("~/Desktop/MCMCglmmTEST.R")
+#source("~/Work/AManal/MCMCglmm_1.11/inst/doc/Figures/TEST.R")
+
+print("res27")
+res27<-matrix(NA, nsim,6)
+R<-diag(1)
+G<-diag(1)
+G2<-diag(1)
+prior=list(R=list(V=R, nu=1),G=list(G1=list(V=G, nu=1, alpha.mu=1, alpha.V=100), G2=list(V=G2, nu=1, alpha.mu=1, alpha.V=100)))
+
+for(i in 1:nsim){
+fac1<-as.factor(sample(1:75,300,replace=TRUE))
+fac2<-as.factor(sample(1:75,300,replace=TRUE))
+id<-as.factor(sample(1:75,300,replace=TRUE))
+fac3<-as.factor(sample(1:3, 300, T))
+y<-mvrnorm(300, 0, R)+mvrnorm(75, 0, G)[fac1]+mvrnorm(75, 0, G)[fac2]+rnorm(75,0,sqrt(G2))[id]
+data=data.frame(y=y, fac1=fac1,fac2=fac2, fac3=fac3, id=id)
+m1<-MCMCglmm(y~fac3,random=~idv(fac1+fac2)+id, data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, pr=TRUE)
+
+if(plotit){
+plot(mcmc(cbind(mcmc(m1$Sol[,1:3]), m1$VCV)), ask=FALSE)
+}
+
+res27[i,]<-posterior.mode(mcmc(cbind(m1$Sol[,1:3], m1$VCV)))
 print(i)
 }
 

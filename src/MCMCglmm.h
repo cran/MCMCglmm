@@ -99,3 +99,10 @@ extern "C"{
 }
 #endif
 
+#ifndef _LPZF_H
+extern "C"{
+#include "lpzF.h"
+}
+#endif
+
+

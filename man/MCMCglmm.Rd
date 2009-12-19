@@ -4,14 +4,15 @@
 \description{
  Markov chain Monte Carlo Sampler for Multivariate Generalised Linear Mixed 
 Models with special emphasis on correlated random effects arising from pedigrees 
-and phylogenies (Hadfield 2009). Please read the tutorial: \code{vignette("Tutorial", 
-"MCMCglmm")}
+and phylogenies (Hadfield 2009). Please read the course notes: \code{vignette("CourseNotes", 
+"MCMCglmm")} or the tutorial \code{vignette("Tutorial", "MCMCglmm")}
 }
 \usage{
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
     data,start=NULL, prior=NULL, tune=NULL, pedigree=NULL,
     nodes="ALL", scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
-    pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=FALSE, saveZ=FALSE)
+    pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=FALSE,
+    saveZ=FALSE, slice=FALSE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
@@ -33,13 +34,8 @@ for random effect meta-analysis.}
   \item{start}{optional list having 4 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random effect components. The fourth element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
   \item{prior}{optional list of prior specifications having 3 possible elements: 
-\code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). Each 
-element is a list containing the expected (co)variances (\code{V}) and a degree 
-of belief parameter (\code{nu}) for the variance structures (\code{R} and 
-\code{G}). \code{B} is a list containing the expected value (\code{mu}) and a 
-(co)variance matrix (\code{V}) representing the strength of belief. Defaults to 
-\code{n=0} and \code{B$V<-I*1e+8}, where I is an identity matrix of appropriate 
-dimension.}
+\code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). \code{B} is a list containing the expected value (\code{mu}) and a 
+(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=0 and \code{B$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The deafults are \code{nu=0}, \code{V=1}, \code{alpha.mu}=1, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
   \item{tune}{optional (co)variance matrix defining the proposal distribution 
 for the latent variables. If NULL an adaptive algorithm is used which ceases to 
 adapt once the burn-in phase has finished.}
@@ -68,7 +64,7 @@ saved?}
   \item{singular.ok}{logical: if \code{FALSE} linear dependencies in the fixed effects are removed. if \code{TRUE} they are left in an estimated, although all information comes form the prior}
   \item{saveX}{logical: save fixed effect design matrix}
   \item{saveZ}{logical: save random effect design matrix}
-
+  \item{slice}{logical: should slice sampling be used? Only applicable for binary triats with indpendent residuals}
 }
 \details{
 }

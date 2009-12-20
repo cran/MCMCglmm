@@ -24,7 +24,7 @@ evolutionary biology so there are also several functions for applying Rice's
 (2004) tensor analysis to real data and functions for visualising and comparing 
 matrices.
 
-Please read the tutorial: \code{vignette("Tutorial", "MCMCglmm")}
+Please read the tutorial \code{vignette("Tutorial", "MCMCglmm")} or the course notes \code{vignette("CourseNotes", "MCMCglmm")} 
 }
 \references{
 	Hadfield, J.D. (2009) MCMC methods for Multi-response Generalised 

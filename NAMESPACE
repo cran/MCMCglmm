@@ -40,7 +40,8 @@ export(
   list2bdiag,
   at.set,
   at.level,
-  leg
+  leg,
+  rtnorm
 ) 
 
 

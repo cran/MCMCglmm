@@ -59,7 +59,7 @@ void MCMCglmm(
         int *familyP,        // distribution of response variables
         double *propCP,      // proposal distribition for liabilities
         bool *verboseP,      // print iterations and MH acceptance ratio to screen
-        double *BvpP,        // inverse prior covariance matrix for beta        
+        double *BvpP,        // inverse prior covariance matrix for beta  with final number indicating diagonal (1) or non diagonal (0)      
         double *BmupP,       // prior mean vector for beta     
         int *mfacP,          // vector of J-1 levels for each multinomial response 
 	int *observedP,	     // vector of 1 (observed) and 0 (missing)
@@ -71,7 +71,13 @@ void MCMCglmm(
         int *ncutpointsP,    // number of cutpoints with -Inf, 0, C1,.... Cncutpoints, Inf
         int *nordinalP,      // number of ordinal traits  
         double *stcutpointsP,// starting vector of cutpoints    
-        double *CPP
+        double *CPP,
+        double *AmupP,
+        int *iAVpP,         
+        int *pAVpP,        
+        double *xAVpP,     
+        int *nzmaxAVpP,        
+        int *PXtermsP  
 ){         
 
 int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
@@ -92,13 +98,14 @@ int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
         post_cnt = 0,
         tvc =0,          // total number of (co)variance components 
         nordinal = nordinalP[0];
-//Rprintf("Helloa");
+
 // Multinomial counters 
  
 int     nthmnl = 0;  // counter for the lth level of nth multinomial
 
 double   mndenom1 = 1.0,  // sum(exp(l_{j}) for all j) and l_old
-         mndenom2 = 1.0;  // sum(exp(l_{j}) for all j) and l_new
+         mndenom2 = 1.0,  // sum(exp(l_{j}) for all j) and l_new
+         u;               // slice sampling runifs
 
 int     nrowX =  dimXP[0], ncolX =  dimXP[1],  nzmaxX = nzmaxXP[0]; 
 int     nrowZ =  dimZP[0], ncolZ =  dimZP[1],  nzmaxZ = nzmaxZP[0];
@@ -106,7 +113,8 @@ int     nrowA =  dimAP[0], ncolA =  dimAP[1],  nzmaxA = nzmaxAP[0];
 
 int 	dimAS =  ncolX+ncolZ;
 int     nMH = 0;
-       
+int     nalpha = 0; 
+ 
 bool    pr = prP[0];
 bool    pl = prP[1];
 bool    cp = nordinal>0;
@@ -120,12 +128,16 @@ bool    missing = FALSE;
           for(i=0; i<nlGR[k]; i++){
             if(mvtype[i+cnt2]!=2){
               missing=TRUE;
-              if(mvtype[i+cnt2]!=1){
+              if(mvtype[i+cnt2]<0){
                 nMH++; 
               }
             }
           }
           cnt2+=nlGR[k];
+        }
+
+        for(k=0; k<nGR; k++){           
+           nalpha += PXtermsP[k]*GRdim[k];
         }
 
 double  densityl1,
@@ -191,11 +203,11 @@ double  densityl1,
           wn[k]=0.0;
           zn[k]=0.0;
         }
-//Rprintf("Hellob");
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *zstar_tmp, *zstar_tmp2, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *pred_tmp, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB;
 
-csn	*L;
-css     *S;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *pred_tmp, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig;
+
+csn	*L, *pvBL, *alphaL, *AlphainvL;
+css     *S, *pvBS, *alphaS, *AlphainvS;
 
 cs*     Ginv[nGR];
 cs*     muG[nGR];	
@@ -227,24 +239,44 @@ cs*     KGinv[nGR];
 
 // read in prior covaraince matrix and mean vector for fixed effects.
 
-       pvB = cs_spalloc(ncolX, ncolX, ncolX*ncolX, true, false);
+       pvB = cs_spalloc(ncolX, ncolX, pow(ncolX, 2.0-BvpP[ncolX*ncolX]), true, false);
        pmuB = cs_spalloc(ncolX, 1, ncolX, true, false);
+       Brv = cs_spalloc(ncolX, 1, ncolX, true, false);
 
-        cnt = 0;
-        for (i = 0 ; i < ncolX ; i++){
-          pvB->p[i] = i*ncolX; 
-          pmuB->i[i] = i;
-          pmuB->x[i] = BmupP[i];
-          for (j = 0 ; j < ncolX ; j++){
-            pvB->i[cnt] = j;
-            pvB->x[cnt] = BvpP[cnt];
-            cnt++;
-          }
-        }
-        pvB->p[ncolX] = ncolX*ncolX;
-        pmuB->p[0] = 0; 
-        pmuB->p[1] = ncolX;
- 
+       cnt = 0;
+       for (i = 0 ; i < ncolX ; i++){
+         pmuB->i[i] = i;
+         Brv->i[i] = i;
+         pmuB->x[i] = BmupP[i];
+       }
+       pmuB->p[0] = 0; 
+       pmuB->p[1] = ncolX;
+       Brv->p[0] = 0; 
+       Brv->p[1] = ncolX;
+
+       if(BvpP[ncolX*ncolX]>0.5){   // prior for beta is diagonal
+         for (i = 0 ; i < ncolX ; i++){
+           pvB->p[i] = i; 
+           pvB->i[i] = i;
+           pvB->x[i] = BvpP[ncolX*i+i];
+         }
+         pvB->p[ncolX] = ncolX;
+       }else{
+         cnt = 0;
+         for (i = 0 ; i < ncolX ; i++){
+           pvB->p[i] = i*ncolX; 
+           for (j = 0 ; j < ncolX ; j++){
+             pvB->i[cnt] = j;
+             pvB->x[cnt] = BvpP[cnt];
+             cnt++;
+           }
+         }
+         pvB->p[ncolX] = ncolX*ncolX;
+       }
+
+       pvBS = cs_schol(1, pvB);                    // Symbolic factorisation of B
+       pvBL = cs_chol(pvB, pvBS);                  // cholesky factorisation of B^{-1} for forming N(0, B)
+
 // read in random-effects design matrix Z 
                                                             /*     Za_1 0   0   Zb_1 0   0  */
         Z = cs_spalloc(nrowZ, ncolZ, nzmaxZ, true, false);  /* Z =  0  Za_2 0    0  Zb_2 0  */
@@ -292,7 +324,7 @@ cs*     KGinv[nGR];
             bv_tmp->p[dimG] = dimG*PedDimP[0];
 
 // create matrix for breeding values when sampling G (bv'Abv) of dimesion ntXindividuals anlaysed
-//Rprintf("Helloc");
+
             cnt=0;
 
             for (i = 0 ; i < dimG; i++){
@@ -307,8 +339,10 @@ cs*     KGinv[nGR];
             bv->p[dimG] = dimG*ncolA;
           }
         }
- 
-// read in G/R and prior matrices
+
+/**********************************/ 
+/* read in G/R and prior matrices */
+/**********************************/
  
         for (k = 0 ; k < nGR; k++){
           dimG = GRdim[k];
@@ -369,6 +403,76 @@ cs*     KGinv[nGR];
 	   }
 	 }
 
+/**********************************/ 
+/* read in alpha  prior matrices */
+/**********************************/
+ 
+      if(nalpha>0){
+
+        Alphainv = cs_spalloc(nalpha, nalpha, nzmaxAVpP[0], true, false); 
+        muAlpha = cs_spalloc(nalpha, 1, nalpha, true, false); 
+                                            
+        for (i = 0 ; i < nzmaxAVpP[0]; i++){
+          Alphainv->i[i] = iAVpP[i];
+          Alphainv->x[i] = xAVpP[i];
+        }
+        for (i = 0 ; i < nalpha ; i++){
+          Alphainv->p[i] = pAVpP[i];
+          muAlpha->i[i] = i;
+          muAlpha->x[i] = AmupP[i];
+        }
+
+        Alphainv->p[nalpha] = pAVpP[nalpha];
+        muAlpha->p[0] = 0;
+        muAlpha->p[1] = nalpha;
+        AlphainvS = cs_schol(1, Alphainv);                    
+        AlphainvL = cs_chol(Alphainv, AlphainvS);                
+
+        Xalpha = cs_spalloc(nrowZ, nalpha, nrowZ*nalpha, true, false); 
+                                                                   
+        cnt=0;
+        for (i = 0; i < nalpha; i++){
+          Xalpha->p[i] = cnt;
+          for (j = 0; j < nrowZ; j++){
+            Xalpha->i[cnt] = j;
+            Xalpha->x[cnt] = 0.0;
+            cnt++;
+          }
+        }
+
+        Xalpha->p[nalpha] = nrowZ*nalpha;
+        tXalpha = cs_transpose(Xalpha, true);
+
+        alphaastar = cs_spalloc(nalpha, 1, nalpha, true, false);
+        alphalocation = cs_spalloc(nalpha, 1, nalpha, true, false);
+        alphalocation_tmp = cs_spalloc(nalpha, 1, nalpha, true, false);
+
+        for (i = 0 ; i < nalpha; i++){
+           alphaastar->i[i] = i;    
+           alphalocation->i[i] = i;  
+           alphalocation->x[i] = 1.0;
+           alphalocation_tmp->i[i] = i;    
+        }
+        alphaastar->p[0] = 0;
+        alphaastar->p[1] = nalpha;
+        alphalocation->p[0] = 0;
+        alphalocation->p[1] = nalpha;
+        alphalocation_tmp->p[0] = 0;
+        alphalocation_tmp->p[1] = nalpha;
+
+        alphazstar = cs_spalloc(ny, 1, ny, true, false);
+        alphapred = cs_spalloc(ny, 1, ny, true, false);
+
+        for (i = 0 ; i < ny; i++){   
+           alphazstar->i[i] = i;
+           alphapred->i[i] = i;
+        }
+        alphazstar->p[0] = 0; 
+        alphazstar->p[1] = ny;
+        alphapred->p[0] = 0; 
+        alphapred->p[1] = ny;
+      }
+
 /*********************************/
 /* Read in proposal distribution */
 /*********************************/
@@ -411,7 +515,7 @@ cs*     KGinv[nGR];
           propCinvS[k+nGR] = cs_schol(1, propCinv[k+nGR]);   
           propCinvL[k+nGR] = cs_chol(propCinv[k+nGR], propCinvS[k+nGR]);
         }
-//Rprintf("Helloc");
+
 // allocate vecotors for pseudo-random effects z* and [0, *a] 
 
         zstar = cs_spalloc(ny, 1, ny, true, false);
@@ -426,7 +530,7 @@ cs*     KGinv[nGR];
 
         linki = cs_spalloc(dimG, 1, dimG, true, false);
         linki_tmp = cs_spalloc(dimG, 1, dimG, true, false);
-        predi = cs_spalloc(dimG, 1, dimG, true, false);                 // This is dimG because this is the diemsnion of the R structures (all of which are the same)
+        predi = cs_spalloc(dimG, 1, dimG, true, false);                 // This is dimG because this is the dimesnion of the R structures (all of which are the same)
 
         for (i = 0 ; i < ny; i++){   
            zstar->i[i] = i;
@@ -451,11 +555,11 @@ cs*     KGinv[nGR];
         mulinky->p[0] = 0; 
 	mulinky->p[1] = ny;
 
-        for (i = 0 ; i < (dimAS-ncolX); i++){
-           astar->i[i] = i+ncolX;    
+        for (i = 0 ; i < dimAS; i++){
+           astar->i[i] = i;    
         }
         astar->p[0] = 0;
-        astar->p[1] = dimAS-ncolX;
+        astar->p[1] = dimAS;
 
         for (i = 0 ; i < dimAS; i++){
            location->i[i] = i;    
@@ -494,8 +598,31 @@ cs*     KGinv[nGR];
             W->p[i] = pXP[i];
           }
         }
+
         Wt = cs_transpose(W, true);
-//Rprintf("Hellod");
+        
+        if(nalpha>0){
+
+          Worig = cs_transpose(Wt, true);
+          cnt = ncolX;
+          cnt2 = 0;
+          for (k = 0; k < nGR; k++){
+            dimG = GRdim[k];
+            for (i = 0; i < dimG; i++){
+              if(PXtermsP[k]==1){    // parameter expanded 
+                for (j = W->p[cnt]; j < W->p[cnt+nlGR[k]]; j++){ 
+                  W->x[j] = Worig->x[j]*alphalocation->x[cnt2];     
+                }
+                cnt2 ++; 
+              }
+              cnt += nlGR[k];
+            }
+          } 
+        }
+  
+       
+
+
         for (k = 0 ; k < nGR ; k++){
            GinvS[k] = cs_schol(1, Ginv[k]);                    // Symbolic factorisation of G
            GinvL[k] = cs_chol(Ginv[k], GinvS[k]);              // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
@@ -510,7 +637,7 @@ cs*     KGinv[nGR];
              KGinv[k] = cs_kroneckerI(Ginv[k],nlGR[k]);      //  form G^{-1} structure
            }
         }
-//Rprintf("Helloe1");
+
         KRinv = cs_directsum(KGinv, nG, nGR);
 
 // form WtmKRinv = W^{t}%*%KRinv  and t(t(WtmKRinv)) so its ordered correctly
@@ -520,7 +647,7 @@ cs*     KGinv[nGR];
 	cs_spfree(WtmKRinv);
 	WtmKRinv = cs_transpose(WtmKRinvtmp, TRUE); 	
 	cs_spfree(WtmKRinvtmp);
-//Rprintf("Hellof1");
+
 // form M = WtmKRinv%*%W  
    
         M = cs_multiply(WtmKRinv, W);
@@ -530,9 +657,28 @@ cs*     KGinv[nGR];
         Omega = cs_omega(KGinv, nG, pvB);
 
 // form MME = M + Omega; mixed model equations 
-//Rprintf("Hellog1");
+
         MME = cs_add(M, Omega, 1.0, 1.0); 
         S = cs_schol(1, MME);                            // Symbolic factorisation - only has to be done once
+
+        if(nalpha>0){
+
+          XtmKRinv = cs_multiply(tXalpha, KRinv); 
+	  XtmKRinvtmp = cs_transpose(XtmKRinv, TRUE); 
+	  cs_spfree(XtmKRinv);
+	  XtmKRinv = cs_transpose(XtmKRinvtmp, TRUE); 	// double transposes so there row ordered within columns!
+	  cs_spfree(XtmKRinvtmp);
+
+// form alphaM = t(alphaX)%*%solve(R)%*%alphaX%*%
+   
+          alphaM = cs_multiply(XtmKRinv, Xalpha);
+
+// form MME = M + Omega; mixed model equations 
+
+          alphaMME = cs_add(alphaM, Alphainv, 1.0, 1.0); 
+
+          alphaS = cs_schol(1, alphaMME);                            // Symbolic factorisation - only has to be done once
+        }
 	
   	GetRNGstate();                                   // get seed for random number generation
 
@@ -553,11 +699,14 @@ cs*     KGinv[nGR];
               }
             }
             cs_spfree(astar_tmp);
-	    cs_spfree(zstar_tmp);
-            cs_spfree(zstar_tmp2);
             cs_spfree(pred_tmp);
             cs_spfree(dev);
-  	      cs_nfree(L);
+  	    cs_nfree(L);
+
+            if(nalpha>0){
+              cs_nfree(alphaL);
+              cs_spfree(alphaastar_tmp); 
+            }
           }
 
           for (i = 0 ; i < nGR; i++){
@@ -577,6 +726,12 @@ cs*     KGinv[nGR];
 	  cs_spfree(WtmKRinv);     
 	  cs_spfree(M);                               
 	  cs_spfree(MME);  
+          if(nalpha>0){
+            cs_spfree(tXalpha);
+            cs_spfree(XtmKRinv);
+            cs_spfree(alphaM);
+            cs_spfree(alphaMME);
+          }
 
           for (i = 0 ; i < nGR ; i++){
             if(updateP[i]==1){
@@ -586,6 +741,15 @@ cs*     KGinv[nGR];
 
           cnt = 0;
 
+          for(i=0; i<ncolX; i++){
+              Brv->x[i] = rnorm(0.0,1.0);
+          }                   
+          cs_ltsolve(pvBL->L, Brv->x);
+          for(i=0; i<ncolX; i++){
+              astar->x[i]  = Brv->x[i]+pmuB->x[i];
+          }                          // sample fixed effects from their prior
+          cnt = ncolX;
+
 	  for(k=0; k<nG; k++){
             dimG = GRdim[k];
             if(AtermP[k]==1){          
@@ -594,7 +758,7 @@ cs*     KGinv[nGR];
 /*  pedigrees  */
 /* phylogenies */
 /***************/
- //Rprintf("Helloe");
+
               if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar
                 for(i=0; i<nlGR[k]; i++){
                   for(j=0; j<dimG; j++){
@@ -691,11 +855,11 @@ cs*     KGinv[nGR];
 /******************/
 /* form equations */
 /******************/
-//Rprintf("Helloe");
+
         for (k = 0 ; k < nGR; k++){                             
           if(updateP[k]==1){
             if(AtermP[k]==1){
-				cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
+		cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
             }else{
                 cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
             }
@@ -710,7 +874,7 @@ cs*     KGinv[nGR];
 	
          M = cs_multiply(WtmKRinv, W);                          // form M = WtmKRinv%*%W  
 
-		cs_omegaupdate(KGinv, nG, pvB, Omega);                      // update Omega = bdiag(0, KGinv) 
+         cs_omegaupdate(KGinv, nG, pvB, Omega);                 // update Omega = bdiag(0, KGinv) 
 
          MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
 
@@ -718,11 +882,11 @@ cs*     KGinv[nGR];
 /* sample pseudo vector */
 /************************/
 
-         zstar_tmp = cs_multiply(W, astar);                     // Za*
-         zstar_tmp2 = cs_add(zstar,zstar_tmp, 1.0 ,1.0);        // z* = N(Za*, R \otimes I)
-         
+         cs_gaxpy(W, astar->x, zstar->x);
+
          for (i = 0 ; i < ny ; i++){
-            zstar->x[i] = linky->x[i] - zstar_tmp2->x[i];       // form y - z*
+            zstar->x[i] *= -1.0;
+            zstar->x[i] += linky->x[i];       // form y - z*
          }
 
          astar_tmp = cs_multiply(WtmKRinv, zstar);              // WtmKRinv(y - z*)
@@ -752,14 +916,14 @@ cs*     KGinv[nGR];
          cs_ltsolve (L->L, location_tmp->x);		                 // x = L'\x 
          cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
 
-          for (i = 0 ; i < ncolZ ; i++){
-            location->x[i+ncolX] += astar->x[i];
+          for (i = 0 ; i < dimAS ; i++){
+            location->x[i] += astar->x[i];
          }
 
 /***********************/
 /* sample VCV matrices */
 /***********************/
-//Rprintf("Hellof");
+
          pred_tmp = cs_multiply(W, location);
          for (i = 0 ; i < ny ; i++){
            pred->x[pred_tmp->i[i]] = pred_tmp->x[i];
@@ -867,13 +1031,13 @@ cs*     KGinv[nGR];
              ldet[i] = log(cs_invR(G[i], Ginv[i]));		
            }
          }
-//Rprintf("Hellog");	
+
 /**********************/
 /* calculate deviance */   
 /**********************/
      dbar =0.0;
 
-     if(DICP[0]==1 && itt>=burnin){
+     if(itt>=burnin && DICP[0]==1){
        if(itt==nitt){
           for(k=nG; k<nGR; k++){
              dimG = GRdim[k];
@@ -907,7 +1071,7 @@ cs*     KGinv[nGR];
            }
            if(nkeep>0){      // some gaussian observed traits
              if(ncond>0){   // some non-gaussian or non-observed traits
-                 dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
+               dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
              }else{
                dbar += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);                                     // all gaussian observed
              }
@@ -957,7 +1121,8 @@ cs*     KGinv[nGR];
          cnt2+=nlGR[k]*dimG;
        }
      }
-//Rprintf("Helloh");
+
+
 /***********************/
 /* sample liabilities  */   
 /***********************/
@@ -971,8 +1136,7 @@ cs*     KGinv[nGR];
        for(k=nG; k<nGR; k++){      // Iterate through R-structures
 
          dimG = GRdim[k];
-
-	 propCinv[k] = cs_inv(propC[k]);
+ 	 propCinv[k] = cs_inv(propC[k]);
 	 propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]); 
 	 propCinv[k+nGR] = cs_inv(propC[k+nGR]);
 	 propCinvL[k+nGR] = cs_chol(propCinv[k+nGR], propCinvS[k+nGR]);
@@ -998,7 +1162,7 @@ cs*     KGinv[nGR];
                linky->x[nlGR[k]*i+j+cnt2] = linki_tmp->x[i]+pred->x[nlGR[k]*i+j+cnt2];
              } 
            }
-           if(mvtype[cnt+j]<1){         // has to be MHed
+           if(mvtype[cnt+j]<0){         // has to be MHed
              cs_ltsolve(propCinvL[p]->L, linki_tmp->x);
            }
 
@@ -1033,34 +1197,51 @@ cs*     KGinv[nGR];
 
                    case 3:  /* Nominal Multinomial Logit */
 
-                     mndenom1 += exp(linki->x[i]);
-                     mndenom2 += exp(linki_tmp->x[i]);
+                     if(mvtype[cnt+j]==0){   // univraiate binary models can be slice sampled
+                       if(yP[record]>0.5){
+                         u = linky->x[record]-log1p(exp(linky->x[record]));  // needed for the deviance calculation
+                         densityl1 += u;
+                         u -= rexp(1.0);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]),u-log1p(-exp(u)), 1e+35);
+                       }else{
+                         u = -log1p(exp(linky->x[record])); // needed for the deviance calculation
+                         densityl1 += u;
+                         u -= rexp(1.0);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, log1p(-exp(u))-u);				
+                       }
 
-                     densityl1 += yP[record]*linki->x[i];
-                     densityl2 += yP[record]*linki_tmp->x[i];
-
-                     if(mfacP[rterm+i]==nthmnl){ 
-                       densityl1 -= y2P[record]*log(mndenom1);
-                       densityl2 -= y2P[record]*log(mndenom2);
-                       nthmnl = 0;
-                       mndenom1 = 1.0;
-                       mndenom2 = 1.0;
                      }else{
-                       nthmnl++;
+
+                       mndenom1 += exp(linki->x[i]);
+                       mndenom2 += exp(linki_tmp->x[i]);
+
+                       densityl1 += yP[record]*linki->x[i];
+                       densityl2 += yP[record]*linki_tmp->x[i];
+
+                       if(mfacP[rterm+i]==nthmnl){ 
+                         densityl1 -= y2P[record]*log(mndenom1);
+                         densityl2 -= y2P[record]*log(mndenom2);
+                         nthmnl = 0;
+                         mndenom1 = 1.0;
+                         mndenom2 = 1.0;
+                       }else{
+                         nthmnl++;
+                       }
                      }
                    break;
      
                    case 4: /* Weibull */
-                     densityl1 += dweibull(yP[record], 1.0, 1.0/exp(linki->x[i]), true);
-                     densityl2 += dweibull(yP[record], 1.0, 1.0/exp(linki_tmp->x[i]), true);
+                     densityl1 += dweibull(yP[record], 1.0, exp(-linki->x[i]), true);
+                     densityl2 += dweibull(yP[record], 1.0, exp(-linki_tmp->x[i]), true);
                    break;
     
                    case 5: /* Exponential */
-                     densityl1 += dexp(yP[record], 1.0/exp(linki->x[i]), true);
-                     densityl2 += dexp(yP[record], 1.0/exp(linki_tmp->x[i]), true);
+                     densityl1 += dexp(yP[record], exp(-linki->x[i]), true);
+                     densityl2 += dexp(yP[record], exp(-linki_tmp->x[i]), true);
                    break;
     
                    case 6: /* Censored Gaussian */
+
                      if(linki_tmp->x[i]<yP[record] || linki_tmp->x[i]>y2P[record]){
                        if(linki_tmp->x[i]<yP[record]){
                          if(int(interval)%2==1){
@@ -1086,13 +1267,13 @@ cs*     KGinv[nGR];
 		   break;
 						 
                    case 8: /* Censored Weibull */
-                     densityl1 += log(pweibull(y2P[record], 1.0, 1.0/exp(linki->x[i]), true, false)-pweibull(yP[record],1.0, 1.0/exp(linki->x[i]), true, false));
-                     densityl2 += log(pweibull(y2P[record], 1.0, 1.0/exp(linki_tmp->x[i]), true, false)-pweibull(yP[record],1.0, 1.0/exp(linki_tmp->x[i]), true, false));
+                     densityl1 += log(pweibull(y2P[record], 1.0, exp(-linki->x[i]), true, false)-pweibull(yP[record],1.0, exp(-linki->x[i]), true, false));
+                     densityl2 += log(pweibull(y2P[record], 1.0, exp(-linki_tmp->x[i]), true, false)-pweibull(yP[record],1.0, exp(-linki_tmp->x[i]), true, false));
                    break;                                            
 
                    case 9: /* Censored Exponential */
-                     densityl1 += log(pexp(y2P[record], 1.0/exp(linki->x[i]), true, false)-pexp(yP[record], 1.0/exp(linki->x[i]), true, false));
-                     densityl2 += log(pexp(y2P[record], 1.0/exp(linki_tmp->x[i]), true, false)-pexp(yP[record], 1.0/exp(linki_tmp->x[i]), true, false));
+                     densityl1 += log(pexp(y2P[record], exp(-linki->x[i]), true, false)-pexp(yP[record], exp(-linki->x[i]), true, false));
+                     densityl2 += log(pexp(y2P[record], exp(-linki_tmp->x[i]), true, false)-pexp(yP[record], exp(-linki_tmp->x[i]), true, false));
                    break;  
 						 
 		   case 10: /* Zero-inflated Gaussian */
@@ -1104,8 +1285,8 @@ cs*     KGinv[nGR];
                        mndenom1 = dpois(yP[record], exp(linki->x[i]), true);  
                        mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true);  
                      }else{
-			mndenom1 += log(1.0-exp(linki->x[i])/(1.0+exp(linki->x[i])));
-			mndenom2 += log(1.0-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
+			mndenom1 += log1p(-exp(linki->x[i])/(1.0+exp(linki->x[i])));
+			mndenom2 += log1p(-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
                         if(yP[record]>0.5){
 			  mndenom1 = log(exp(mndenom1)+exp(linki->x[i])/(1.0+exp(linki->x[i])));
 			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));  
@@ -1126,29 +1307,40 @@ cs*     KGinv[nGR];
 
                    case 14: /* Ordered Mulinomial Probit */
 
-                     nthordinal = mfacP[rterm+i];
+                     if(mvtype[cnt+j]==0){   // univraiate binary models can be slice sampled
 
-                     if(int(yP[record])==1 || int(yP[record])==(ncutpointsP[nthordinal]-1)){
-                       if(int(yP[record])==1){
-                         densityl1 += pnorm(-linki->x[i], 0.0, 1.0, true,true);
-                         densityl2 += pnorm(-linki_tmp->x[i], 0.0, 1.0, true,true);
+                       
+                       if(yP[record]>1.5){
+	                 u = pnorm(linky->x[record], 0.0, 1.0, true, true);
+                         densityl1 += u;    // needed for the deviance calculation   
+                         u -= rexp(1.0);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), qnorm(u, 0.0, 1.0, true, true), 1e+35);
                        }else{
-                         densityl1 += log(1.0-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false));
-                         densityl2 += log(1.0-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false));
+                         u = pnorm(linky->x[record], 0.0, 1.0, false, true);
+                         densityl1 += u;   // needed for the deviance calculation
+                         u -= rexp(1.0);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, qnorm(u, 0.0, 1.0, false, true));		
                        }
+
                      }else{
-                       densityl1 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false));
-                       densityl2 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false));
+                       nthordinal = mfacP[rterm+i];
+
+                       if(int(yP[record])==1 || int(yP[record])==(ncutpointsP[nthordinal]-1)){
+                         if(int(yP[record])==1){
+                           densityl1 += pnorm(linki->x[i], 0.0, 1.0, false,true);
+                           densityl2 += pnorm(linki_tmp->x[i], 0.0, 1.0, false,true);
+                         }else{
+                           densityl1 += pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, false,true);
+                           densityl2 += pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, false,true);
+                         }
+                       }else{
+                         densityl1 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false));
+                         densityl2 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false));
+                       }
                      }
-
-
                    break;
 
                    case 15: /*  Nominal Multinomial Probit */
-
-                     densityl1 += yP[record]*pnorm(linki->x[i], 0.0, 1.0, true,true)+(y2P[record]-yP[record])*pnorm(linki->x[i], 0.0, 1.0, false,true);
-                     densityl2 += yP[record]*pnorm(linki_tmp->x[i], 0.0, 1.0, true,true)+(y2P[record]-yP[record])*pnorm(linki_tmp->x[i], 0.0, 1.0, false,true);
-
                    break;
                  }
                }
@@ -1156,7 +1348,8 @@ cs*     KGinv[nGR];
            }
            dbar += densityl1;
 
-           if(mvtype[cnt+j]<1){
+           if(mvtype[cnt+j]<0){
+
              densityl1 += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);
              densityl2 += cs_dmvnorm(linki_tmp, predi, ldet[k], Ginv[k]);
              zn[p] *= rACCEPT; 
@@ -1174,7 +1367,7 @@ cs*     KGinv[nGR];
 /* Adaptive MH */
 /***************/
 
-             if(AMtuneP[k]==1 && itt<burnin){
+             if(itt<burnin && AMtuneP[k]==1){
                t[p] ++;
                for(i=0; i<dimG; i++){
                  for(l=0; l<dimG; l++){
@@ -1197,7 +1390,7 @@ cs*     KGinv[nGR];
              }
            }
          }
-         if(AMtuneP[k]==1 && itt<burnin){
+         if(itt<burnin && AMtuneP[k]==1){
            for(i=0; i<dimG; i++){
              for(l=0; l<dimG; l++){
 	       propC[k]->x[i*dimG+l] += (muC[k]->x[i]*muC[k]->x[l])/(t[k]);
@@ -1222,10 +1415,144 @@ cs*     KGinv[nGR];
          rterm += dimG;
          cnt2+=nlGR[k]*dimG;
          cnt+=nlGR[k];
-
        }
      }
 	
+/***********************/
+/* update alpha for PX */
+/***********************/
+
+     if(nalpha>0){
+
+       for (i = 0; i < nalpha*nrowZ; i++){
+         Xalpha->x[i] = 0.0;
+       }
+
+       cnt = ncolX;
+       cnt2 = 0;
+       for (k = 0; k < nG; k++){
+         dimG = GRdim[k];
+         for (i = 0; i < dimG; i++){
+           if(PXtermsP[k]==1){   // parameter expanded 
+             for (l = 0; l < nlGR[k]; l++){ 
+               for (j = Worig->p[cnt+l]; j < Worig->p[cnt+l+1]; j++){ 
+                 Xalpha->x[cnt2*nrowZ+Worig->i[j]] += Worig->x[j]*location->x[cnt+l];    
+               }
+             }
+             cnt2 ++; 
+           }
+           cnt += nlGR[k];
+         }
+       }
+
+       tXalpha = cs_transpose(Xalpha, true);
+
+       XtmKRinv = cs_multiply(tXalpha, KRinv);   
+	
+       alphaM = cs_multiply(XtmKRinv, Xalpha);          
+
+       alphaMME = cs_add(alphaM, Alphainv, 1.0, 1.0);                      
+
+       alphaL = cs_chol(alphaMME, alphaS); 
+
+       if(alphaL==NULL){
+         error("alpha equations singular: use a (stronger) prior for the alphas\n");
+       }
+
+       for(i=0; i<nalpha; i++){
+          alphaastar->x[i] = rnorm(0.0,1.0);
+       }               
+
+       cs_ltsolve(AlphainvL->L, alphaastar->x);
+       for(i=0; i<nalpha; i++){
+          alphaastar->x[i]  += muAlpha->x[i];
+       }      
+                    
+       cnt=0;
+       for(k=nG; k<nGR; k++){
+         dimG = GRdim[k];
+         for(i=0; i<nlGR[k]; i++){
+           for(j=0; j<dimG; j++){
+             Grv[k]->x[j] = rnorm(0.0,1.0);
+           }
+           cs_ltsolve(GinvL[k]->L, Grv[k]->x);
+           for(j=0; j<dimG; j++){
+             alphazstar->x[j*nlGR[k]+i+cnt] = Grv[k]->x[j];     
+           }
+         }
+         cnt += dimG*nlGR[k];  
+       }  
+  
+// form W%*%theta for non expanded parameter
+
+       for (i = 0; i < ny; i++){
+           alphapred->x[i] = linky->x[i];
+       }
+       for (l = 0; l < ncolX; l++){
+          for (j = W->p[l]; j < W->p[l+1]; j++){ 
+             alphapred->x[W->i[j]] -= W->x[j]*location->x[l]; 
+          }
+       }
+
+       cnt = ncolX;
+
+       for (k = 0; k < nG; k++){
+         dimG = GRdim[k];
+         for (i = 0; i < dimG; i++){
+           if(PXtermsP[k]==0){   // non-parameter expanded 
+             for (l = 0; l < nlGR[k]; l++){ 
+               for (j = W->p[cnt+l]; j < W->p[cnt+l+1]; j++){ 
+                 alphapred->x[W->i[j]] -= W->x[j]*location->x[cnt+l];    
+               }
+             }
+           }
+           cnt += nlGR[k];
+         }
+       }
+
+       cs_gaxpy(Xalpha, alphaastar->x, alphazstar->x);
+
+       for (i = 0 ; i < ny ; i++){
+         alphapred->x[i] -= alphazstar->x[i];       // form y - z*
+       }
+
+       alphaastar_tmp = cs_multiply(XtmKRinv, alphapred);                 // XtmKRinv(y - z*)
+
+       for (i = 0 ; i < alphaastar_tmp->nzmax ; i++){
+         alphalocation->x[alphaastar_tmp->i[i]] = alphaastar_tmp->x[i];
+       }
+
+       for (i = 0 ; i < nalpha; i++){
+         alphalocation_tmp->x[i] = 0.0;
+       }
+
+       cs_ipvec (alphaS->pinv, alphalocation->x, alphalocation_tmp->x, alphaMME->n);	 
+       cs_lsolve(alphaL->L,alphalocation_tmp->x);                                // x = L\x 
+       cs_ltsolve (alphaL->L, alphalocation_tmp->x);		                 // x = L'\x 
+       cs_pvec (alphaS->pinv, alphalocation_tmp->x, alphalocation->x, alphaMME->n);        // b = P'*x 
+
+       for (i = 0 ; i < nalpha; i++){
+         alphalocation->x[i] += alphaastar->x[i];
+       }  
+
+       cnt = ncolX;
+       cnt2 = 0;
+       for (k = 0; k < nG; k++){
+         dimG = GRdim[k];
+         for (i = 0; i < dimG; i++){
+           if(PXtermsP[k]==1){    // parameter expanded 
+             for (j = Worig->p[cnt]; j < Worig->p[cnt+nlGR[k]]; j++){ 
+               W->x[j] = Worig->x[j]*alphalocation->x[cnt2];     
+             }
+             cnt2 ++; 
+           }
+           cnt += nlGR[k];
+         }
+       } 
+       cs_spfree(Wt);
+       Wt = cs_transpose(W, true);                               
+     }
+
 /***********************/
 /*   store posterior   */
 /***********************/
@@ -1244,7 +1571,7 @@ cs*     KGinv[nGR];
        }
      }
 
-     if(DICP[0]==1 && itt>=burnin){
+     if(itt>=burnin && DICP[0]==1){
        mdbar *= (itt-burnin);
        mdbar += dbar;
        mdbar /= (itt-burnin+1.0);
@@ -1266,7 +1593,7 @@ cs*     KGinv[nGR];
        }
      }
 
-     if(itt>=burnin && itt%thin == 0 && itt!=nitt){
+     if(itt%thin == 0 && itt>=burnin && itt!=nitt){
        if(DICP[0]==1){
          dbarP[post_cnt] = dbar;
        }
@@ -1279,26 +1606,61 @@ cs*     KGinv[nGR];
            }
          }
        }
+       for (i = 0 ; i < ncolX ; i++){
+         LocP[i+post_cnt*(ncolX+pr*ncolZ)] = location->x[i];
+       }
        if(pr){
-         for (i = 0 ; i < dimAS ; i++){
-           LocP[i+post_cnt*dimAS] = location->x[i];
+         if(nalpha>0){
+           cnt=0;
+           cnt2=0;
+           for(k=0; k<nG; k++){
+             dimG = GRdim[k];
+             if(PXtermsP[k]==1){
+               for(j=0; j<dimG; j++){
+                 for(i=0; i<nlGR[k]; i++){              
+                   LocP[ncolX+post_cnt*dimAS+cnt] = location->x[ncolX+cnt]*alphalocation->x[cnt2];
+                   cnt++;
+                 }
+                 cnt2++;
+               }               
+             }else{
+               for(j=0; j<dimG; j++){
+                 for(i=0; i<nlGR[k]; i++){              
+                   LocP[ncolX+post_cnt*dimAS+cnt] = location->x[ncolX+cnt];
+                   cnt++;
+                 }
+               }
+             }
+           }
+         }else{
+           for (i = ncolX ; i < dimAS ; i++){
+             LocP[i+post_cnt*dimAS] = location->x[i];
+           }
          }
-       }else{
-         for (i = 0 ; i < ncolX ; i++){
-           LocP[i+post_cnt*ncolX] = location->x[i];
-         }
-       } 
+       }
        if(pl==1){
          for (i = 0 ; i < ny; i++){
            PLiabP[i+post_cnt*ny]  = linky->x[i];
          }
        }
+
        cnt=0;
+       cnt2=0;
        for(i=0; i<nGR; i++){
          dimG = GRdim[i];
-         for(j=0; j<(dimG*dimG); j++){
-           VarP[cnt+post_cnt*tvc] = G[i]->x[j];
-           cnt++;
+         if(PXtermsP[i]==0){
+           for(j=0; j<(dimG*dimG); j++){
+             VarP[cnt+post_cnt*tvc] = G[i]->x[j];
+             cnt++;
+           }
+         }else{
+           for(j=0; j<dimG; j++){              
+             for(k=0; k<dimG; k++){
+               VarP[cnt+post_cnt*tvc] = G[i]->x[j*dimG+k]*alphalocation->x[cnt2+j]*alphalocation->x[cnt2+k];
+               cnt++;
+             }
+           }
+           cnt2 += dimG;
          }
        }
        post_cnt++;
@@ -1325,8 +1687,6 @@ cs*     KGinv[nGR];
         cs_spfree(Omega);
         cs_spfree(MME);
         cs_spfree(zstar);
-        cs_spfree(zstar_tmp);
-        cs_spfree(zstar_tmp2);
         cs_spfree(astar);
         cs_spfree(astar_tmp);
         cs_spfree(location);
@@ -1341,9 +1701,9 @@ cs*     KGinv[nGR];
         cs_spfree(predi);
         cs_spfree(dev);                              
         cs_spfree(pvB);
-        cs_spfree(pmuB);                                
-
-                                
+        cs_spfree(pmuB);  
+        cs_spfree(Brv);                                
+                                                              
         if(Aexists){
           cs_spfree(A);               
           cs_spfree(bv);                                                              
@@ -1353,6 +1713,8 @@ cs*     KGinv[nGR];
 
         cs_nfree(L);
         cs_sfree(S);
+        cs_nfree(pvBL);
+        cs_sfree(pvBS);
 
         for(i=0; i<nGR; i++){
 	    cs_spfree(Ginv[i]);
@@ -1366,7 +1728,27 @@ cs*     KGinv[nGR];
 	    cs_nfree(GinvL[i]);
             cs_spfree(KGinv[i]);
         }
-
+        
+        if(nalpha>0){
+	  cs_spfree(Alphainv);
+	  cs_spfree(muAlpha);
+          cs_spfree(Xalpha);
+          cs_spfree(tXalpha);
+          cs_spfree(XtmKRinv);
+          cs_spfree(alphaM);
+          cs_spfree(alphaMME);
+          cs_spfree(Worig);
+          cs_sfree(alphaS);
+          cs_nfree(alphaL);
+          cs_sfree(AlphainvS);                  
+          cs_nfree(AlphainvL);    
+          cs_spfree(alphaastar);
+          cs_spfree(alphazstar);
+          cs_spfree(alphapred);
+          cs_spfree(alphaastar_tmp);
+          cs_spfree(alphalocation);
+          cs_spfree(alphalocation_tmp);
+        }
 
         for(i=nG; i<nGR; i++){
 	    cs_spfree(propC[i]);

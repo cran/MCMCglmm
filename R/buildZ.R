@@ -1,4 +1,4 @@
-buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
+buildZ<-function(x, data, formZ=TRUE){
 
   vtype="idh"
   if(length(grep("^us\\(", x))>0){
@@ -56,8 +56,10 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
   if(length(rterms)==0){
     rfactor<-rep(as.factor(1), dim(data)[1]) 	
   }else{
+    if(any(rterms%in%colnames(data)==FALSE)){stop(paste("object", paste(rterms, collapse=" and "), "not found"))}
     rfactor<-interaction(data[,rterms], drop=(Aterm==0))  # random effects are dropped if they are not animal 
   }
+
   nfl<-ncol(X)
   nrl<-nlevels(rfactor)
   nd<-length(rfactor)
@@ -84,11 +86,25 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
 
     if(nfl==0){
 
-      missing<-rep(0,ncol(Ztmp))
+      missing<-which(colSums(Ztmp)==0)  # non-represented random effects (or zero covariates for RR)
 
-      missing[which(colSums(Ztmp)==0)]<-1
+      #################################################################################################
+      # It woule be more efficient to allow complete sparse columns in Z - but need to change C code! #
+      #################################################################################################
+ 
+      if(length(missing)>0){        
+        if(Aterm==0){                       # if not associated with ginv drop terms     
+          Ztmp<-Ztmp[,-missing,drop=FALSE]
+          nrl[i]<-ncol(Ztmp)              
+        }else{                              # if associated with ginv set arbitrary row to structural zero   
+          for(j in 1:length(missing)){
+            Ztmp[j,missing[j]]<-1e-64     
+          }
+        }
+      }
+
       nfl<-1
-      return(list(Z=Ztmp, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=paste(rterms, collapse=":"), ordering=NULL, trait.ordering=NULL, missing=missing))
+      return(list(Z=Ztmp, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=paste(rterms, collapse=":"), ordering=NULL, trait.ordering=NULL))
 
     }else{
   
@@ -108,21 +124,35 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
         Xtmp@x<-Xcol@x
         Z<-Xtmp%*%Ztmp
         colnames(Z)<-paste(paste(rterms, collapse=":"), colnames(X)[i], colnames(Z),sep=".") 
-        Zmissing<-rep(0,ncol(Z))
-        Zmissing[which(colSums(Z)==0)]<-1
-        if((vtype=="idh" | vtype=="idv") & Aterm==0){
-          if(any(Zmissing!=0)){
-            Z<-Z[,-which(Zmissing==1),drop=FALSE]
-            Zmissing<-Zmissing[-which(Zmissing==1)]
+
+        missing<-which(colSums(Z)==0)
+
+        #################################################################################################
+        # It woule be more efficient to allow complete sparse columns in Z - but need to change C code! #
+        #################################################################################################
+
+        if(length(missing)>0){
+          if(vtype=="idh" | vtype=="idv"){
+            if(Aterm==0){                     # if univariate G-structure and no Ginv term drop levels
+              Z<-Z[,-missing,drop=FALSE]
+              nrl[i]<-ncol(Z)
+            }else{                            # if univariate G-structure but Ginv term replace with structural zeros
+              for(j in 1:length(missing)){
+                 Z[j,missing[j]]<-1e-64
+              }
+            }
+          }else{                              # if multiivariate G-structure replace with structural zeros
+            for(j in 1:length(missing)){
+              Z[j,missing[j]]<-1e-64
+            }
           }
-          nrl[i]<-ncol(Z)
         }
+
+
         if(i==1){
           Zsave<-Z
-          missing<-Zmissing
         }else{
           Zsave<-cBind(Zsave,Z)
-          missing<-c(missing, Zmissing)
         }
       }
       if(vtype=="idh"){
@@ -135,7 +165,7 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
 	nfl<-1
 	vnames<-vnames[1]  
       }
-      return(list(Z=Zsave, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=NULL, trait.ordering=NULL, missing=missing))
+      return(list(Z=Zsave, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=NULL, trait.ordering=NULL))
     }
 
   }else{
@@ -143,10 +173,6 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
     if(nfl==0){
       nfl=1
       ordering<-order(as.numeric(rfactor))
-      if(add.missing){
-        nrl<-nrl+1
-        ordering<-c(ordering,length(ordering)+1)
-      }
       trait.ordering<-data$trait[1]
       vnames<-paste(rterms, collapse=":")
     }else{
@@ -168,16 +194,7 @@ buildZ<-function(x, data, formZ=TRUE, add.missing=FALSE){
           vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=".")
         }
       }
-      if(add.missing){
-        nrl[1]<-nrl[1]+1
-        ordering<-c(ordering,100000000*(1:nfl[1])+nfl[1]+1)
-      }
     }
-    if(add.missing){
-      missing<-nfl[1]
-    }else{
-      missing<-0
-    }
-    return(list(Z=NULL, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=ordering, trait.ordering=trait.ordering, missing=missing))
+    return(list(Z=NULL, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=ordering, trait.ordering=trait.ordering))
   }
 }

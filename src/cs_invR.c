@@ -66,10 +66,15 @@ double cs_invR(const cs *C, const cs *A){
        }
 	  CN *= cs_norm(A);
 	
-	  if (1/CN < Ctol || det < Dtol){
-		error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
-	  }
-	
+	  if (1/CN < Ctol){ 
+	    error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
+          }
+	  if(det < Dtol){
+             if(n==1){
+               A->x[0] = Dtol;
+             }
+	   }
+
 	  return (det) ;	/* success; free workspace, return C */
 
 }

@@ -37,6 +37,8 @@ MCMCglmm is a package for fitting Generalised Linear Mixed Models using Markov c
 \end{Sinput}
 \end{Schunk}
 
+This tutorial is now a bit out of date and I would recommend reading the course notes (\texttt{vignette("CourseNotes", "MCMCglmm")}) for more indepth and up to date information. 
+
 \section{An Empirical Example}
 
 To demonstrate how to fit and interpret these models we will use some data from a pilot study on the Indian meal moth (\emph{Plodia interpunctella}) and its granulosis virus, PiGV.  This data was collected by Hannah Tidbury \& Mike Boots at the University of Sheffield, and highlights a range of model fitting problems that are hard to solve with standard techniques. The aim of the study was to see if there was an association between the amount of phenoloxidase (PO) produced by the caterpillars and resistance to being artificially infected by the virus (measured as successfully reaching pupation). The difficulty with the experiment is that measuring PO is lethal, and so it is not possible to have individual measures for both PO and resistance to the virus. The solution was to take full-sib families and measure half the individuals for PO and infect the other half with the virus. The aim then was to estimate the `genetic' correlation between the two measures.  

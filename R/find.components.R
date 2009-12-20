@@ -52,9 +52,14 @@ find.components<-function(x, data){
 
   fformula=names(attr(X, "contrasts"))
 
+  # IDEALLY - WHEN ANIMAL SPECIFIED at.level/set.level TERMS SHOULD BE RETAINED IN fformula
+
   if(is.null(fformula)==FALSE){
     if(any(fformula=="trait") & notrait){
-      fformula=NULL
+      fformula<-fformula[-which(fformula=="trait")]
+      if(length(fformula)==0){
+        fformula<-NULL
+      }
     }
   }
   if(any(rterms=="animal")){

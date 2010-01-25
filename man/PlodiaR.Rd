@@ -13,8 +13,6 @@ experimentally infected with the virus \code{Infected} and the number of those
 that pupated \code{Pupated}. These full-sib family identifiers also relate to 
 the full-sib family identifiers in PlodiaPO}
 \source{Tidbury H & Boots M (2007) University of Sheffield}
-\references{
-}
 \seealso{\link{PlodiaRB}, \link{PlodiaPO}}
 \keyword{datasets}
 

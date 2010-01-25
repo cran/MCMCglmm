@@ -8,5 +8,4 @@
 \references{
 Clutton-Brock T., Pemberton, J. Eds. 2004 Soay Sheep: Dynamics \& Selection in an Island Population
 }
-\seealso{}
 \keyword{datasets}

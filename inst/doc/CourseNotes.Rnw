@@ -13,11 +13,27 @@
 \usepackage{tocbibind}
 \usepackage{makeidx}
 \usepackage{color}
+\usepackage{hyperref}
+
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+  \hypersetup{%
+    hyperindex = {true},
+    colorlinks = {true},
+    linktocpage = {true},
+    plainpages = {false},
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {red},
+    pdfstartview = {Fit},
+    pdfpagemode = {UseOutlines},
+    pdfview = {XYZ null null null}
+  }
 
 \makeindex
 
-% \SweaveOpts{width=60}
-% \VignetteIndexEntry{MCMCglmm Tutorial}
+%\SweaveOpts{width=60}
+% \VignetteIndexEntry{MCMCglmm CourseNotes}
 %\newcommand{\begin{document}}{\chapter{}}
 %\newcommand{\begin{master_document}}{\begin{document}}
 
@@ -65,9 +81,6 @@ These are (incomplete) course notes about generalised linear mixed models (GLMM)
 %\end{table}
 
  
-<<echo=FALSE>>=
-par(bty="l")
-@
 \include{Lecture1}
 \include{Lecture2}
 \include{Lecture3}
@@ -82,7 +95,7 @@ par(bty="l")
 
 MCMCglmm relies heavily on sparse matrix operations facilitated by the CSparse library written by Tim Davis, whom I thank. Countless people have given me feedback, suggestions and bug reports. In particular, I'd like to thank Shinichi Nakagawa, Michael Morrissey \& Laura Ross, and also Loeske Kruuk who provided funding for this work through a Leverhulme trust award. More recently this work has been funded by NERC. 
 
-\bibliographystyle{amnat}
+\bibliographystyle{jss}
 \bibliography{JarLib}
 
 

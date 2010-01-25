@@ -9,8 +9,6 @@
 full-sib family (\code{FSfamily}), phenoloxidase measures (\code{PO}), and plate 
 (\code{plate}). PO has undergone a Box-Cox power transformation of 0.141}
 \source{Tidbury H & Boots M (2007) University of Sheffield}
-\references{
-}
 \seealso{\link{PlodiaR}, \link{PlodiaRB}}
 \keyword{datasets}
 

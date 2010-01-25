@@ -18,8 +18,6 @@ and for pedigrees a vector of id's can be passed which inverts the relatedness
 matrix for that subset.}
   \item{scale}{logical: should a phylogeny (needs to be ultrametric) be scaled 
 to unit length (distance from root to tip)?}}
-\details{
-}
 \value{
   \item{Ainv}{inverse as \code{sparseMatrix}}
   \item{inbreeding}{inbreeding coefficients/branch lengths}

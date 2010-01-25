@@ -13,7 +13,9 @@ cs *cs_inv(const cs *C){
     cs *A;
     n = C->n;
     det=1.0;
-    int indxc[n], indxr[n],ipiv[n]; 
+    int indxc[n],
+	    indxr[n],
+		ipiv[n]; 
 
     A = cs_spalloc (n, n, n*n, 1, 0);
 

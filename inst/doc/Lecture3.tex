@@ -12,7 +12,22 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
+\usepackage{hyperref}
 
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+  \hypersetup{%
+    hyperindex = {true},
+    colorlinks = {true},
+    linktocpage = {true},
+    plainpages = {false},
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {red},
+    pdfstartview = {Fit},
+    pdfpagemode = {UseOutlines},
+    pdfview = {XYZ null null null}
+  }
 
 \title{Categorical Random Interactions}
 
@@ -63,8 +78,8 @@ The traces from the Markov chain look reasonable (Figure \ref{mBTVCV-fig}), and 
 > diag(autocorr(m3a.1$VCV)[2, , ])
 \end{Sinput}
 \begin{Soutput}
-        dam  fosternest       units 
-0.029731577 0.337123023 0.003081286 
+       dam fosternest      units 
+0.04355271 0.37201126 0.01601377 
 \end{Soutput}
 \end{Schunk}
 
@@ -76,7 +91,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
- 1000.0000   488.1017  1000.0000 
+  803.3475   405.5459  1000.0000 
 \end{Soutput}
 \end{Schunk}
 
@@ -90,9 +105,9 @@ The posterior correlation between the parameters is low
 \end{Sinput}
 \begin{Soutput}
                    dam fosternest       units
-dam         1.00000000 -0.2212656 -0.03972778
-fosternest -0.22126563  1.0000000 -0.15603099
-units      -0.03972778 -0.1560310  1.00000000
+dam         1.00000000 -0.2735331 -0.07248912
+fosternest -0.27353307  1.0000000 -0.14000130
+units      -0.07248912 -0.1400013  1.00000000
 \end{Soutput}
 \end{Schunk}
 
@@ -106,9 +121,9 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 \end{Sinput}
 \begin{Soutput}
                 lower     upper
-dam        0.14319866 0.3252834
-fosternest 0.01766090 0.1290711
-units      0.51501074 0.6389049
+dam        0.13470245 0.3148237
+fosternest 0.01250724 0.1250839
+units      0.51781330 0.6424352
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -125,13 +140,13 @@ and perhaps a model without it would be better supported, although the DIC sugge
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.434
+[1] 2014.169
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.897
+[1] 1991.988
 \end{Soutput}
 \end{Schunk}
 
@@ -143,8 +158,8 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 > HPDinterval(m3a.1$VCV[, 1]/rowSums(m3a.1$VCV))
 \end{Sinput}
 \begin{Soutput}
-        lower    upper
-var1 0.182828 0.357196
+         lower     upper
+var1 0.1772118 0.3488745
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -166,16 +181,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
                Mean      SD Naive SE Time-series SE
-(Intercept) -0.4052 0.06685 0.002114       0.001968
-sexMale      0.7714 0.05791 0.001831       0.001644
-sexUNK       0.2128 0.12743 0.004030       0.003953
+(Intercept) -0.4064 0.06782 0.002145       0.001599
+sexMale      0.7682 0.05740 0.001815       0.001555
+sexUNK       0.2092 0.12881 0.004073       0.004186
 
 2. Quantiles for each variable:
 
                 2.5%     25%     50%     75%   97.5%
-(Intercept) -0.54209 -0.4480 -0.4050 -0.3607 -0.2798
-sexMale      0.65537  0.7330  0.7726  0.8082  0.8905
-sexUNK      -0.02915  0.1307  0.2112  0.2946  0.4641
+(Intercept) -0.54183 -0.4524 -0.4054 -0.3609 -0.2762
+sexMale      0.65256  0.7286  0.7698  0.8083  0.8748
+sexUNK      -0.04448  0.1250  0.2107  0.2974  0.4660
 \end{Soutput}
 \end{Schunk}
 
@@ -276,13 +291,13 @@ We can extract the marginal means for each variance and place them into a matrix
 \end{Sinput}
 \begin{Soutput}
      sexFem.dam sexMale.dam sexUNK.dam
-[1,]  0.1752493   0.0000000 0.00000000
-[2,]  0.0000000   0.1689354 0.00000000
-[3,]  0.0000000   0.0000000 0.05723843
+[1,]  0.1780549   0.0000000 0.00000000
+[2,]  0.0000000   0.1721624 0.00000000
+[3,]  0.0000000   0.0000000 0.05509935
 \end{Soutput}
 \end{Schunk}
 
-Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.227)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
+Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.228)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -336,9 +351,9 @@ The posterior mean (co)variances for this model show that the covariances are al
 \end{Sinput}
 \begin{Soutput}
      sexFem.dam.sexFem.dam sexMale.dam.sexFem.dam sexUNK.dam.sexFem.dam
-[1,]             0.2315287              0.1993445             0.2115677
-[2,]             0.1993445              0.2113756             0.2004348
-[3,]             0.2115677              0.2004348             0.2557272
+[1,]             0.2381187              0.2031793             0.2257735
+[2,]             0.2031793              0.2125059             0.2130592
+[3,]             0.2257735              0.2130592             0.2793702
 \end{Soutput}
 \end{Schunk}
 
@@ -382,13 +397,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1996.309
+[1] 1996.953
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.897
+[1] 1991.988
 \end{Soutput}
 \end{Schunk}
 
@@ -638,6 +653,8 @@ In Lecture \ref{chap2} we saw that a non-informative prior for a variance compon
 
 \label{VCVprior-sec}
 \ifalone
+\bibliographystyle{jss}
+\bibliography{JarLib}
 \end{document}
 \else
 \fi

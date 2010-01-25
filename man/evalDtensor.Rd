@@ -12,8 +12,6 @@ evalDtensor(x, mu)
   \item{mu}{values at which the derivatives are evaluated: names need to match 
 terms in x}
 }
-\details{
-}
 \value{
    tensor 
 }

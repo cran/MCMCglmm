@@ -9,13 +9,10 @@ Ptensor(x, k)
   \item{x}{matrix; traits in columns samples in rows}
   \item{k}{kth central moment}
 }
-\details{
-}
 \value{
    \item{}{tensor}
  }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\seealso{}
 \examples{
 n<-1000
 y<-mvrnorm(n, c(0,0), diag(2))

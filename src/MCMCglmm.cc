@@ -88,8 +88,6 @@ int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
         ny = nyP[0],          // number of records
         *nlGR = levelsRP,     // number of random levels 
         *GRdim = GRdimP,      // dimensions of variance structures
-        cond[GRdim[nG]],
-        keep[GRdim[nG]],
         ncond=0,
         nkeep=0,
         nitt = nittP[0], 
@@ -98,6 +96,9 @@ int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
         post_cnt = 0,
         tvc =0,          // total number of (co)variance components 
         nordinal = nordinalP[0];
+
+	int *cond = new int[GRdim[nG]];
+	int *keep = new int[GRdim[nG]];
 
 // Multinomial counters 
  
@@ -148,18 +149,19 @@ double  densityl1,
         alpha_star = (-double(GRdimP[nG])/(1.0-2.75*double(GRdimP[nG])))-0.133,  // optimal acceptance ratio
         rACCEPT = 0.9,
         qACCEPT = 2.0,
-        t[nGR*2],
-        sd[nGR*2],
-        wn[nGR*2],
-        zn[nGR*2],
-        ldet[nR+nG],
+        *t = new double[nGR*2],
+        *sd = new double[nGR*2],
+        *wn = new double[nGR*2],
+        *zn = new double[nGR*2],
+        *ldet = new double[nR+nG],
         interval,
         remainder,
         dm = 1.0/PedDimP[1];  // 0.5 for pedigrees 1 for phylogenies for taking averaging of potential bv.
 
+	
 //double inf = std::numeric_limits<double>::max();
 
-        int cumsum_ncutpoints[nordinal+1];
+        int *cumsum_ncutpoints = new int[nordinal+1];
             cumsum_ncutpoints[0] = 0;
         int ncutpoints_store = 0;
 
@@ -172,13 +174,13 @@ double  densityl1,
           }
         } 
 
-        double  oldcutpoints[cumsum_ncutpoints[nordinal]],
-                newcutpoints[cumsum_ncutpoints[nordinal]],
-                sdcp[nordinal],
-                wncp[nordinal],
-                zncp[nordinal],
-                accp[nordinal],
-                cutpointMHR[nordinal];
+        double  *oldcutpoints = new double[cumsum_ncutpoints[nordinal]],
+                *newcutpoints = new double[cumsum_ncutpoints[nordinal]],
+                *sdcp = new double[nordinal],
+                *wncp = new double[nordinal],
+                *zncp = new double[nordinal],
+                *accp = new double[nordinal],
+                *cutpointMHR = new double[nordinal];
 
         if(cp){
           cnt = 0;
@@ -209,21 +211,21 @@ cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zs
 csn	*L, *pvBL, *alphaL, *AlphainvL;
 css     *S, *pvBS, *alphaS, *AlphainvS;
 
-cs*     Ginv[nGR];
-cs*     muG[nGR];	
-cs*     propC[nGR*2];
-cs*     propCinv[nGR*2];
-cs*     muC[nGR*2];
-cs*     G[nGR];
-cs*     pG[nGR];
-cs*     CM[nGR];	
-cs*     Gtmp[nGR];
-cs*     Grv[nGR];
-css*    GinvS[nGR];
-csn*    GinvL[nGR];
-css*    propCinvS[nGR*2];
-csn*    propCinvL[nGR*2];
-cs*     KGinv[nGR];
+cs*     *Ginv = new cs*[nGR];
+cs*     *muG = new cs*[nGR];	
+cs*     *propC = new cs*[nGR*2];
+cs*     *propCinv = new cs*[nGR*2];
+cs*     *muC = new cs*[nGR*2];
+cs*     *G = new cs*[nGR];
+cs*     *pG = new cs*[nGR];
+cs*     *CM = new cs*[nGR];	
+cs*     *Gtmp = new cs*[nGR];
+cs*     *Grv = new cs*[nGR];
+css*    *GinvS = new css*[nGR];
+csn*    *GinvL = new csn*[nGR];
+css*    *propCinvS = new css*[nGR*2];
+csn*    *propCinvL = new csn*[nGR*2];
+cs*     *KGinv = new cs*[nGR];
 
 // read in fixed-effects design matrix X 
 
@@ -688,10 +690,6 @@ cs*     KGinv[nGR];
 
         for (itt = 0; itt < (nitt+DICP[0]); itt++){
 
-/***************************/
-/* sample location effects */
-/***************************/
-
           if(itt>0){
             for (i = 0 ; i < nGR; i++){
               if(updateP[i]==1){
@@ -733,12 +731,42 @@ cs*     KGinv[nGR];
             cs_spfree(alphaMME);
           }
 
+/******************/
+/* form equations */
+/******************/
+			
           for (i = 0 ; i < nGR ; i++){
             if(updateP[i]==1){
               GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
             }
           } 
+			
+			for (k = 0 ; k < nGR; k++){                             
+				if(updateP[k]==1){
+					if(AtermP[k]==1){
+						cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
+					}else{
+						cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
+					}
+				}  
+			}
+			
+			cs_directsumupdate(KGinv, nG, nGR, KRinv);
+			
+			WtmKRinv = cs_multiply(Wt, KRinv);   
+			
+			M = cs_multiply(WtmKRinv, W);                          // form M = WtmKRinv%*%W  
+			
+			cs_omegaupdate(KGinv, nG, pvB, Omega);                 // update Omega = bdiag(0, KGinv) 
+			
+			MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
 
+/*************************/
+/*  sample vectors from  */
+/*      their prior      */
+/*************************/
+
+/* beta */			
           cnt = 0;
 
           for(i=0; i<ncolX; i++){
@@ -750,16 +778,13 @@ cs*     KGinv[nGR];
           }                          // sample fixed effects from their prior
           cnt = ncolX;
 
-	  for(k=0; k<nG; k++){
+	      for(k=0; k<nG; k++){
             dimG = GRdim[k];
             if(AtermP[k]==1){          
 
-/***************/
-/*  pedigrees  */
-/* phylogenies */
-/***************/
+/* pedigree and phylogeny effects - to become non iid effects generally  */
 
-              if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar
+		      if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar				  
                 for(i=0; i<nlGR[k]; i++){
                   for(j=0; j<dimG; j++){
                     Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
@@ -779,13 +804,27 @@ cs*     KGinv[nGR];
                     }  
                   }
                 }
+				  for(i=0; i<nlGR[k]; i++){
+					  for(j=0; j<dimG; j++){
+						  Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
+					  }
+					  cs_ltsolve(GinvL[k]->L, Grv[k]->x);
+					  for(j=0; j<dimG; j++){
+						  astar->x[j*nlGR[k]+i+cnt] = Grv[k]->x[j];     
+					  }
+					  if(sireP[i]!=-999){  
+						  for(j=0; j<dimG; j++){
+							  astar->x[j*nlGR[k]+i+cnt] += 0.5*(astar->x[j*nlGR[k]+sireP[i]+cnt]);
+						  }  
+					  }
+					  if(damP[i]!=-999){  
+						  for(j=0; j<dimG; j++){
+							  astar->x[j*nlGR[k]+i+cnt] += dm*(astar->x[j*nlGR[k]+damP[i]+cnt]);
+						  }  
+					  }
+				  }
+				  				  
               }else{    // For situations where the number of individuals < the dimension of the pedigree/phylogeny
-
-/***************/
-/*   partial   */
-/*  pedigrees  */
-/* phylogenies */
-/***************/
 
                 for(i=0; i<PedDimP[0]; i++){
                   for(j=0; j<dimG; j++){
@@ -816,9 +855,8 @@ cs*     KGinv[nGR];
               }
             }else{
 
-/***********/
-/* blocked */
-/***********/ 
+/* blocked random effects */
+				
               for(i=0; i<nlGR[k]; i++){
                 for(j=0; j<dimG; j++){
                   Grv[k]->x[j] = rnorm(0.0,1.0);
@@ -832,10 +870,8 @@ cs*     KGinv[nGR];
             cnt += dimG*nlGR[k];                                                           // form [0, a*]
           }
 
-/************/
-/* residual */
-/************/
-
+/* residuals */
+			
           cnt=0;
 
           for(k=nG; k<nGR; k++){
@@ -852,31 +888,6 @@ cs*     KGinv[nGR];
             cnt += dimG*nlGR[k];  
           }    
 
-/******************/
-/* form equations */
-/******************/
-
-        for (k = 0 ; k < nGR; k++){                             
-          if(updateP[k]==1){
-            if(AtermP[k]==1){
-		cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
-            }else{
-                cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
-            }
-          }  
-        }
-
-	 cs_directsumupdate(KGinv, nG, nGR, KRinv);
-
-         WtmKRinv = cs_multiply(Wt, KRinv);   
-
-//		cs_tmultiplyupdate(W, KRinv, WtmKRinv);
-	
-         M = cs_multiply(WtmKRinv, W);                          // form M = WtmKRinv%*%W  
-
-         cs_omegaupdate(KGinv, nG, pvB, Omega);                 // update Omega = bdiag(0, KGinv) 
-
-         MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
 
 /************************/
 /* sample pseudo vector */

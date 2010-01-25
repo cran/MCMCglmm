@@ -15,6 +15,23 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
+\usepackage{hyperref}
+
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+  \hypersetup{%
+    hyperindex = {true},
+    colorlinks = {true},
+    linktocpage = {true},
+    plainpages = {false},
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {red},
+    pdfstartview = {Fit},
+    pdfpagemode = {UseOutlines},
+    pdfview = {XYZ null null null}
+  }
+
 \title{Multi-response models}
 
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
@@ -52,7 +69,7 @@ In practice does this matter? Lets imagine there was only one unmeasured variabl
 \end{Sinput}
 \end{Schunk}
 
-A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.002.
+A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.004.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -64,18 +81,18 @@ lm(formula = y.car ~ y.hol, data = Spending)
 
 Residuals:
       Min        1Q    Median        3Q       Max 
--0.912413 -0.193454 -0.004534  0.172240  1.142933 
+-0.973730 -0.180634  0.002579  0.163683  1.172051 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)  1.05190    0.03691  28.499   <2e-16 ***
-y.hol       -0.04029    0.03435  -1.173    0.241    
+(Intercept)  1.05925    0.03374  31.390   <2e-16 ***
+y.hol       -0.05613    0.03202  -1.753     0.08 .  
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 
-Residual standard error: 0.3013 on 798 degrees of freedom
-Multiple R-squared: 0.001721,	Adjusted R-squared: 0.0004697 
-F-statistic: 1.375 on 1 and 798 DF,  p-value: 0.2412 
+Residual standard error: 0.2776 on 798 degrees of freedom
+Multiple R-squared: 0.003836,	Adjusted R-squared: 0.002588 
+F-statistic: 3.073 on 1 and 798 DF,  p-value: 0.07999 
 \end{Soutput}
 \end{Schunk}
 
@@ -101,12 +118,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-     -0.171392       0.036304       0.001148       0.001299 
+    -0.1582607      0.0330955      0.0010466      0.0009278 
 
 2. Quantiles for each variable:
 
    2.5%     25%     50%     75%   97.5% 
--0.2430 -0.1958 -0.1712 -0.1461 -0.1006 
+-0.2228 -0.1798 -0.1586 -0.1356 -0.0949 
 \end{Soutput}
 \end{Schunk}
 
@@ -118,22 +135,22 @@ It is useful to think of a new data frame where the response variables have been
 \begin{array}{cc}
 \begin{array}{cccc}
 &{\color{blue} \texttt{y.hol}}&{\color{blue} \texttt{y.car}}&\texttt{id}\\
-{\color{red} \texttt{1}}&\texttt{1.301373}&\texttt{1.241138}&\texttt{1}\\
-{\color{red} \texttt{2}}&\texttt{0.591098}&\texttt{1.091690}&\texttt{1}\\
+{\color{red} \texttt{1}}&\texttt{1.131162}&\texttt{0.725513}&\texttt{1}\\
+{\color{red} \texttt{2}}&\texttt{0.846146}&\texttt{1.491301}&\texttt{1}\\
 \vdots&\vdots&\vdots\\
-{\color{red} \texttt{800}}&\texttt{1.077030}&\texttt{0.668279}&\texttt{200}\\
+{\color{red} \texttt{800}}&\texttt{0.639202}&\texttt{1.236248}&\texttt{200}\\
 \end{array}&
 \Longrightarrow
 \begin{array}{ccccc}
 &\texttt{y}&{\color{blue} \texttt{trait}}&\texttt{id}&{\color{red} \texttt{units}}\\
-1&\texttt{1.301373}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
-2&\texttt{0.591098}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
+1&\texttt{1.131162}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
+2&\texttt{0.846146}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-800&\texttt{1.077030}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
-801&\texttt{1.241138}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
-802&\texttt{1.091690}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
+800&\texttt{0.639202}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
+801&\texttt{0.725513}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
+802&\texttt{1.491301}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-1600&\texttt{0.668279}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
+1600&\texttt{1.236248}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
 \end{array}
 \end{array}
 \end{displaymath}
@@ -400,17 +417,17 @@ Sample size per chain = 1000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-        Mean      SD  Naive SE Time-series SE
-[1,] 0.65420 0.01736 0.0005490       0.001732
-[2,] 0.09843 0.01096 0.0003466       0.001388
-[3,] 0.24737 0.01647 0.0005207       0.001857
+       Mean      SD  Naive SE Time-series SE
+[1,] 0.6519 0.01866 0.0005899       0.001998
+[2,] 0.1015 0.01082 0.0003420       0.001376
+[3,] 0.2465 0.01608 0.0005086       0.001668
 
 2. Quantiles for each variable:
 
         2.5%     25%    50%    75%  97.5%
-var1 0.61808 0.64249 0.6545 0.6657 0.6877
-var2 0.07957 0.09069 0.0979 0.1056 0.1209
-var3 0.21648 0.23660 0.2474 0.2584 0.2798
+var1 0.61832 0.63892 0.6505 0.6646 0.6908
+var2 0.08042 0.09419 0.1010 0.1083 0.1252
+var3 0.21373 0.23583 0.2465 0.2569 0.2782
 \end{Soutput}
 \end{Schunk}
 
@@ -477,16 +494,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-[1,] 0.3460 0.03092 0.0009776       0.003128
-[2,] 0.2645 0.02917 0.0009226       0.002919
-[3,] 0.3894 0.03347 0.0010585       0.004203
+[1,] 0.3425 0.02890 0.0009139       0.002738
+[2,] 0.2652 0.02801 0.0008856       0.002709
+[3,] 0.3923 0.02690 0.0008508       0.002845
 
 2. Quantiles for each variable:
 
        2.5%    25%    50%    75%  97.5%
-var1 0.2861 0.3262 0.3457 0.3665 0.4074
-var2 0.2113 0.2436 0.2642 0.2846 0.3215
-var3 0.3268 0.3674 0.3883 0.4114 0.4605
+var1 0.2910 0.3229 0.3412 0.3607 0.4059
+var2 0.2119 0.2455 0.2634 0.2847 0.3183
+var3 0.3428 0.3746 0.3920 0.4100 0.4458
 \end{Soutput}
 \end{Schunk}
 
@@ -520,17 +537,17 @@ Sample size per chain = 1000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-         Mean       SD  Naive SE Time-series SE
-[1,] 0.828354 0.018279 5.780e-04      0.0023357
-[2,] 0.005322 0.002060 6.513e-05      0.0002933
-[3,] 0.166324 0.017951 5.677e-04      0.0022890
+         Mean      SD  Naive SE Time-series SE
+[1,] 0.830519 0.01638 5.181e-04      0.0018133
+[2,] 0.007157 0.00285 9.013e-05      0.0004108
+[3,] 0.162324 0.01575 4.981e-04      0.0017257
 
 2. Quantiles for each variable:
 
-         2.5%      25%      50%     75%   97.5%
-var1 0.789677 0.816256 0.830405 0.84156 0.86012
-var2 0.002356 0.003869 0.004969 0.00618 0.01019
-var3 0.134520 0.153238 0.164633 0.17820 0.20462
+         2.5%      25%      50%      75%   97.5%
+var1 0.795932 0.819874 0.831229 0.842285 0.86029
+var2 0.003288 0.004602 0.006822 0.009094 0.01315
+var3 0.134319 0.150683 0.161060 0.172850 0.19640
 \end{Soutput}
 \end{Schunk}
 
@@ -627,7 +644,7 @@ The model would have to be run for (much) longer to say something concrete about
 \end{Sinput}
 \begin{Soutput}
          0%         25%         50%         75%        100% 
-0.005888091 0.012854860 0.021884375 0.030824842 0.060844932 
+0.001105795 0.002941390 0.007548893 0.012695060 0.058058227 
 \end{Soutput}
 \end{Schunk}
 
@@ -662,6 +679,8 @@ Figure \ref{PPZIP}  shows a histogram of the posterior predictive distribution o
 
 
 \ifalone
+\bibliographystyle{jss}
+\bibliography{JarLib}
 \end{document}
 \else
 \fi

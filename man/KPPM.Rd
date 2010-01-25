@@ -11,14 +11,11 @@ KPPM(m, k)
   \item{m}{integer}
   \item{k}{integer}
 }
-\details{
-}
 \value{
   \item{}{Matrix}
 }
 \references{Schott, J.R.(2003) Journal of Multivariate Analysis 87 (1) 177-190}
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\note{}
 \examples{
 KPPM(2,3)
 }

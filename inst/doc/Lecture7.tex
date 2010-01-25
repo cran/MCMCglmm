@@ -11,8 +11,24 @@
 \usepackage{Sweave}
 \usepackage{lscape}
 \usepackage{makeidx}
+\usepackage{hyperref}
 
-\title{Appendices}
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+  \hypersetup{%
+    hyperindex = {true},
+    colorlinks = {true},
+    linktocpage = {true},
+    plainpages = {false},
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {red},
+    pdfstartview = {Fit},
+    pdfpagemode = {UseOutlines},
+    pdfview = {XYZ null null null}
+  }
+
+\title{Technical Details}
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
 
 \begin{document}
@@ -303,6 +319,8 @@ The deviance is calculated at each iteration if \texttt{DIC=TRUE} and stored eac
 \end{equation}
 
 \ifalone
+\bibliographystyle{jss}
+\bibliography{JarLib}
 \end{document}
 \else
 \fi

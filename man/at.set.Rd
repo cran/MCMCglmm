@@ -9,8 +9,6 @@ at.set(x, level)
   \item{x}{factor}
   \item{level}{set of factor levels}
 }
-\details{
-}
 \value{
     incidence matrix for the set \code{level} in x
 }

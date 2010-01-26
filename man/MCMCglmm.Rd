@@ -66,8 +66,6 @@ saved?}
   \item{saveZ}{logical: save random effect design matrix}
   \item{slice}{logical: should slice sampling be used? Only applicable for binary triats with indpendent residuals}
 }
-\details{
-}
 \value{
   \item{Sol}{Posterior Distribution of MME solutions, including fixed effects}
   \item{VCV}{Posterior Distribution of (co)variance matrices}

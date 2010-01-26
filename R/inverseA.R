@@ -83,7 +83,9 @@
     }
 
   }else{
-
+    if(is.rooted(pedigree)==FALSE){
+	   stop("phyloegny needs to be rooted")
+	}	
     if(is.null(pedigree$edge.length)){
       warning("no branch lengths: compute.brlen from ape has been used")
       pedigree$edge.length<-compute.brlen(pedigree)$edge.length
@@ -99,8 +101,13 @@
 
     node.names<-id
     node.names[tips]<-pedigree$tip.label
-    node.names[-tips]<-paste("a", 1:(length(id)-length(tips)), sep="")
-
+	  
+	if(is.null(pedigree$node.label)){
+	  pedigree<-makeNodeLabel(pedigree)
+	}
+	  
+	node.names[-tips]<-pedigree$node.label[-1]
+		
     inbreeding<-pedigree$edge.length[reorder]
     if(any(inbreeding<1e-16)){stop("some phylogeny edge.lengths are zero")}
 

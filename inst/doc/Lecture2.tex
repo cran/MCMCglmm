@@ -15,8 +15,24 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
+\usepackage{hyperref}
 
-\title{GLMs and GLMMs}
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+  \hypersetup{%
+    hyperindex = {true},
+    colorlinks = {true},
+    linktocpage = {true},
+    plainpages = {false},
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {red},
+    pdfstartview = {Fit},
+    pdfpagemode = {UseOutlines},
+    pdfview = {XYZ null null null}
+  }
+
+\title{Generalised Linear Mixed Models (GLMM)}
 
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
 \begin{document}
@@ -387,18 +403,18 @@ Note that the latent variable does not exactly predict y, as it would if the dat
 > mean(resid92)
 \end{Sinput}
 \begin{Soutput}
-[1] -0.1328844
+[1] -0.1332734
 \end{Soutput}
 \end{Schunk}
 
-This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=22.049. In fact there would be a 22.615\% chance of having more injuries than if the residual had been zero:
+This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=22.014. In fact there would be a 22.385\% chance of having more injuries than if the residual had been zero:
 
 \begin{Schunk}
 \begin{Sinput}
 > 1 - ppois(exp(mean(eta92)), exp(mean(lat92)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2261454
+[1] 0.2238471
 \end{Soutput}
 \end{Schunk}
 
@@ -418,7 +434,7 @@ This particular day has a negative residual indicating that the probability of g
 \label{vcv.traffic-fig}
 \end{figure}
 
-The forces that created this residual were only realised on day 92 in 1961, however we could ask hypothetically what if those forces were present on another day. Figure \ref{prediction1-fig} plots the first 92 residuals as function of day (red lines) as scatter around the expectation on the log scale (solid black line). Each residual is only realised once, and the black dashed line is the hypothetical \texttt{resid92} which happened to be observed on day 92 (black circle).\\
+The forces that created residual \texttt{resid92} were only realised on day 92 in 1961, however we could ask hypothetically what if those forces were present on another day. Figure \ref{prediction1-fig} plots the first 92 residuals as function of day (red lines) as scatter around the expectation on the log scale (solid black line). Each residual is only realised once, and the black dashed line is the hypothetical \texttt{resid92} which happened to be observed on day 92 (black circle).\\
 
 
 \iftalk
@@ -440,7 +456,7 @@ The forces that created this residual were only realised on day 92 in 1961, howe
 \includegraphics{Lecture2-030}
 \end{minipage}
 \label{prediction1-fig}
-\caption{The predicted number of injuries on the log scale (left) and data scale (right) as a function of the continuous covariate \texttt{day} for 1961 without a speed limit. In order to highlight a point, the slope of the plotted relationship is an order of magnitude steeper than the model \texttt{m2a.5} estimate.The black line is the value of the linear predictor, and the red dashed lines represent noise around the linear predictor. Each dashed line is a residual from the model, which is only observed for a particular data point. The vertical distance between the black dot and the solid black line is the observed residual on day 92. The black dashed line is the predicted value of a data point observed on other days but with the same residual value.  All lines are parallel and linear on the log scale, but this is not the case on the data scale.
+\caption{The predicted number of injuries on the log scale (left) and data scale (right) as a function of the continuous covariate \texttt{day} for 1961 without a speed limit. In order to highlight the differences, the slope of the plotted relationship is an order of magnitude steeper than the model \texttt{m2a.5} estimate.  The solid black line is the value of the linear predictor, and the red dashed lines represent noise around the linear predictor. Each dashed line is a residual from the model, which is only observed for a particular data point. The vertical distance between the black dot and the solid black line is the observed residual on day 92. The black dashed line is the predicted value of a data point observed on other days but with the same residual value.  All lines are parallel and linear on the log scale, but this is not the case on the data scale.
 }
 \end{figure}
 
@@ -467,7 +483,7 @@ It is perhaps more interesting to know the expected number of injuries that woul
 \includegraphics{Lecture2-038}
 \end{minipage}
 \label{prediction3-fig}
-\caption{The hypothetical distribution for the number of injuries on the log scale (left) and data scale (right) for day 92 in 1961 without a speed limit. These can viewed as vertical slices from Figure \ref{prediction1-fig} on day 92. On the log scale the distribution is assumed to be normal and so the residuals are symmetrically distributed around the linear predictor. As a consequence the linear predictor ($\eta$) is equal to the mean, median and mode of the distribution on the log scale. Because the exponential function is non-linear this symmetry is lost on the data scale, and the different measures of central tendency do not coincide. Since the residuals are normal on the log scale, the distribution on the data scale is log-normal and so analytical solutions exist for the mean, mode and median.  $\sigma^{2}$ is the residual variance.
+\caption{The hypothetical distribution for the number of injuries on the log scale (left) and data scale (right) for day 92 in 1961 without a speed limit. These can be viewed as vertical slices from Figure \ref{prediction1-fig} on day 92. On the log scale the distribution is assumed to be normal and so the residuals are symmetrically distributed around the linear predictor. As a consequence the linear predictor ($\eta$) is equal to the mean, median and mode of the distribution on the log scale. Because the exponential function is non-linear this symmetry is lost on the data scale, and the different measures of central tendency do not coincide. Since the residuals are normal on the log scale, the distribution on the data scale is log-normal and so analytical solutions exist for the mean, mode and median.  $\sigma^{2}$ is the residual variance.
 }
 \end{figure}
 
@@ -483,13 +499,13 @@ In the \texttt{Traffic} example the non linearities are small so the differences
 > exp(mean(m2a.5$Sol[, "(Intercept)"] + 0.5 * m2a.5$VCV[, 1]))
 \end{Sinput}
 \begin{Soutput}
-[1] 20.95478
+[1] 20.89346
 \end{Soutput}
 \begin{Sinput}
 > exp(mean(m2a.5$Sol[, "(Intercept)"]))
 \end{Sinput}
 \begin{Soutput}
-[1] 19.92898
+[1] 19.86686
 \end{Soutput}
 \begin{Sinput}
 > exp(m2a.3$coef["(Intercept)"])
@@ -580,7 +596,10 @@ and
 \end{Soutput}
 \end{Schunk}
 
-You will notice that this new design matrix is  exactly equivalent to the original design matrix \texttt{X} except we have one additional variable \texttt{year1961}. In our first model this variable was absorbed in to the global intercept because it could no be uniquely estimated from the data. What has changed that could make this additional parameter estimable?  As is usual in a Bayesian analysis, if there is no information in the data it has to come from the prior. In model \texttt{m2a.5} we used the default normal prior for the fixed effects with means of zero, large variances of $10^{8}$, and no covariances. Lets treat the year effects as random, but rather than estimate a variance component for them we'll fix the variance  at $10^{8}$ in the prior:
+You will notice that this new design matrix is  exactly equivalent to the original design matrix \texttt{X} except we have one additional variable \texttt{year1961}. In our first model this variable was absorbed in to the global intercept because it could no be uniquely estimated from the data. What has changed that could make this additional parameter estimable?  As is usual in a Bayesian analysis, if there is no information in the data it has to come from the prior. In model \texttt{m2a.5} we used the default normal prior for the fixed effects with means of zero, large variances of $10^{8}$, and no covariances. Lets treat the year effects as random, but rather than estimate a variance component for them we'll fix the variance  at $10^{8}$ in the prior.\\
+
+The prior specification now needs to include an additional element \texttt{G}, which stands for ${\bf G}$-structure. Because multiple terms may be entered into the random formula,  \texttt{G} itself should be a list with each element defining a prior for each  term in the random formula. In this case we only have a single random term so \texttt{G} only has a single element. The name of the element is arbitrary and it may be useful to give it a meaningful name. However, I've just called it  \texttt{G1}:\\
+
 
 \begin{Schunk}
 \begin{Sinput}
@@ -743,7 +762,7 @@ The following function may be of use:
 \end{Schunk}
 
 \section{Categorical Data}
-\ref{cat-sec}
+\label{cat-sec}
 
 Response variables consisting of levels of some categorical factor are best analysed using \texttt{family="categorical"} if the levels have no natural ordering,  or \texttt{family="ordinal"} if the levels do have a natural ordering, such as never $<$ sometimes $<$ always. The simplest variable of this type is binary data where the response variable is either a zero or a one, and can be analysed as \texttt{family="categorical"} (logit link) or \texttt{family="ordinal"} (probit link).   A binary distribution is a special case of the binomial distribution where the number of trials (\texttt{size}) is equal to 1. One way of interpreting a binomial response is to expand it into a series of binary variables and treat the zero's and ones as repeated measures. For example, we could generate two binomial variates each with 5 trials:
 
@@ -758,8 +777,8 @@ Response variables consisting of levels of some categorical factor are best anal
 \end{Sinput}
 \begin{Soutput}
         u.1 u.2
-success   2   3
-failure   3   2
+success   0   2
+failure   5   3
 \end{Soutput}
 \end{Schunk}
 
@@ -773,7 +792,7 @@ and then expand them into success or failure:
 \end{Sinput}
 \begin{Soutput}
      u.1 u.1 u.1 u.1 u.1 u.2 u.2 u.2 u.2 u.2
-[1,]   1   1   0   0   0   1   1   1   0   0
+[1,]   0   0   0   0   0   1   1   0   0   0
 \end{Soutput}
 \end{Schunk}
 
@@ -845,7 +864,7 @@ as do the variance components  (see Figure \ref{Bin2-fig}):
 \label{Bin2-fig}
 \end{figure}
 
-Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.684 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
+Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.699 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
 
 \begin{equation}
 \texttt{IC} =  \frac{\sigma^{2}_{\texttt{FSfamily}}}{\sigma^{2}_{\texttt{FSfamily}}+\sigma^{2}_{\texttt{units}}+\pi^{2}/3} 
@@ -877,7 +896,7 @@ Obtaing the posterior distribution of the intra-calss correlation for each model
 \label{IC-fig}
 \end{figure}
 
-We can also rescale the estimates by the estimated residual variance ($\sigma^{2}_{\texttt{units}}$) in order to obtain the posterior distributions of the parameters under the assumption that the actual residual variance ($\sigma^{2}_{e}$) is equal to some other value.  For location effects the posterior distribution needs to be multiplied by $\sqrt{\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}}$ and for the variance components the posterior distribution needs to be multiplied by $\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}$ where $c$ is some constant that depends on the link function. For the probit $c=1$ and for the logit $c=16\sqrt{3}/15\pi$ \citep{Zeger.1988}. We can obtain estimates under the assumption that $\sigma^{2}_{e}=0$: 
+Using an approximation due to \citet{Diggle.2004} we can also rescale the estimates by the estimated residual variance ($\sigma^{2}_{\texttt{units}}$) in order to obtain the posterior distributions of the parameters under the assumption that the actual residual variance ($\sigma^{2}_{e}$) is equal to some other value.  For location effects the posterior distribution needs to be multiplied by $\sqrt{\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}}$ and for the variance components the posterior distribution needs to be multiplied by $\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}$ where $c$ is some constant that depends on the link function. For the probit $c=1$ and for the logit $c=16\sqrt{3}/15\pi$. We can obtain estimates under the assumption that $\sigma^{2}_{e}=0$: 
 
 \begin{Schunk}
 \begin{Sinput}
@@ -896,7 +915,7 @@ We can also rescale the estimates by the estimated residual variance ($\sigma^{2
 \label{ICI-fig}
 \end{figure}
 
-The posteriors should be identical under a flat prior (See Figure \ref{ICI-fig}) although with different priors this is not always the case. Remarkably, \citep{vanDyk.2001} show that leaving a diffuse prior on $\sigma^{2}_{\texttt{units}}$ and rescaling the estimates each iteration, a Markov chain with superior mixing and convergence properties can be obtained (See section \ref{secPX}).\\  
+The posteriors should be virtually identical under a flat prior (See Figure \ref{ICI-fig}) although with different priors this is not always the case. Remarkably, \citep{vanDyk.2001} show that leaving a diffuse prior on $\sigma^{2}_{\texttt{units}}$ and rescaling the estimates each iteration, a Markov chain with superior mixing and convergence properties can be obtained (See section \ref{secPX}).\\  
 
 
 It should also be noted that a diffuse prior on the logit scale is not necessarily weakly informative on the probability scale. For example, the default setting for the prior on the intercept is $N(0, 10^{8})$ on the logit scale, which although relatively flat across most of the probability scale, has a lot of density close to zero and one:
@@ -928,7 +947,7 @@ This diffuse prior can cause problems if there is complete (or near complete) se
 \begin{Soutput}
          y
 treatment  0  1
-        1 16  9
+        1  9 16
         2 25  0
 \end{Soutput}
 \end{Schunk}
@@ -946,16 +965,16 @@ glm(formula = y ~ treatment, family = "binomial", data = data.bin)
 
 Deviance Residuals: 
        Min          1Q      Median          3Q         Max  
--9.448e-01  -9.448e-01  -7.976e-05  -7.976e-05   1.429e+00  
+-1.429e+00  -7.976e-05  -7.976e-05   9.448e-01   9.448e-01  
 
 Coefficients:
              Estimate Std. Error z value Pr(>|z|)
-(Intercept)   -0.5754     0.4167  -1.381    0.167
-treatment2   -18.9907  2150.8026  -0.009    0.993
+(Intercept)    0.5754     0.4167   1.381    0.167
+treatment2   -20.1414  2150.8026  -0.009    0.993
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 47.139  on 49  degrees of freedom
+    Null deviance: 62.687  on 49  degrees of freedom
 Residual deviance: 32.671  on 48  degrees of freedom
 AIC: 36.671
 
@@ -1038,8 +1057,8 @@ looks a little better (see Figure \ref{separation1-fig}), and the posterior dist
 > HPDinterval(mcmc(predict.MCMCglmm(m2c.4$Sol[, 2], 1, "binomial")))
 \end{Sinput}
 \begin{Soutput}
-           lower     upper
-var1 0.003170892 0.1185721
+            lower     upper
+var1 0.0004311017 0.1021100
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -1236,6 +1255,8 @@ The model:
 
 is therefore sampling from the same posterior distribution as model \texttt{m2a.5.1}.
 \ifalone
+\bibliographystyle{jss}
+\bibliography{JarLib}
 \end{document}
 \else
 \fi

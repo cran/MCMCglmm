@@ -11,8 +11,6 @@ kunif(min, max, k)
   \item{min, max}{lower and upper limits of the distribution.  Must be finite.}
   \item{k}{k central moment, must be even}
 }
-\details{
-}
 \value{
   kth central moment
 }

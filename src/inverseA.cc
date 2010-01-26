@@ -27,8 +27,8 @@ void inverseA(
 
   int     i, j, k, cnt, sj, dj;
   double  ai;
-  double  AN[nAP[0]];
-  double  li[nAP[0]];
+  double  *AN = new double[nAP[0]];
+  double  *li = new double[nAP[0]];
   cs *Tinv, *D, *tTinv, *tTD, *A, *tA;
 
   for(i=0; i<nAP[0]; i++){

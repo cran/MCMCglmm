@@ -15,8 +15,6 @@ subspace of B}
   \item{corr}{logical; if \code{TRUE} the variances of A and B are standardised}
   \item{...}{further arguments to be passed}
 }
-\details{
- }
 \value{
   \item{sumofS}{metric for overall similarity with 0 indicting no similarity and 
 a value of \code{length(vecsA)} for identical subspaces}
@@ -25,8 +23,6 @@ a value of \code{length(vecsA)} for identical subspaces}
 }
 \references{Krzanowski, W.J. (2000) Principles of Multivariate Analysis. OUP}
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\note{}
-\seealso{}
 \examples{
 CA<-rIW(diag(5),10, n=1)
 CB<-rIW(diag(5),10, n=1)

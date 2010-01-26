@@ -16,7 +16,6 @@ commutation(m, n)
 }
 \references{Magnus, J. R. & Neudecker, H. (1979) Annals of Statistics 7 (2) 381-394}
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
-\seealso{}
 \examples{
 commutation(2,2)
 }

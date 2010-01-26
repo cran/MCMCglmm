@@ -10,15 +10,11 @@ Ddivergence(CA=NULL, CB=NULL, n=10000)
   \item{CB}{Matrix B}
   \item{n}{number of Monte Carlo samples for approximating the integral}
 }
-\details{
- }
 \value{
   \item{}{d-divergence}
 }
 \references{Ovaskainen, O.  et. al. (2008) Proc. Roy. Soc - B (275) 1635 593-750}
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
-\note{}
-\seealso{}
 \examples{
 CA<-rIW(diag(2),10, n=1)
 CB<-rIW(diag(2),10, n=1)

@@ -8,13 +8,10 @@ list2bdiag(x)
 \arguments{
   \item{x}{list of square matrices}
 }
-\details{
-}
 \value{
     matrix
 }
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
-\seealso{}
 \examples{
 M<-list(rIW(diag(3), 10), rIW(diag(2), 10))
 list2bdiag(M)

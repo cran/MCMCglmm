@@ -1,14 +1,19 @@
-citHeader("To cite package MCMCglmm in publications use:")
+citHeader("To cite MCMCglmm in publications use:")
 
-citEntry(entry="Article",
-         title = "MCMC methods for Multi-response Generalised Linear Mixed Models: The MCMCglmm R Package",
-         author = personList(as.person("J.D. Hadfield")),
-         language = "English",
-         year = 2010,
-         journal      = "Journal of Statistical Software (probably)",
-         volume       = 999,
-         number       = 999,
-         pages        = 999,
-         month        = 999,
-textVersion = paste("Hadfield J.D. (2010)",
-                    "MCMC methods for Multi-response Generalised Linear Mixed Models: The MCMCglmm R Package  Journal of Statistical Software (probably)"))
+citEntry(entry = "Article",
+  title        = "MCMC Methods for Multi-Response Generalized Linear Mixed Models: The {MCMCglmm} {R} Package",
+  author       = personList(as.person("Jarrod Hadfield")),
+  journal      = "Journal of Statistical Software",
+  year         = "2010",
+  volume       = "33",
+  number       = "2",
+  pages        = "1--22",
+  url          = "http://www.jstatsoft.org/v33/i02/",
+
+  textVersion  =
+  paste("Jarrod Hadfield (2010).",
+        "MCMC Methods for Multi-Response Generalized Linear Mixed Models: The MCMCglmm R Package.",
+        "Journal of Statistical Software, 33(2), 1-22.",
+        "URL http://www.jstatsoft.org/v33/i02/.")
+)
+

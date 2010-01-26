@@ -15,7 +15,22 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
+\usepackage{hyperref}
 
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+  \hypersetup{%
+    hyperindex = {true},
+    colorlinks = {true},
+    linktocpage = {true},
+    plainpages = {false},
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {red},
+    pdfstartview = {Fit},
+    pdfpagemode = {UseOutlines},
+    pdfview = {XYZ null null null}
+  }
 
 \title{Continuous Random Interactions}
 
@@ -202,8 +217,8 @@ but notice that the the estimate of intercept-slope correlation is close to the 
 > posterior.mode(int.slope.cor)
 \end{Sinput}
 \begin{Soutput}
-      var1 
--0.9712975 
+     var1 
+-0.970434 
 \end{Soutput}
 \end{Schunk}
 
@@ -218,10 +233,10 @@ and shows strong autocorrelation
 
                [,1]
 Lag 0    1.00000000
-Lag 10   0.16440836
-Lag 50  -0.02380565
-Lag 100  0.02600715
-Lag 500  0.01409059
+Lag 10   0.15240319
+Lag 50  -0.01574894
+Lag 100  0.02835634
+Lag 500  0.02551442
 \end{Soutput}
 \end{Schunk}
 and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran:
@@ -295,19 +310,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.242
+[1] 5525.705
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.633
+[1] 4544.647
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.979
+[1] 3932.791
 \end{Soutput}
 \end{Schunk}
 
@@ -548,6 +563,8 @@ where $\beta_{1}$ is the expected value, $m_{i}$ is some deviation due to measur
 fixing $\sigma^{2}_{m}=1$ in the prior, the expected variance in the measurement errors are therefore the standard errors squared (the sampling variance) and all measurement errors are assumed to be independent of each other. The random regression therefore fits a random effect meta-analysis.   
 
 \ifalone
+\bibliographystyle{jss}
+\bibliography{JarLib}
 \end{document}
 \else
 \fi

@@ -26,10 +26,10 @@ void rbv(
   int     i, j, k, cnt, sj, dj;
   int nid = nidP[0];
   int ngroup = ngroupP[0];
-  double  f[nid];
+  double  *f = new double[nid];
   double  ai;
-  double  AN[nA[0]];
-  double  li[nA[0]];
+  double  *AN = new double[nA[0]];
+  double  *li = new double[nA[0]];
 
   int dimG = GdimP[0];
 

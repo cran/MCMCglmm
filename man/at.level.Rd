@@ -9,8 +9,6 @@ at.level(x, level)
   \item{x}{factor}
   \item{level}{factor level}
 }
-\details{
-}
 \value{
     incidence matrix for level in x
 }

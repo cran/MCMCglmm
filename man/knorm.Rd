@@ -11,8 +11,6 @@ knorm(V, k)
   \item{V}{(co)variance matrix}
   \item{k}{kth central moment, must be even}
 }
-\details{
-}
 \value{
    \item{}{tensor}
 }

@@ -347,7 +347,7 @@
       }	
       nt<-nt-1
     }
-    if(sum((family.names%in%family.types)==FALSE)!=0){stop(paste(unique(family[which((family.names%in%family.types)==FALSE)]), "not a supported distribution"))}
+    if(sum((family.names%in%family.types)==FALSE)!=0){stop(paste(unique(family.names[which((family.names%in%family.types)==FALSE)]), "not a supported distribution"))}
 
 ###**************************************########################
 
@@ -726,7 +726,7 @@
             }
             if(data_tmp$MCMC_family.names[1]=="zipoisson"){
               if(max(data_tmp$MCMC_y, na.rm=T)==1){
-                mu<-logit(mean(data_tmp$MCMC_y==1))
+                mu<-logit(mean(data_tmp$MCMC_y==1, na.rm=T))
                 v<-diag(GRprior[[nR]]$V)[length(diag(GRprior[[nR]]$V))]
               }else{
                 data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  

@@ -6,6 +6,7 @@ buildZ<-function(x, data, formZ=TRUE){
   }
   if(length(grep("^corh\\(", x))>0){
     vtype<-"corh"
+	stop("sorry - corh not yet implemented")
   }
   if(length(grep("^cor\\(", x))>0){
     vtype<-"cor"

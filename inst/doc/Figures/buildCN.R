@@ -1,12 +1,12 @@
-#source("~/Desktop/Work/MCMCglmm_2.01/inst/doc/Figures/buildCN.R")
+#source("~/Desktop/Work/MCMCglmm_2.02/inst/doc/Figures/buildCN.R")
 alone=FALSE
-lectures<-1:8
+lectures<-3
 forCRAN=TRUE
 JSS<-FALSE
 options(width=80)
 
 UPpath="~/Desktop/Work/UP_course/Tex/"
-MCpath="~/Desktop/Work/MCMCglmm_2.01/inst/doc/"
+MCpath="~/Desktop/Work/MCMCglmm_2.02/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)

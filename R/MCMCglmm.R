@@ -80,9 +80,9 @@
               #    in the missing records       #
               ###################################
 			  			  
-	      missing.comb1<-which(is.na(MCMC_components1) & is.na(MCMC_components2)==FALSE)  # na's for random but have fixed
-	      missing.comb2<-which(is.na(MCMC_components1)==FALSE & is.na(MCMC_components2))  # na's for fixed but have random
-	      missing.comb12<-which(is.na(MCMC_components1) & is.na(MCMC_components2))        # na's for both
+	      missing.comb1<-which(is.na(MCMC_components1) & is.na(MCMC_components2)==FALSE)  # nas for random but have fixed
+	      missing.comb2<-which(is.na(MCMC_components1)==FALSE & is.na(MCMC_components2))  # nas for fixed but have random
+	      missing.comb12<-which(is.na(MCMC_components1) & is.na(MCMC_components2))        # nas for both
 
 	      matching<-match(unique(missing.combinations[,2]), MCMC_components2[missing.comb1])  # some places that can be filled
 			
@@ -223,7 +223,7 @@
 ######################
 # categorical traits #
 ######################
-
+				
           if(dist.preffix=="ca"){
             cont<-as.matrix(model.matrix(~ as.factor(data[[response.names[nt]]]))[,-1])                            # form new J-1 variable   
             nJ<-dim(cont)[2]                                                                                       # number of J-1 categories    
@@ -257,11 +257,12 @@
 
          if(dist.preffix=="mu"){
            nJ<-as.numeric(substr(family[i],12,nchar(family[i])))-1                                                                            # number of J-1 categories
-	   if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
+	       if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
            mfac<-c(mfac, rep(nJ-1,nJ))  
            if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){stop("multinomial data must be positive integers")}
            y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
-           data<-data[,-which(names(data)==response.names[nt+nJ]),drop=FALSE]                                                                      # remove first category
+			 if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:nJ+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){stop("multinomial responses must be either completely observed or completely missing")}	 
+           data<-data[,-which(names(data)==response.names[nt+nJ]),drop=FALSE]                                                        # remove first category
            response.names<-response.names[-(nt+nJ)]
            family.names[nt]<-"multinomial"
            ones<-rep(1,length(family.names))
@@ -396,7 +397,8 @@
     variance.names<-c()
     GR<-list()
     GRprior<-list()
-    Aterm<-c()
+    Aterm<-c()                                                     # 1 if associated with ginverse
+	update<-c()                                                    # variance structure type
     ordering<-c()
     trait.ordering<-c()
 #    missing<-c()
@@ -436,6 +438,7 @@
        variance.names<-c(variance.names, Zlist$vnames)
        ordering<-c(ordering ,Zlist$ordering)
        trait.ordering<-c(trait.ordering ,Zlist$trait.ordering)
+	   update<-c(update, Zlist$vtype)
 
        if(NOpriorG==TRUE){
          GRprior[[nr]]<-list(V=diag(sum(Zlist$nfl)), nu=0, alpha.mu=rep(1, sum(Zlist$nfl)), alpha.V=diag(sum(Zlist$nfl))*0)
@@ -769,11 +772,28 @@
 
     split<-unlist(lapply(GRprior, function(x){if(is.null(x$fix)){return(-998)}else{return(x$fix)}}))
     if(any(split>nfl | (split<1 & split!=-998))){stop("fix term in priorG/priorR must be at least one less than the dimension of V")}
-    update<-as.numeric(split!=1)
+    if(any(split>1 & update=="cor")){stop("sorry, fix terms cannot yet be used in conjunction with cor structures")}
+	
+	update[which(update=="idh" | update=="idv" | update=="us")]<-1
+	update[which(update==1 & split>1)]<-2
+	update[which(update=="cor")]<-3
+    update[which(split==1)]<-0
 
+    # update codes: 0 fixed - do not sample;
+    #             : 1 unstructured 
+    #             : 2 block diagonal constrained 
+	#             : 3 correlation
+
+	
     GRinv<-unlist(lapply(GR, function(x){c(solve(x))}))
     GRvpP<-lapply(GRprior, function(x){(x$V)*(x$n)})
-    GRvpP<-unlist(GRvpP)
+	non.zero.prior<-unlist(lapply(GRvpP, function(x){any(x!=0)}))
+    if(any(non.zero.prior & update==3)){
+	  for(i in which(non.zero.prior)){
+	     GRvpP[[i]]<-GRvpP[[i]]*0  	
+	  }
+	}	 
+	GRvpP<-unlist(GRvpP)
     GRnpP<-unlist(lapply(GRprior, function(x){c(x$n)}))      
     BvpP<-c(solve(prior$B$V), sum(prior$B$V!=0)==dim(prior$B$V)[1])
     BmupP<-c(prior$B$mu)
@@ -913,9 +933,9 @@
         as.integer(PXterms)  
         )
 
-        if(ncutpoints_store==0){
+	   if(ncutpoints_store==0){
           Sol<-t(matrix(output[[39]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
-          if(pr){      
+          if(pr){   
             colnames(Sol)<-c(colnames(X),colnames(Z))
           }else{
             colnames(Sol)<-c(colnames(X))
@@ -934,9 +954,10 @@
        }
 
         VCV<-t(matrix(output[[40]], length(GRinv), nkeep))
+
         colnames(VCV)<-variance.names
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
-
+	
         if(DIC==TRUE){
          deviance<-mcmc(-2*output[[52]][1:nkeep], start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
          DIC<--4*output[[52]][nkeep+1]+2*output[[52]][nkeep+2]

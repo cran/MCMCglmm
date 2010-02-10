@@ -63,6 +63,12 @@ extern "C"{
 }
 #endif
 
+#ifndef _CS_RR_H
+extern "C"{
+#include "cs_rR.h"
+}
+#endif
+
 #ifndef _CS_INV_H
 extern "C"{
 #include "cs_inv.h"

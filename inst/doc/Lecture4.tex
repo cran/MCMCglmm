@@ -217,8 +217,8 @@ but notice that the the estimate of intercept-slope correlation is close to the 
 > posterior.mode(int.slope.cor)
 \end{Sinput}
 \begin{Soutput}
-     var1 
--0.970434 
+      var1 
+-0.9708628 
 \end{Soutput}
 \end{Schunk}
 
@@ -231,12 +231,12 @@ and shows strong autocorrelation
 \begin{Soutput}
 , , 1
 
-               [,1]
-Lag 0    1.00000000
-Lag 10   0.15240319
-Lag 50  -0.01574894
-Lag 100  0.02835634
-Lag 500  0.02551442
+                [,1]
+Lag 0    1.000000000
+Lag 10   0.178474485
+Lag 50  -0.008167032
+Lag 100 -0.035599104
+Lag 500 -0.012882882
 \end{Soutput}
 \end{Schunk}
 and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran:
@@ -310,19 +310,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.705
+[1] 5525.925
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.647
+[1] 4544.568
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.791
+[1] 3933.005
 \end{Soutput}
 \end{Schunk}
 
@@ -563,7 +563,7 @@ where $\beta_{1}$ is the expected value, $m_{i}$ is some deviation due to measur
 fixing $\sigma^{2}_{m}=1$ in the prior, the expected variance in the measurement errors are therefore the standard errors squared (the sampling variance) and all measurement errors are assumed to be independent of each other. The random regression therefore fits a random effect meta-analysis.   
 
 \ifalone
-\bibliographystyle{jss}
+\bibliographystyle{JSS}
 \bibliography{JarLib}
 \end{document}
 \else

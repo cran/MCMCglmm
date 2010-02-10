@@ -388,7 +388,7 @@ cs*     *KGinv = new cs*[nGR];
 /**************************************/
 	
 	for (k = 0 ; k < nGR; k++){	
-	   if(splitP[k]<0){
+	   if(updateP[k]!=2){
 	     CM[k] = cs_spalloc(1,1,1,true, false);
            }else{	
 	     cnt = 0;	
@@ -692,7 +692,7 @@ cs*     *KGinv = new cs*[nGR];
 
           if(itt>0){
             for (i = 0 ; i < nGR; i++){
-              if(updateP[i]==1){
+              if(updateP[i]>0){
                 cs_spfree(G[i]); 
               }
             }
@@ -704,12 +704,6 @@ cs*     *KGinv = new cs*[nGR];
             if(nalpha>0){
               cs_nfree(alphaL);
               cs_spfree(alphaastar_tmp); 
-            }
-          }
-
-          for (i = 0 ; i < nGR; i++){
-            if(updateP[i]==1){
-	      cs_nfree(GinvL[i]);
             }
           }
 
@@ -736,13 +730,13 @@ cs*     *KGinv = new cs*[nGR];
 /******************/
 			
           for (i = 0 ; i < nGR ; i++){
-            if(updateP[i]==1){
+            if(updateP[i]>0){
               GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
             }
           } 
 			
 			for (k = 0 ; k < nGR; k++){                             
-				if(updateP[k]==1){
+				if(updateP[k]>0){
 					if(AtermP[k]==1){
 						cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
 					}else{
@@ -943,7 +937,7 @@ cs*     *KGinv = new cs*[nGR];
          cnt2 = ncolX;
 
 	 for(i=0; i< nG; i++){        
-           if(updateP[i]==1){            
+           if(updateP[i]>0){            
              dimG = GRdim[i];
              if(AtermP[i]==1){        
                for(j=0; j<(dimG*ncolA); j++){
@@ -957,7 +951,7 @@ cs*     *KGinv = new cs*[nGR];
                }
                cs_spfree(tbv);               
                cs_spfree(bvA);               
-	       cs_spfree(bvAbv);
+			   cs_spfree(bvAbv);
              }else{
                for(j=0; j<dimG; j++){
                  for(k=j; k<dimG; k++){
@@ -976,14 +970,24 @@ cs*     *KGinv = new cs*[nGR];
                }
              }
              cnt2 += nlGR[i]*dimG;
-             if(splitP[i]==-999){  
-               cs_invR(Gtmp[i], Ginv[i]);
-               G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
-             }else{
-               cs_invR(Gtmp[i], Ginv[i]);
-               G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);
-             }	
-	     ldet[i] = log(cs_invR(G[i], Ginv[i]));  
+			 switch(updateP[i]){					   
+				case 1:
+				  cs_invR(Gtmp[i], Ginv[i]);
+				  G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);	 
+				break;
+					   
+				case 2:    
+				  cs_invR(Gtmp[i], Ginv[i]);
+				  G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]); 
+				break;	   
+					   
+				case 3:  					 
+				   G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i]);
+				break;
+			 }		
+	         ldet[i] = log(cs_invR(G[i], Ginv[i]));  
+			 cs_nfree(GinvL[i]);	
+			 GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of G^{-1} for Gibbs sampling PX working parameters. 
            }
          }
 
@@ -994,54 +998,66 @@ cs*     *KGinv = new cs*[nGR];
 			
 
          for(i=nG; i<nGR; i++){    
-            if(updateP[i]==1){ 
-             dimG = GRdim[i];
-             for(j=0; j<dimG; j++){
-               for(k=j; k<dimG; k++){
-                 cnt = j*dimG+k;
-                 Gtmp[i]->x[cnt] = 0.0;
-                 for(l=0; l<nlGR[i]; l++){
-                   Gtmp[i]->x[cnt] += dev->x[cnt2+nlGR[i]*j+l]*dev->x[cnt2+nlGR[i]*k+l];
-                 }
+            if(updateP[i]>0){ 
+              dimG = GRdim[i];
+              for(j=0; j<dimG; j++){
+                for(k=j; k<dimG; k++){
+                  cnt = j*dimG+k;
+                  Gtmp[i]->x[cnt] = 0.0;
+                  for(l=0; l<nlGR[i]; l++){
+                    Gtmp[i]->x[cnt] += dev->x[cnt2+nlGR[i]*j+l]*dev->x[cnt2+nlGR[i]*k+l];
+                  }
                   Gtmp[i]->x[cnt] += pG[i]->x[cnt];
-               }
-             }
-             for(j=1; j<dimG; j++){
-               for(k=j; k<dimG; k++){
-                 Gtmp[i]->x[j+dimG*k-1] = Gtmp[i]->x[(j-1)*dimG+k];
-               }
-             }
-             cnt2 += nlGR[i]*dimG;
-	     if(diagP[i]==1){
-	       cnt=0;  
-	       for(j=0; j<dimG; j++){
-		 for(k=0; k<(dimG-1); k++){
-		   if(j==k){cnt++;}
-		   Gtmp[i]->x[cnt] = 0.0;
-		   cnt++;
-		 }
-	       }	
-	     }
-             if(splitP[i]==-999){  
-               cs_invR(Gtmp[i], Ginv[i]);
-               G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
-             }else{
-    	       cs_invR(Gtmp[i], Ginv[i]);
-               G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);	
-             }	
-             if(diagP[i]==1){
-	       cnt=0;  
-	       for(j=0; j<dimG; j++){
-		 for(k=0; k<(dimG-1); k++){
-		   if(j==k){cnt++;}
-		   G[i]->x[cnt] = 0.0;
-		   cnt++;
-		 }
-	       }	
-	     }		
-             ldet[i] = log(cs_invR(G[i], Ginv[i]));		
-           }
-         }
+                }
+              }
+              for(j=1; j<dimG; j++){
+                for(k=j; k<dimG; k++){
+                  Gtmp[i]->x[j+dimG*k-1] = Gtmp[i]->x[(j-1)*dimG+k];
+                }
+              }
+              cnt2 += nlGR[i]*dimG;
+	          if(diagP[i]==1){
+	            cnt=0;  
+	            for(j=0; j<dimG; j++){
+		          for(k=0; k<(dimG-1); k++){
+		            if(j==k){cnt++;}
+					Gtmp[i]->x[cnt] = 0.0;
+		            cnt++;
+		          }
+	            }	
+	          }
+		      switch(updateP[i]){					   
+			    case 1: 
+				  cs_invR(Gtmp[i], Ginv[i]);
+			      G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
+			    break;
+						
+			    case 2: 
+				  cs_invR(Gtmp[i], Ginv[i]);
+			      G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);
+			    break;	   
+			
+			    case 3:  
+				  cs_cov2cor(Gtmp[i]);
+				  G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i]);  
+			    break;
+			  }	
+				
+	          if(diagP[i]==1){
+	            cnt=0;  
+	            for(j=0; j<dimG; j++){
+		          for(k=0; k<(dimG-1); k++){
+		            if(j==k){cnt++;}
+					G[i]->x[cnt] = 0.0;
+				    cnt++;
+			      }
+			    }	
+		      }		
+		      ldet[i] = log(cs_invR(G[i], Ginv[i]));	
+			  cs_nfree(GinvL[i]);	
+			  GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of R^{-1} for Gibbs sampling fully missing data. 
+		    }
+	    }
 
 /**********************/
 /* calculate deviance */   
@@ -1171,8 +1187,9 @@ cs*     *KGinv = new cs*[nGR];
              cs_ltsolve(GinvL[k]->L, linki_tmp->x);  
              for(i=0; i<dimG; i++){
                linky->x[nlGR[k]*i+j+cnt2] = linki_tmp->x[i]+pred->x[nlGR[k]*i+j+cnt2];
-             } 
+             }
            }
+			 
            if(mvtype[cnt+j]<0){         // has to be MHed
              cs_ltsolve(propCinvL[p]->L, linki_tmp->x);
            }

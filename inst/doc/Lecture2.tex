@@ -403,18 +403,18 @@ Note that the latent variable does not exactly predict y, as it would if the dat
 > mean(resid92)
 \end{Sinput}
 \begin{Soutput}
-[1] -0.1332734
+[1] -0.1242356
 \end{Soutput}
 \end{Schunk}
 
-This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=22.014. In fact there would be a 22.385\% chance of having more injuries than if the residual had been zero:
+This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=22.231. In fact there would be a 23.822\% chance of having more injuries than if the residual had been zero:
 
 \begin{Schunk}
 \begin{Sinput}
 > 1 - ppois(exp(mean(eta92)), exp(mean(lat92)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2238471
+[1] 0.2382218
 \end{Soutput}
 \end{Schunk}
 
@@ -499,13 +499,13 @@ In the \texttt{Traffic} example the non linearities are small so the differences
 > exp(mean(m2a.5$Sol[, "(Intercept)"] + 0.5 * m2a.5$VCV[, 1]))
 \end{Sinput}
 \begin{Soutput}
-[1] 20.89346
+[1] 20.82335
 \end{Soutput}
 \begin{Sinput}
 > exp(mean(m2a.5$Sol[, "(Intercept)"]))
 \end{Sinput}
 \begin{Soutput}
-[1] 19.86686
+[1] 19.80760
 \end{Soutput}
 \begin{Sinput}
 > exp(m2a.3$coef["(Intercept)"])
@@ -777,8 +777,8 @@ Response variables consisting of levels of some categorical factor are best anal
 \end{Sinput}
 \begin{Soutput}
         u.1 u.2
-success   0   2
-failure   5   3
+success   3   1
+failure   2   4
 \end{Soutput}
 \end{Schunk}
 
@@ -792,7 +792,7 @@ and then expand them into success or failure:
 \end{Sinput}
 \begin{Soutput}
      u.1 u.1 u.1 u.1 u.1 u.2 u.2 u.2 u.2 u.2
-[1,]   0   0   0   0   0   1   1   0   0   0
+[1,]   1   1   1   0   0   1   0   0   0   0
 \end{Soutput}
 \end{Schunk}
 
@@ -864,7 +864,7 @@ as do the variance components  (see Figure \ref{Bin2-fig}):
 \label{Bin2-fig}
 \end{figure}
 
-Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.699 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
+Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.776 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
 
 \begin{equation}
 \texttt{IC} =  \frac{\sigma^{2}_{\texttt{FSfamily}}}{\sigma^{2}_{\texttt{FSfamily}}+\sigma^{2}_{\texttt{units}}+\pi^{2}/3} 
@@ -947,7 +947,7 @@ This diffuse prior can cause problems if there is complete (or near complete) se
 \begin{Soutput}
          y
 treatment  0  1
-        1  9 16
+        1 12 13
         2 25  0
 \end{Soutput}
 \end{Schunk}
@@ -965,18 +965,18 @@ glm(formula = y ~ treatment, family = "binomial", data = data.bin)
 
 Deviance Residuals: 
        Min          1Q      Median          3Q         Max  
--1.429e+00  -7.976e-05  -7.976e-05   9.448e-01   9.448e-01  
+-1.212e+00  -7.976e-05  -7.976e-05   8.577e-01   1.144e+00  
 
 Coefficients:
-             Estimate Std. Error z value Pr(>|z|)
-(Intercept)    0.5754     0.4167   1.381    0.167
-treatment2   -20.1414  2150.8026  -0.009    0.993
+              Estimate Std. Error z value Pr(>|z|)
+(Intercept)    0.08004    0.40032   0.200    0.842
+treatment2   -19.64611 2150.80263  -0.009    0.993
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 62.687  on 49  degrees of freedom
-Residual deviance: 32.671  on 48  degrees of freedom
-AIC: 36.671
+    Null deviance: 57.306  on 49  degrees of freedom
+Residual deviance: 34.617  on 48  degrees of freedom
+AIC: 38.617
 
 Number of Fisher Scoring iterations: 18
 \end{Soutput}
@@ -1057,8 +1057,8 @@ looks a little better (see Figure \ref{separation1-fig}), and the posterior dist
 > HPDinterval(mcmc(predict.MCMCglmm(m2c.4$Sol[, 2], 1, "binomial")))
 \end{Sinput}
 \begin{Soutput}
-            lower     upper
-var1 0.0004311017 0.1021100
+           lower     upper
+var1 0.000711048 0.1060524
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -1255,7 +1255,7 @@ The model:
 
 is therefore sampling from the same posterior distribution as model \texttt{m2a.5.1}.
 \ifalone
-\bibliographystyle{jss}
+\bibliographystyle{JSS}
 \bibliography{JarLib}
 \end{document}
 \else

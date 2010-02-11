@@ -79,7 +79,7 @@ The traces from the Markov chain look reasonable (Figure \ref{mBTVCV-fig}), and 
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
-0.04355271 0.37201126 0.01601377 
+0.07604419 0.43503353 0.08195163 
 \end{Soutput}
 \end{Schunk}
 
@@ -91,7 +91,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
-  803.3475   405.5459  1000.0000 
+  750.5522   284.1813   847.6621 
 \end{Soutput}
 \end{Schunk}
 
@@ -105,9 +105,9 @@ The posterior correlation between the parameters is low
 \end{Sinput}
 \begin{Soutput}
                    dam fosternest       units
-dam         1.00000000 -0.2735331 -0.07248912
-fosternest -0.27353307  1.0000000 -0.14000130
-units      -0.07248912 -0.1400013  1.00000000
+dam         1.00000000 -0.2197987 -0.01015479
+fosternest -0.21979867  1.0000000 -0.23715309
+units      -0.01015479 -0.2371531  1.00000000
 \end{Soutput}
 \end{Schunk}
 
@@ -121,9 +121,9 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 \end{Sinput}
 \begin{Soutput}
                 lower     upper
-dam        0.13470245 0.3148237
-fosternest 0.01250724 0.1250839
-units      0.51781330 0.6424352
+dam        0.13879407 0.3189826
+fosternest 0.01259158 0.1345072
+units      0.51481967 0.6364201
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -140,13 +140,13 @@ and perhaps a model without it would be better supported, although the DIC sugge
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.169
+[1] 2014.512
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.988
+[1] 1991.902
 \end{Soutput}
 \end{Schunk}
 
@@ -159,7 +159,7 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.1772118 0.3488745
+var1 0.1798907 0.3453093
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -181,16 +181,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
                Mean      SD Naive SE Time-series SE
-(Intercept) -0.4064 0.06782 0.002145       0.001599
-sexMale      0.7682 0.05740 0.001815       0.001555
-sexUNK       0.2092 0.12881 0.004073       0.004186
+(Intercept) -0.4018 0.06876 0.002174       0.002314
+sexMale      0.7641 0.05714 0.001807       0.002049
+sexUNK       0.2051 0.12508 0.003955       0.003873
 
 2. Quantiles for each variable:
 
-                2.5%     25%     50%     75%   97.5%
-(Intercept) -0.54183 -0.4524 -0.4054 -0.3609 -0.2762
-sexMale      0.65256  0.7286  0.7698  0.8083  0.8748
-sexUNK      -0.04448  0.1250  0.2107  0.2974  0.4660
+               2.5%     25%     50%     75%   97.5%
+(Intercept) -0.5375 -0.4463 -0.4043 -0.3560 -0.2620
+sexMale      0.6615  0.7258  0.7611  0.7987  0.8862
+sexUNK      -0.0489  0.1237  0.2102  0.2855  0.4452
 \end{Soutput}
 \end{Schunk}
 
@@ -291,13 +291,13 @@ We can extract the marginal means for each variance and place them into a matrix
 \end{Sinput}
 \begin{Soutput}
      sexFem.dam sexMale.dam sexUNK.dam
-[1,]  0.1780549   0.0000000 0.00000000
-[2,]  0.0000000   0.1721624 0.00000000
-[3,]  0.0000000   0.0000000 0.05509935
+[1,]  0.1770816   0.0000000 0.00000000
+[2,]  0.0000000   0.1696873 0.00000000
+[3,]  0.0000000   0.0000000 0.07034245
 \end{Soutput}
 \end{Schunk}
 
-Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.228)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
+Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.226)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -351,9 +351,9 @@ The posterior mean (co)variances for this model show that the covariances are al
 \end{Sinput}
 \begin{Soutput}
      sexFem.dam.sexFem.dam sexMale.dam.sexFem.dam sexUNK.dam.sexFem.dam
-[1,]             0.2381187              0.2031793             0.2257735
-[2,]             0.2031793              0.2125059             0.2130592
-[3,]             0.2257735              0.2130592             0.2793702
+[1,]             0.2370304              0.2038913             0.2260481
+[2,]             0.2038913              0.2156469             0.2145118
+[3,]             0.2260481              0.2145118             0.2826131
 \end{Soutput}
 \end{Schunk}
 
@@ -397,13 +397,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1996.953
+[1] 1998.234
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.988
+[1] 1991.902
 \end{Soutput}
 \end{Schunk}
 
@@ -607,10 +607,14 @@ or alternatively:
 if ${\bf Z}$ is non-square and/or singular, where \texttt{$^{-}$} is a generalised inverse.\\
 
  
-\section{Priors for Covariance Matrices}
+\section{Priors for  Covariance Matrices}
+\label{VCVprior-sec}
 
-Priors for covariance matrices are tricky. What maybe non-informative for a covariance may be informative for a correlation and \emph{vice versa}. A useful result is that the marginal distribution of a variance is also inverse - Wishart distributed:
+Priors for covariance matrices are tricky. What maybe non-informative for a covariance may be informative for a correlation and \emph{vice versa}.
 
+\subsection{Priors for \texttt{us} structures}
+
+ A useful result is that the marginal distribution of a variance is also inverse - Wishart distributed:
 
 \begin{displaymath}
 \sigma^{2}_{1} \sim IW\left(\texttt{nu}^{\ast}\texttt{=nu-dim(V)+1},\ \texttt{V}^{\ast}=\frac{\texttt{nu}}{\texttt{nu}^{\ast}}\texttt{V[1,1]}\right)
@@ -651,9 +655,33 @@ In Lecture \ref{chap2} we saw that a non-informative prior for a variance compon
 \end{array}
 \end{displaymath}
 
-\label{VCVprior-sec}
+\subsection{Priors for \texttt{idh} structures}
+
+For \texttt{idh} the diagonal elements of the matrix are independent and each variance is distributed as:
+
+\begin{displaymath}
+\sigma^{2}_{1} \sim IW\left(\texttt{nu}^{\ast}\texttt{=nu-dim(V)+1},\ \texttt{V}^{\ast}=\texttt{V[1,1]}\right)
+\end{displaymath}
+
+note that the $\texttt{V}^{\ast}$ is not multiplied by the ratio of  $\frac{\texttt{nu}}{\texttt{nu}^{\ast}}$.
+
+\subsection{Priors for \texttt{cor} structures}
+
+For \texttt{cor} structures I use the prior specification in \citet{Barnard.2000}. Here the specification of \texttt{V} is redundant and \texttt{nu} controls how much the correlation matrix approaches an identity matrix.  The marginal distribution of individual correlations ($r$) is given by  \citep{Barnard.2000}   \citep[and][]{Box.1973}):
+
+\begin{equation}
+\begin{array}{lr}
+Pr(r) \propto (1-r^{2})^\frac{\texttt{nu-dim(V)-1}}{\texttt{2}}, & |r|<1\\
+\end{array}
+\end{equation}
+
+and as shown above setting \texttt{nu} =\texttt{dim(V)+1} results in marginal correlations that are uniform on the interval [-1,1].\\
+
+In most cases correlation matrices do not have known form and so cannot be directly Gibbs sampled. \texttt{MCMCglmm} uses a method proposed by \citet{Liu.2006} with the target prior as in \citet{Barnard.2000}.  Generally this algorithm is very efficient as the Metropolis-Hastings acceptance probability only depends on the degree to which the candidate prior  and the target prior (the prior you specify) conflict. The candidate prior is equivalent to the prior  in \citet{Barnard.2000} with \texttt{nu=0} so as long as a diffuse prior is set, mixing is generally not a problem. If  \texttt{nu=0} is set (the default) then the Metropolis-Hastings steps are always accepted resulting in Gibbs sampling. However, a prior of this form puts high density on extreme correlations which can cause problems if the data give support to correlations in this region.\\ 
+
+
 \ifalone
-\bibliographystyle{jss}
+\bibliographystyle{JSS}
 \bibliography{JarLib}
 \end{document}
 \else

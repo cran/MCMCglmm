@@ -17,7 +17,7 @@ pl=FALSE
 verbose=TRUE
 DIC=TRUE
 singular.ok=FALSE
-source("~/Work/AManal/MCMCglmm_1.12/R/MCMCglmm.R")
-source("~/Work/AManal/MCMCglmm_1.12/R/split.direct.sum.R")
-source("~/Work/AManal/MCMCglmm_1.12/R/buildZ.R")
-source("~/Work/AManal/MCMCglmm_1.12/R/find.components.R")
+source("~/Desktop/Work/MCMCglmm_2.02/R/MCMCglmm.R")
+source("~/Desktop/Work/MCMCglmm_2.02/R/split.direct.sum.R")
+source("~/Desktop/Work/MCMCglmm_2.02/R/buildZ.R")
+source("~/Desktop/Work/MCMCglmm_2.02/R/find.components.R")

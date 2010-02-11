@@ -110,7 +110,7 @@ The prior densities in the two models are very similar across the range of varia
 \label{sexratio-fig}
 \end{figure}
 
-The parameter expanded model is 25\% slower per iteration but the effective sample size is 2.839 times greater:
+The parameter expanded model is 25\% slower per iteration but the effective sample size is 1.418 times greater:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -118,14 +118,14 @@ The parameter expanded model is 25\% slower per iteration but the effective samp
 \end{Sinput}
 \begin{Soutput}
     var1 
-175.4054 
+116.9204 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.2$VCV[, 1])
 \end{Sinput}
 \begin{Soutput}
-   var1 
-61.7807 
+    var1 
+82.46342 
 \end{Soutput}
 \end{Schunk}
 
@@ -287,14 +287,14 @@ Despite their similarity however, the mixing properties of the second chain are 
 \end{Sinput}
 \begin{Soutput}
     var1 
-175.4054 
+116.9204 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
 \end{Sinput}
 \begin{Soutput}
     var1 
-553.4687 
+835.2753 
 \end{Soutput}
 \end{Schunk}
 
@@ -308,12 +308,12 @@ Although the chain mixes faster as the residual variance is set to be larger, nu
 \end{Sinput}
 \begin{Soutput}
     var1 
-723.7353 
+798.2359 
 \end{Soutput}
 \end{Schunk}
 
 \ifalone
-\bibliographystyle{jss}
+\bibliographystyle{JSS}
 \bibliography{JarLib}
 \end{document}
 \else

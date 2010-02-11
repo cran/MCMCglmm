@@ -722,4 +722,57 @@ res27[i,]<-posterior.mode(mcmc(cbind(m1$Sol[,1:3], m1$VCV)))
 print(i)
 }
 
+# bivariate binary
+print("res28")
+T<-2
+res28<-matrix(NA, nsim,T*(1+T))
+R<-cov2cor(rIW(diag(T), nu=T+2))
+mu<-matrix(runif(T),T,1)
+prior=list(B=list(mu=mu, V=diag(T)*1e-10), R=list(V=diag(T), nu=T+1))
+
+for(i in 1:nsim){
+	y<-mvrnorm(300, mu, R)
+	data=data.frame(apply(y,2, function(x){rbinom(length(x), 1, inv.logit(x))}))
+	m1<-MCMCglmm(cbind(X1, X2)~trait-1,rcov=~cor(trait):units, family=rep("categorical", T), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, singular.ok=TRUE, pl=TRUE)
+	
+	if(plotit){
+		plot(mcmc(cbind(mcmc(m1$Sol), m1$VCV)), ask=FALSE)
+	}
+	
+	res28[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+	print(i)
+}
+
+
+# bivaraite 4 category ordinal
+print("res29")
+res29<-matrix(NA, nsim,12)
+R<-cov2cor(rIW(diag(2), 5))
+
+prior=list(R=list(V=diag(2), n=3)) #,G=list(G1=list(V=G, n=1)))
+for(i in 1:nsim){
+	fac<-as.factor(sample(1:75,300,replace=TRUE))
+	x<-runif(300)
+	g<-mvrnorm(300, c(-1,0), R)+cbind(x*-1, x*0.5) #+mvrnorm(75, c(0), G)[fac]
+	cp<-c(0.5,1)
+	pr<-cbind(pnorm(-g[,1]),pnorm(cp[1]-g[,1])-pnorm(-g[,1]),  pnorm(cp[2]-g[,1])-pnorm(cp[1]-g[,1]), 1-pnorm(cp[2]-g[,1]))
+	cp2<-c(1,2)
+	pr2<-cbind(pnorm(-g[,2]),pnorm(cp2[1]-g[,2])-pnorm(-g[,2]),  pnorm(cp2[2]-g[,2])-pnorm(cp2[1]-g[,2]), 1-pnorm(cp2[2]-g[,2]))
+	
+	y1<-1:300
+	for(j in 1:300){
+		y1[j]<-which(rmultinom(1, 1, pr[j,])==1)
+	}
+	y2<-1:300
+	for(j in 1:300){
+		y2[j]<-which(rmultinom(1, 1, pr2[j,])==1)
+	}
+	data=data.frame(y1=y1, y2=y2, fac=fac, xcov=x)
+	m1<-MCMCglmm(cbind(y1, y2)~trait+trait:xcov-1,rcov=~cor(trait):units, data=data, prior=prior, family=c("ordinal", "ordinal"), verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+	if(plotit){
+		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+	}
+	res29[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
+	print(i)
+}
 

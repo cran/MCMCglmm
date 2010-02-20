@@ -76,15 +76,15 @@ cs *cs_inv(const cs *C){
 
 	CN *= cs_norm(A); 
 
-	   if (1/CN < Ctol){ 
-             error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
-           }
-           if(det < Dtol){
-             if(n==1){
-               A->x[0] = Dtol;
-             }
-	   }
-	   return (cs_done (A, NULL, NULL, 1)) ;	/* success; free workspace, return C */
+	if(1.0/CN < Ctol || det < Dtol){
+		if(n==1){
+			A->x[0] = Dtol;
+		}else{
+	          PutRNGstate();
+		  error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
+		}	 
+	}
+	return (cs_done (A, NULL, NULL, 1)) ;	/* success; free workspace, return C */
 
 }
 

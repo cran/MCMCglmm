@@ -1,4 +1,5 @@
 #include "cs_rR.h"
+# define Dtol  1e-7
 
 cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, double Roldldet){
     
@@ -36,16 +37,16 @@ cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, 
 	}
 	
 	MH *= 0.5*nuR;
-	
-	if(MH<log(runif(0.0,1.0))){
-		cs_invR(Roldinv, Rnew);	// save old R
-		for (i = 0 ; i < dimG; i++){
-			Rnew->x[i*dimG+i] = 1.0;
-        }
+
+	if(MH<log(runif(0.0,1.0)) || Rnewldet<log(Dtol)){
+	  Rnewldet = cs_invR(Roldinv, Rnew);	// save old R
+	  for (i = 0 ; i < dimG; i++){
+	    Rnew->x[i*dimG+i] = 1.0;
+          }
 	}	
 	
-    cs_spfree(Rnewinv);
-    cs_spfree(Ainv);
+        cs_spfree(Rnewinv);
+        cs_spfree(Ainv);
 
     return (cs_done (Rnew, NULL, NULL, 1)) ;	/* success; free workspace, return C */
 

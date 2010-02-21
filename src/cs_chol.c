@@ -2,6 +2,7 @@
 /* L = chol (A, [pinv parent cp]), pinv is optional */
 csn *cs_chol (const cs *A, const css *S)
 {
+
     double d, lki, *Lx, *x, *Cx ;
     int top, i, p, k, n, *Li, *Lp, *cp, *pinv, *s, *c, *parent, *Cp, *Ci ;
     cs *L, *C, *E ;
@@ -15,7 +16,6 @@ csn *cs_chol (const cs *A, const css *S)
     C = pinv ? cs_symperm (A, pinv, 1) : ((cs *) A) ;
     E = pinv ? C : NULL ;	    /* E is alias for A, or a copy E=A(p,p) */
     if (!N || !c || !x || !C) return (cs_ndone (N, E, c, x, 0)) ;
-//    if (!N || !c || !x || !C) error("cs_chol out of memory");
     s = c + n ;
     Cp = C->p ; Ci = C->i ; Cx = C->x ;
     N->L = L = cs_spalloc (n, n, cp [n], 1, 0) ;    /* allocate result */
@@ -49,7 +49,7 @@ csn *cs_chol (const cs *A, const css *S)
 	    Lx [p] = lki ;
 	}
 	/* --- Compute L(k,k) ----------------------------------------------- */
-	if (d <= 0) return (cs_ndone (N, E, c, x, 0)) ; /* not pos def */
+	if (d <= 0) {return (cs_ndone (N, E, c, x, 0)) ; /* not pos def */}	
 	p = c [k]++ ;
 	Li [p] = k ;		    /* store L(k,k) = sqrt (d) in column k */
 	Lx [p] = sqrt (d) ;

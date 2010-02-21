@@ -34,7 +34,6 @@
 
     response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
 
-
 ######################################################################################
 # for phyloegnetic/pedigree analyses form A and augment with missing nodes if needed #
 ###################################################################################### 	
@@ -65,7 +64,6 @@
 	if(is.null(components[[1]])==FALSE | length(components[[2]])>0){
 
           for(j in 1:length(components[[2]])){                                                                                
-
             MCMC_components1<-interaction(data[,components[[1]]], sep=".MCMC.", drop=TRUE*(length(components[[1]])>1))  	# random effect factors 
             MCMC_components2<-interaction(data[,components[[2]][[j]]], sep=".MCMC.", drop=FALSE)  	                        # fixed effect factors
             allc<-expand.grid(levels(MCMC_components1),levels(MCMC_components2))  						# all pairwise combinations
@@ -85,7 +83,10 @@
 	      missing.comb12<-which(is.na(MCMC_components1) & is.na(MCMC_components2))        # nas for both
 
 	      matching<-match(unique(missing.combinations[,2]), MCMC_components2[missing.comb1])  # some places that can be filled
-			
+  
+              has.dim.names<-which(unlist(lapply(data, function(x){is.null(attributes(x)$dim)==FALSE})))
+              data[has.dim.names]<-lapply(data[has.dim.names], as.vector)
+
 	      while(any(is.na(matching)==FALSE)){
                 a.match<-match(MCMC_components2[missing.comb1[na.omit(matching)]],missing.combinations[,2])  # missing combinations to be placed
 	        data[missing.comb1[na.omit(matching)],unlist(components[[1]])]<-as.matrix(apply(missing.combinations[a.match,1,drop=FALSE], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
@@ -96,7 +97,7 @@
 	      }
 
 	      matching<-match(unique(missing.combinations[,1]), MCMC_components1[missing.comb2])  # some places that can be filled
-			
+
 	      while(any(is.na(matching)==FALSE)){
                 a.match<-match(MCMC_components1[missing.comb2[na.omit(matching)]],missing.combinations[,1])  # missing combinations to be placed
 	        data[missing.comb2[na.omit(matching)],unlist(components[[2]][[j]])]<-as.matrix(apply(missing.combinations[a.match,2,drop=FALSE], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
@@ -107,17 +108,15 @@
 	      }
 
               n.rm<-min(length(missing.comb12), dim(missing.combinations)[1])
-
 	      if(n.rm>0){
 	        data[missing.comb12,c(components[[1]], components[[2]][[j]])]<-t(apply(missing.combinations[1:n.rm,], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
                 MCMC_components1[missing.comb12][1:n.rm]<-missing.combinations[,1][1:n.rm]
                 MCMC_components2[missing.comb12][1:n.rm]<-missing.combinations[,2][1:n.rm]
 	      }	
-
-	      if(length(missing.combinations)>0){       
+	      if(length(missing.combinations)>0){      
                 nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
 		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
-		data[,c(components[[1]], components[[2]][[j]])][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-t(apply(missing.combinations, 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
+		data[,c(components[[1]], components[[2]][[j]])][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-t(apply(missing.combinations, 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))  
                 if(is.null(mev)==FALSE){
                   mev<-c(mev,rep(1, dim(missing.combinations)[1]))
                 }
@@ -703,7 +702,7 @@
               }
             }
             if(data_tmp$MCMC_family.names[1]=="exponential" | data_tmp$MCMC_family.names[1]=="cenexponential"){
-              if(any(data_tmp$MCMC_y==0)){
+              if(any(data_tmp$MCMC_y==0, na.rm=T)){
                 data_tmp$MCMC_y[which(data_tmp$MCMC_y==0)]<-1e-6
               }
               m1<-summary(glm(MCMC_y~1, family="Gamma", data=data_tmp,subset=is.na(data_tmp$MCMC_y)==FALSE))
@@ -742,7 +741,9 @@
               data$MCMC_liab[trait_set][missing_set]<-sample(data$MCMC_liab[trait_set][-missing_set], length(missing_set), TRUE)
             }
             l_tmp<-sort(rnorm(length(trait_set), mu, sqrt(v)))
-            data$MCMC_liab[trait_set][order(data$MCMC_liab[trait_set])]<-l_tmp
+            mix<-sample(1:length(l_tmp),max(2,as.integer(length(l_tmp)/2)))
+            l_tmp[mix]<-l_tmp[rev(mix)] # mix up 50% of latent variables to stop complete separation
+            data$MCMC_liab[trait_set][order(data$MCMC_y[trait_set])]<-l_tmp
           }
         }
       }	
@@ -774,26 +775,26 @@
     if(any(split>nfl | (split<1 & split!=-998))){stop("fix term in priorG/priorR must be at least one less than the dimension of V")}
     if(any(split>1 & update=="cor")){stop("sorry, fix terms cannot yet be used in conjunction with cor structures")}
 	
-	update[which(update=="idh" | update=="idv" | update=="us")]<-1
-	update[which(update==1 & split>1)]<-2
-	update[which(update=="cor")]<-3
+    update[which(update=="idh" | update=="idv" | update=="us")]<-1
+    update[which(update==1 & split>1)]<-2
+    update[which(update=="cor")]<-3
     update[which(split==1)]<-0
 
     # update codes: 0 fixed - do not sample;
     #             : 1 unstructured 
     #             : 2 block diagonal constrained 
-	#             : 3 correlation
+    #             : 3 correlation
 
 	
     GRinv<-unlist(lapply(GR, function(x){c(solve(x))}))
     GRvpP<-lapply(GRprior, function(x){(x$V)*(x$n)})
-	non.zero.prior<-unlist(lapply(GRvpP, function(x){any(x!=0)}))
+    non.zero.prior<-unlist(lapply(GRvpP, function(x){any(x!=0)}))
     if(any(non.zero.prior & update==3)){
-	  for(i in which(non.zero.prior)){
+	  for(i in which(non.zero.prior & update==3)){
 	     GRvpP[[i]]<-GRvpP[[i]]*0  	
 	  }
 	}	 
-	GRvpP<-unlist(GRvpP)
+    GRvpP<-unlist(GRvpP)
     GRnpP<-unlist(lapply(GRprior, function(x){c(x$n)}))      
     BvpP<-c(solve(prior$B$V), sum(prior$B$V!=0)==dim(prior$B$V)[1])
     BmupP<-c(prior$B$mu)

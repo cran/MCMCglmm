@@ -19,8 +19,8 @@
      for(i in 1:dim(pedigree)[1]){
        nlinks<-phenotyped[i]+sum(pedigree[,2]%in%pedigree[,1][i])+sum(pedigree[,3]%in%pedigree[,1][i])+sum(is.na(pedigree[i,][2:3])==FALSE)    
        if(nlinks<2 & phenotyped[i]==FALSE){                  
-         pedigree[,2][which(pedigree[,2]==pedigree[,1][i])]<-NA
-         pedigree[,3][which(pedigree[,3]==pedigree[,1][i])]<-NA
+         pedigree[,2][which(as.character(pedigree[,2])==as.character(pedigree[,1][i]))]<-NA
+         pedigree[,3][which(as.character(pedigree[,3])==as.character(pedigree[,1][i]))]<-NA
          delete[i]<-TRUE                                                            
        }
      } 

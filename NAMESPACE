@@ -41,7 +41,8 @@ export(
   at.set,
   at.level,
   leg,
-  rtnorm
+  rtnorm,
+  spl
 ) 
 
 

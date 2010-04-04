@@ -507,7 +507,7 @@
          }else{
            GR[[nr]]<-start$R
          }
-	 if(is.matrix(GR[[r]]$V)==FALSE){GR[[r]]$V<-as.matrix(GR[[r]]$V)}	
+	 if(is.matrix(GR[[r]])==FALSE){GR[[r]]<-as.matrix(GR[[r]])}	
          if(dim(GR[[r]])[1]!=sum(Zlist$nfl)  | dim(GR[[r]])[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some startG/startR elements")}
          if(is.positive.definite(GR[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
        }
@@ -544,7 +544,7 @@
              if(r<=ngstructures){
                GR[[nr]]<-as.matrix(diag(start$G[[r]])[l])
              }else{
-               GR[[nr]]<-as.matrix(diag(start$R[[r]])[l])
+               GR[[nr]]<-as.matrix(diag(start$R)[l])
              }
            } 
            nr<-nr+1
@@ -575,6 +575,7 @@
     mfac<-mfac[trait.ordering]
 
     nR<-nr-nG-1  # number of R structures
+
     if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
     if(is.null(tune)){
       AMtune=c(rep(FALSE, nG), rep(TRUE, nR))
@@ -609,9 +610,7 @@
    if(any(is.na(X))){stop("missing values in the fixed predictors")}
    if(singular.ok==FALSE){
      if(all(is.na(data$MCMC_y))){stop("all data are missing. Use singular.ok=TRUE to sample these effects, but use an informative prior!")}
-
-     sing.rm<-lm(data$MCMC_y~X-1, subset=is.na(data$MCMC_y)==FALSE)
-
+     sing.rm<-lm(replace(data$MCMC_y, which(data$MCMC_y%in%c(-Inf, Inf)), 0)~X-1, subset=(is.na(data$MCMC_y)==FALSE))
      sing.rm<-which(is.na(sing.rm$coef))
      if(length(sing.rm)){
        warning("some fixed effects are not estimable and have been removed. Use singular.ok=TRUE to sample these effects, but use an informative prior!")
@@ -654,23 +653,24 @@
        fp<-matrix(match(data$MCMC_family.names, family.types)[cnt+1:(nfl[i+nG]*nrl[i+nG])-1], nrl[i+nG], nfl[i+nG])
        proposal<-c(proposal, AMtune[i+nG]*((fp==11)*(mp==0 & is.na(mp)==FALSE))[,1])
        missing.pattern<-fp*(is.na(mp)==FALSE) # 0 for missing data 1 for gaussian >1 for other
-       mvtype_tmp<-apply(missing.pattern, 1,function(x){any(x!=1 & x!=0)})*-2 
+       mvtype_tmp<-apply(missing.pattern, 1,function(x){all(x==1 | x==0)})-2 # -2 if observed non-gaussian present, -1 otherwise 
        if(nfl[i+nG]==1 & slice){    # if univariate 
           mvtype_tmp[which(missing.pattern==14)]<-0  # ordinal
           if(max(mp, na.rm=T)==1){                   # binary
           mvtype_tmp[which(missing.pattern==3)]<-0
           }    
        }   
-       mvtype_tmp[which(apply(missing.pattern, 1,function(x){any(x!=1)})==FALSE)]<-2          
-       mvtype_tmp[which(apply(missing.pattern, 1,function(x){any(x!=0)})==FALSE)]<-1       
+       mvtype_tmp[which(apply(missing.pattern, 1,function(x){all(x==1)}))]<-2          
+       mvtype_tmp[which(apply(missing.pattern, 1,function(x){all(x==0)}))]<-1       
        if(all(mvtype_tmp>c(-1))){AMtune[i+nG]=FALSE}  # If everything can be gibbsed/sliced do not tune
        mvtype<-c(mvtype,mvtype_tmp) 
        cnt<-cnt+nfl[i+nG]*nrl[i+nG]
+
        # missing data codes: 2 complete gaussian (ignore);
        #                     1 completely missing (unconditional Gibbs)
        #                     0 univariate binary - slice sample
        #                    -1 partial missing with observed being Guassian (conditional Gibbs)
-       #                    -2 partial or fully observed with non-gaussian (MH)  currently 0 & -1 are both MHed. 
+       #                    -2 partial or fully observed with non-gaussian (MH)  currently -1 & -2 are both MHed. 
 
     }
     stcutpoints<-c()	
@@ -719,8 +719,8 @@
               stcutpoints<-c(stcutpoints, cps)              
             }
             if(data_tmp$MCMC_family.names[1]=="cengaussian"){ 
-              v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){min(abs(x))}) , na.rm=T)
-              mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){min(abs(x))}) , na.rm=T)
+              v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}) , na.rm=T)
+              mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}) , na.rm=T)
             }
             if(data_tmp$MCMC_family.names[1]=="gaussian"){ 
               v<-var(data_tmp$MCMC_y, na.rm=T)

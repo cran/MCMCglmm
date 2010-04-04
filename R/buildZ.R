@@ -104,6 +104,8 @@ buildZ<-function(x, data, formZ=TRUE){
         }
       }
 
+      if(any(data$MCMC_dummy==0 & is.na(rfactor))){stop("missing values in random predictors")}
+
       nfl<-1
       return(list(Z=Ztmp, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=paste(rterms, collapse=":"), ordering=NULL, trait.ordering=NULL))
 
@@ -125,6 +127,8 @@ buildZ<-function(x, data, formZ=TRUE){
         Xtmp@x<-Xcol@x
         Z<-Xtmp%*%Ztmp
         colnames(Z)<-paste(paste(rterms, collapse=":"), colnames(X)[i], colnames(Z),sep=".") 
+
+        if(any(X[,i]!=0 & data$MCMC_dummy==0 & is.na(rfactor))){stop("missing values in random predictors")}
 
         missing<-which(colSums(Z)==0)
 
@@ -180,6 +184,7 @@ buildZ<-function(x, data, formZ=TRUE){
       vnames<-paste(colnames(X), paste(rterms, collapse=":"), sep=".")
       trait.ordering<-as.numeric(data$trait[X@i[X@p[1:ncol(X)]+1]+1])
       ordering<-order(100000000*as.numeric(X%*%Matrix(1:nfl,nfl,1))+as.numeric(rfactor))
+
       if(vtype=="idh"){
         nfl<-ncol(X)
         Aterm<-rep(Aterm, nfl)

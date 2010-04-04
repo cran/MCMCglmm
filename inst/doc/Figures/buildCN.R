@@ -1,7 +1,7 @@
-#source("~/Desktop/Work/MCMCglmm_2.02/inst/doc/Figures/buildCN.R")
-alone=FALSE
-lectures<-3
-forCRAN=TRUE
+#source("~/Desktop/Work/MCMCglmm_2.03/inst/doc/Figures/buildCN.R")
+alone=TRUE
+lectures<-6
+forCRAN=FALSE
 JSS<-FALSE
 options(width=80)
 

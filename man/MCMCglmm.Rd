@@ -4,7 +4,7 @@
 \description{
  Markov chain Monte Carlo Sampler for Multivariate Generalised Linear Mixed 
 Models with special emphasis on correlated random effects arising from pedigrees 
-and phylogenies (Hadfield 2009). Please read the course notes: \code{vignette("CourseNotes", 
+and phylogenies (Hadfield 2010). Please read the course notes: \code{vignette("CourseNotes", 
 "MCMCglmm")} or the tutorial \code{vignette("Tutorial", "MCMCglmm")}
 }
 \usage{
@@ -23,7 +23,7 @@ Currently, the only \code{variance.functions} available are \code{idv}, \code{id
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
-\code{"multinomial"},  \code{"ordinal"}, \code{"ordinal"}, \code{"exponential"},  \code{"cengaussian"},  
+\code{"multinomial"},  \code{"ordinal"}, \code{"exponential"},  \code{"cengaussian"},  
 \code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"} are 
 supported, where the prefix \code{"cen"} means censored and the prefix 
 \code{"zi"} means zero inflated. If \code{NULL} \code{data} needs to contain a 
@@ -79,9 +79,9 @@ saved?}
   \item{Z}{sparse random effect design matrix}
 }
 \references{
-	General analyses: Hadfield, J.D. (2009) \emph{submitted}
+	General analyses: Hadfield, J.D. (2010) Journal of Statistical Software 33 2 1-22
 	
-	Phylogenetic analyses: Hadfield, J.D.  and Nakagawa, S. (2009) \emph{submitted}
+	Phylogenetic analyses: Hadfield, J.D.  and Nakagawa, S. (2010) Journal of Evolutionary Biology 23 494-508
 	
 	Background Sorensen, D. \& Gianola, D. (2002) Springer
 }

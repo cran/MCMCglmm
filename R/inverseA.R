@@ -102,11 +102,11 @@
     node.names<-id
     node.names[tips]<-pedigree$tip.label
 	  
-	if(is.null(pedigree$node.label)){
-	  pedigree<-makeNodeLabel(pedigree)
-	}
+    if(is.null(pedigree$node.label)){
+       pedigree<-makeNodeLabel(pedigree) 
+    }
 	  
-	node.names[-tips]<-pedigree$node.label[-1]
+    node.names[-tips]<-pedigree$node.label[-1]
 		
     inbreeding<-pedigree$edge.length[reorder]
     if(any(inbreeding<1e-16)){stop("some phylogeny edge.lengths are zero")}

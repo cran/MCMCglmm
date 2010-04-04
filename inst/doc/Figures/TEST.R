@@ -1,20 +1,21 @@
 #source("~/Desktop/MCMCglmmTEST.R")
-#source("~/Work/AManal/MCMCglmm_1.11/inst/doc/Figures/TEST.R")
+#source("~/Work/AManal/MCMCglmm_2.04/inst/doc/Figures/TEST.R")
 library(MCMCglmm)
 library(VGAM)
 verbose=FALSE
 plotit=TRUE
 leg=TRUE
 nsim<-1
-nitt<-5000
-thin<-4
-burnin<-1000
+nitt<-13
+thin<-1
+burnin<-3
 
 # poisson test 1.2 seconds OK
 print("res1")
 R<-diag(1)
 res1<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1))
+tpar<-c(1, 1)
 for(i in 1:nsim){
 l<-exp(rnorm(100,1,R))
 y<-rpois(100,l)
@@ -23,21 +24,27 @@ m1<-MCMCglmm(cbind(y1)~1, family="poisson", data=data, prior=prior, verbose=verb
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res1 different from expected"))
+}
 res1[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
-
 
 # multinomial test J=1 test 0.9 seconds  OK
 print("res2")
 res2<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1))
+tpar<-c(1,1)
 for(i in 1:nsim){
 y<-rbinom(100,10,inv.logit(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=10-y)
 m1<-MCMCglmm(cbind(y1,y2)~1, family="multinomial2", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res2 different from expected"))
 }
 res2[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
@@ -47,6 +54,7 @@ print(i)
 print("res3")
 res3<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
+tapr<-c(1,1)
 for(i in 1:nsim){
 y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
@@ -55,14 +63,18 @@ m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose,
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res3 different from expected"))
+}
 res3[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
 # categorical test J=1 test with slice sampling 0.9 seconds OK
 print("res3b")
-res3<-matrix(NA, nsim,2)
+res3b<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
+tpar<-c(1,1)
 for(i in 1:nsim){
 y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
@@ -71,7 +83,10 @@ m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose,
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-res3[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res3b different from expected"))
+}
+res3b[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -82,6 +97,7 @@ res4<-matrix(NA, nsim,3)
 R<-as.matrix(2)
 G<-as.matrix(1)
 prior<-list(R=list(V=as.matrix(1), n=1), G=list(G1=list(V=G, n=1)))
+tpar<-c(-1,1,2)
 for(i in 1:nsim){
 fac<-as.factor(sample(1:50,300,replace=TRUE))
 ffac<-gl(2,150)
@@ -91,16 +107,20 @@ m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior,verbose=verbose, nitt=nit
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res4 different from expected"))
+}
 res4[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
 # binary with blocked random  1.5 seconds OK
 
-print("res4")
+print("res4c")
 res4c<-matrix(NA, nsim,3)
 R<-as.matrix(2)
 G<-as.matrix(1)
+tpar<-c(-1,1,2)
 prior=list(R=list(V=R, n=1, fix=1),G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
@@ -110,10 +130,12 @@ m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, family="categorical",ver
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res4c different from expected"))
+}
 res4c[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
-
 
 # gauss with correlated random 9.6 seconds OK
 print("res5")
@@ -121,21 +143,22 @@ res5<-matrix(NA, nsim,3)
 R<-as.matrix(2)
 G<-as.matrix(1)
 prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
+tpar<-c(-1,1,2)
 for(i in 1:nsim){
 Ped<-cbind(1:400, c(rep(NA,100), sample(1:50,300,TRUE)),c(rep(NA,100), sample(51:100,300,TRUE)))
 y<-mvrnorm(300, c(-1), R)+rbv(Ped,G)[101:400]
-data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]))
+data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]), fac=gl(2,150))
 system.time(m1<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin))
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-m2<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-if(plotit){
-plot(mcmc(cbind(m2$Sol, m2$VCV)), ask=FALSE)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res5 different from expected"))
 }
 res5[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
+
 
 if(leg){
 # gauss with correlated random regression OK
@@ -144,6 +167,7 @@ res5b<-matrix(NA, nsim,6)
 R<-as.matrix(2)
 G<-diag(2)
 prior=list(R=list(V=R, nu=1),G=list(G1=list(V=G, nu=2)))
+tpar<-c(-1, 1, 0,0,1,2)
 for(i in 1:nsim){
 Ped<-cbind(1:400, c(rep(NA,100), sample(1:50,300,TRUE)),c(rep(NA,100), sample(51:100,300,TRUE)))
 x<-runif(300, -1,1)
@@ -153,6 +177,9 @@ data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]), x=x)
 m1<-MCMCglmm(y1~1, random=~us(leg(x,1,FALSE)):animal, pedigree=Ped, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res5b different from expected"))
 }
 res5b[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
@@ -165,6 +192,7 @@ res6<-matrix(NA, nsim,6)
 G=matrix(c(1,0.5,0.5,2),2,2)
 R<-as.matrix(2)
 prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
+tpar<-c(-1, 1, 0.5, 0.5, 2, 2)
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 facf<-as.factor(sample(1:2,300,replace=TRUE))
@@ -178,13 +206,13 @@ m1<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior,verbose=verbose,
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-m2<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-if(plotit){
-plot(mcmc(cbind(m2$Sol, m2$VCV)), ask=FALSE)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res6 different from expected"))
 }
 res6[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
+
 
 # gauss with idh random effect 1.7 seconds
 print("res7")
@@ -203,20 +231,30 @@ m1<-MCMCglmm(y1~1,random=~idh(facf):fac,  data=data, prior=prior,verbose=verbose
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+tpar<-c(-1, 1, 2, 2)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res7 different from expected"))
+}
 m2<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m2$Sol, m2$VCV)), ask=FALSE)
+}
+tpar<-c(-1, 1,0,0, 2, 2)
+if(any(HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,2]<tpar)){
+print("res7b different from expected")
 }
 res7[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 res7b[i,]<-posterior.mode(mcmc(cbind(m2$Sol, m2$VCV)))
 print(i)
 }
 
+
 # bivariate gauss 1.9 seconds
 print("res8")
 res8<-matrix(NA, nsim,6)
 R=matrix(c(1,0.5,0.5,2),2,2)
 prior=list(R=list(V=R, n=1))
+tpar<-c(-1,1,1,0.5,0.5,2)
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
@@ -225,15 +263,20 @@ m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~us(tra
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res8 different from expected"))
+}
 res8[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
+
 
 # bivariate gauss idh residual 1.7 seconds
 print("res9")
 res9<-matrix(NA, nsim,4)
 R=matrix(c(1,0,0,2),2,2)
 prior=list(R=list(V=R, n=2))
+tpar<-c(-1,1,1,2)
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=y[,2])
@@ -241,6 +284,9 @@ data$y1[sample(1:300, 50)]<-NA
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~idh(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res9 different from expected"))
 }
 res9[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
@@ -250,7 +296,8 @@ print(i)
 print("res10")
 res10<-matrix(NA, nsim,6)
 R=matrix(c(1,0,0,2),2,2)
-G=matrix(c(2,0.5,0.5,1),2,2)
+G=matrix(c(2,0,0,1),2,2)
+tpar<-c(-1,1,2,1,1,2)
 prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
@@ -260,6 +307,9 @@ m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~idh(trait):fac, family=c("gaussian","
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res10 different from expected"))
+}
 res10[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
@@ -268,6 +318,7 @@ print(i)
 res11<-matrix(NA, nsim,8)
 R=matrix(c(1,0,0,2),2,2)
 G=matrix(c(2,0.5,0.5,1),2,2)
+tpar<-c(-1,1,2,0.5,0.5,1,1,2)
 prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
@@ -279,6 +330,9 @@ m1<-MCMCglmm(cbind(y1s,y1f,y2s,y2f)~trait-1, random=~us(trait):fac, family=c("mu
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res11 different from expected"))
+}
 res11[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
@@ -286,14 +340,24 @@ print(i)
 
 # gauss with blocked random - all missing 1.9 seconds
 print("res12")
+res12<-matrix(NA, nsim,3)
 R<-as.matrix(2)
 G<-as.matrix(1)
 prior=list(R=list(V=R, n=100),G=list(G1=list(V=G, n=100)), B=list(mu=0, V=0.000000001))
+for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-rep(NA,300)
+tpar<-c(0,1,2)
 data=data.frame(y1=y, fac=fac)
-res12<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, singular.ok=TRUE,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, singular.ok=TRUE,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res12 different from expected"))
+}
+
+res12[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
 
 # Jennys data - once as gaussian once as binomial 32 seconds
 
@@ -326,14 +390,25 @@ if(file.exists("~/Work/Jenny/Data/Intermediate/ThirdC.R")){
     y<-rbinom(dim(firstP)[1], firstP$total, inv.logit(l))
     firstP$noalive<-y
     firstP$nodead<-firstP$total-y
+    tpar<-coef
     m1test<-MCMCglmm(l~virus+day, random=~us(virus):line+f2rep, rcov=~idh(virus):units, family=c("gaussian"), data=firstP, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1test$Sol, m1test$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1test$Sol, m1test$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1test$Sol, m1test$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1test$Sol, m1test$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1test$Sol, m1test$VCV)))[,2]<tpar)/length(tpar), "res13 different from expected"))
+}
+
+
     m1test2<-MCMCglmm(cbind(noalive, nodead)~virus+day, random=~us(virus):line+f2rep, rcov=~idh(virus):units, family=c("multinomial2"), data=firstP, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1test2$Sol, m1test2$VCV)), ask=FALSE)
 }
+
+if(any(HPDinterval(mcmc(cbind(m1test2$Sol, m1test2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1test2$Sol, m1test2$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1test2$Sol, m1test2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1test2$Sol, m1test2$VCV)))[,2]<tpar)/length(tpar), "res14 different from expected"))
+}
+
     res13[i,]<-posterior.mode(mcmc(cbind(m1test$Sol, m1test$VCV)))
     res14[i,]<-posterior.mode(mcmc(cbind(m1test2$Sol, m1test2$VCV)))
     print(i)
@@ -354,13 +429,19 @@ for(i in 1:nsim){
 mev<-rchisq(300,10)
 y<-mvrnorm(300, c(-1), R)+rnorm(300, c(0), sqrt(mev))
 data=data.frame(y1=y)
+tpar<-c(-1,1,2)
 m1<-MCMCglmm(y1~1,data=data, prior=prior, mev=mev,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res15 different from expected"))
+}
+
 res15[i,]<-apply(mcmc(cbind(m1$Sol, m1$VCV)), 2, median)
 print(i)
 }
+
 
 
 # censored gaussian data
@@ -388,7 +469,13 @@ if(any(y1==-Inf) | any(y2==Inf)){
   if(plotit){
     plot(mcmc(cbind(m2$Sol, m2$VCV)), ask=FALSE)
   }
-
+tpar<-c(0,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res17a different from expected"))
+}
+if(any(HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,2]<tpar)/length(tpar), "res17b different from expected"))
+}
 res17a[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 res17b[i,]<-posterior.mode(mcmc(cbind(m2$Sol, m1$VCV)))
 print(i)
@@ -397,6 +484,7 @@ print(i)
 # censored Possion data
 res18<-matrix(NA, nsim,2)
 print("res18")
+tpar<-c(0,1)
 prior=list(R=list(V=diag(1), n=1))
 for(i in 1:nsim){
 l<-rpois(100, exp(rnorm(100,0,1)))
@@ -410,16 +498,19 @@ m1<-MCMCglmm(cbind(y1, y2)~1, data=data, family="cenpoisson", prior=prior, pl=TR
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res18 different from expected"))
+}
 res18[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
-
 
 print("res19")
 res19<-matrix(0, nsim, 6)
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
 tune=list(diag(2))
+tpar<-c(1,-1,1,0,0,1)
 for(i in 1:nsim){
 l<-mvrnorm(300,c(0,-1), R)
 y<-rzipois(300, exp(1+l[,1]), inv.logit(l[,2]))
@@ -428,16 +519,19 @@ m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",p
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res19 different from expected"))
+}
 res19[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
-
 
 print("res19b")
 res19b<-matrix(0, nsim, 8)
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2),G=list(G1=list(V=1, n=1)))
 tune=list(diag(2))
+tpar<-c(1, -0.5, 0.2, 1,1,0,0,1)
 for(i in 1:nsim){
 	x<-rnorm(300)
 	l<-mvrnorm(300,c(0,-0.5), R)
@@ -449,6 +543,10 @@ for(i in 1:nsim){
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res19b different from expected"))
+}
+
 	res19b[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 	print(i)
 }
@@ -460,12 +558,16 @@ print("res20")
 tune<-diag(2)
 R=matrix(c(2,0.25,0.25,1),2,2)
 prior=list(R=list(V=R, n=2, fix=2))
+tpar<-c(-1,1,2,0.25, 0.25,1)
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
 data=data.frame(y1=y[,1], y2=rbinom(300, 1, inv.logit(y[,2])), y3=y[,2])
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","categorical"), rcov=~us(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res20 different from expected"))
 }
 res20[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
@@ -475,6 +577,8 @@ print(i)
 
 if(leg){
 res21<-matrix(NA, nsim,5)
+res21b<-matrix(NA, nsim,5)
+res21c<-matrix(NA, nsim,7)
 print("res21")
 G=matrix(c(2,0,0,1),2,2)
 R=matrix(1,1,1)
@@ -487,9 +591,6 @@ time<-rnorm(900)
 y<-int.slope[,1][ind]+time*int.slope[,2][ind]
 y<-y+rnorm(900,-1,R)
 data=data.frame(y1=y, time=time, ind=ind)
-
-
-m2<-MCMCglmm(y1~time, random=~us(1+poly(time,1, raw=TRUE)):ind, data=data, prior=prior2,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 
 for(i in 1:nsim){
 int.slope<-mvrnorm(300, c(0,0), G)
@@ -504,11 +605,23 @@ data=data.frame(y1=y, time=time, ind=ind)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
+tpar<-c(-1, 0, 2,1,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res21-m1 different from expected"))
+}
+if(any(HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m2$Sol, m2$VCV)))[,2]<tpar)/length(tpar), "res21-m2 different from expected"))
+}
+tpar<-c(-1, 0, 2,0,0,1,1)
+if(any(HPDinterval(mcmc(cbind(m3$Sol, m3$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m3$Sol, m3$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m3$Sol, m3$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m3$Sol, m3$VCV)))[,2]<tpar)/length(tpar), "res21-m3 different from expected"))
+}
 res21[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+res21b[i,]<-posterior.mode(mcmc(cbind(m2$Sol, m2$VCV)))
+res21c[i,]<-posterior.mode(mcmc(cbind(m3$Sol, m3$VCV)))
 print(i)
 }
 }
-
 
 if(file.exists("~/Work/Boots/Data/Raw/PO.csv")){
 print("MVasUV")
@@ -570,26 +683,27 @@ m1<-MCMCglmm(y~trait-1, random=~us(trait):fac, family=c("categorical"), rcov=~us
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-
+tpar<-c(-1,0,2,0.5,0.5,1,1,0,0,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res22 different from expected"))
+}
 res22[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
-
 # binary probit
 
 print("res23")
-res23<-matrix(NA, nsim,2)
+res23<-matrix(NA, nsim,3)
 R<-as.matrix(1)
 G<-as.matrix(2)
-prior=list(R=list(V=R, n=1, fix=1)) #,G=list(G1=list(V=G, n=1)))
+prior=list(R=list(V=R, n=1, fix=1))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 x<-runif(300)
-g<-rnorm(300, -1+0.5*x, R) #+mvrnorm(75, c(0), G)[fac]
+g<-rnorm(300, -1+0.5*x, R)
 cp<-0.5
 pr<-cbind(pnorm(-g),1-pnorm(-g))
-
 
 y1<-1:300
 for(j in 1:300){
@@ -603,23 +717,26 @@ cp-cp[2]
 data=data.frame(y1=y1, fac=fac, xcov=x)
 m1<-MCMCglmm(y1~xcov,data=data, prior=prior, family="ordinal", verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
-plot(mcmc(cbind(m1$Sol)), ask=FALSE)
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-res23[i,]<-posterior.mode(m1$Sol)
+tpar<-c(-1,0.5,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res23 different from expected"))
+}
+res23[i,]<-c(posterior.mode(mcmc(cbind(m1$Sol, m1$VCV))))
 print(i)
 }
 
-
 # 4 category ordinal
 print("res24")
-res24<-matrix(NA, nsim,4)
+res24<-matrix(NA, nsim,5)
 R<-as.matrix(1)
 G<-as.matrix(2)
 prior=list(R=list(V=R, n=1, fix=1)) #,G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 x<-runif(300)
-g<-rnorm(300, -1+1*x, R) #+mvrnorm(75, c(0), G)[fac]
+g<-rnorm(300, -1+1*x, R)
 cp<-c(0.5,1)
 pr<-cbind(pnorm(-g),pnorm(cp[1]-g)-pnorm(-g),  pnorm(cp[2]-g)-pnorm(cp[1]-g), 1-pnorm(cp[2]-g))
 
@@ -631,11 +748,16 @@ for(j in 1:300){
 data=data.frame(y1=y1, fac=fac, xcov=x)
 m1<-MCMCglmm(y1~xcov,data=data, prior=prior, family="ordinal", verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
-plot(mcmc(cbind(m1$Sol)), ask=FALSE)
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-res24[i,]<-posterior.mode(m1$Sol)
+tpar<-c(cp,-1,1,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res24 different from expected"))
+}
+res24[i,]<-c(posterior.mode(mcmc(cbind(m1$Sol, m1$VCV))))
 print(i)
 }
+
 
 # bivariate ordinal
 
@@ -670,11 +792,13 @@ m1<-MCMCglmm(cbind(y1,y2)~trait+trait:xcov-1,random=~us(trait):fac, rcov=~idh(tr
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
-
+tpar<-c(cp1, cp2,-1,-0.5,1,-1,1,0.5,0.5,1,1,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res25 different from expected"))
+}
 res25[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
-
 
 print("res26")
 res26<-matrix(NA, nsim,3)
@@ -694,12 +818,11 @@ plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 res26[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
+tpar<-c(0,1,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res26 different from expected"))
+}
 
-#source("~/Desktop/MCMCglmmTEST.R")
-#source("~/Work/AManal/MCMCglmm_1.11/inst/doc/Figures/TEST.R")
-rr<-sample(1:1000,1)
-print(rr)
-set.seed(rr)
 
 print("res27")
 res27<-matrix(NA, nsim,6)
@@ -720,18 +843,21 @@ m1<-MCMCglmm(y~fac3,random=~idv(fac1+fac2)+id, data=data, prior=prior, verbose=v
 if(plotit){
 plot(mcmc(cbind(mcmc(m1$Sol[,1:3]), m1$VCV)), ask=FALSE)
 }
+tpar<-c(0,0,0,1,1,1)
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res27 different from expected"))
+}
 
 res27[i,]<-posterior.mode(mcmc(cbind(m1$Sol[,1:3], m1$VCV)))
 print(i)
 }
 
-
 # bivariate binary
 print("res28")
 T<-2
 res28<-matrix(NA, nsim,T*(1+T))
-R<-cov2cor(rIW(diag(T), nu=T+2))
-mu<-matrix(runif(T),T,1)
+R<-cbind(c(1,-0.25),c(-0.25,1))
+mu<-matrix(c(0.3,0.9),T,1)
 prior=list(R=list(V=diag(T), nu=T+1))
 
 for(i in 1:nsim){
@@ -742,17 +868,20 @@ for(i in 1:nsim){
 	if(plotit){
 		plot(mcmc(cbind(mcmc(m1$Sol), m1$VCV)), ask=FALSE)
 	}
-	
+	tpar<-c(mu,c(R))
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res28 different from expected"))
+}
+
 	res28[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 	print(i)
 }
 
 
-
 # bivaraite 4 category ordinal
 print("res29")
 res29<-matrix(NA, nsim,12)
-R<-cov2cor(rIW(diag(2), 5))
+R<-cbind(c(1,-0.35), c(-0.35,1))
 
 prior=list(R=list(V=diag(2), n=3)) #,G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
@@ -777,7 +906,19 @@ for(i in 1:nsim){
 	if(plotit){
 		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 	}
+	tpar<-c(cp,cp2, -1,0,-1,0.5, c(R))
+        if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+        print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res29 different from expected"))
+        }
 	res29[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 	print(i)
 }
+
+tpar<-c(1, 1,1,1,1,1,1,1,-1,1,2,-1,1,2,-1,1,2,-1, 1, 0,0,1,2,-1, 1, 0.5, 0.5, 2, 2,-1, 1, 2, 2,-1, 1,0,0, 2, 2,-1,1,1,0.5,0.5,2,-1,1,1,2,-1,1,2,1,1,2,-1,1,2,0.5,0.5,1,1,2,0,1,2, coef, coef,-1,1,2,0,1,0,1,0,1,1,-1,1,0,0,1,1, -0.5, 0.2, 1,1,0,0,1,-1,1,2,0.25, 0.25,1,-1, 0, 2,1,1,-1, 0, 2,1,1,-1, 0, 2,0,0,1,1,-1,0,2,0.5,0.5,1,1,0,0,1,-1,0.5,1,0.5,1,-1,1,1,0.5,1,0.75,-1,-0.5,1,-1,1,0.5,0.5,1,1,1,0,1,1,0,0,0,1,1,1,0.3,0.9,1,-0.25,-0.25,1,0.5,1,1,2,-1,0,-1,0.5,1,-0.35, -0.35,1)
+
+est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29))
+
+plot(est~tpar)
+abline(0,1)
+
 

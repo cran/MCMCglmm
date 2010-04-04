@@ -3,7 +3,7 @@
 \title{Inverse Relatedness Matrix and Phylogenetic Covariance Matrix}
 \description{
  Henderson (1976) and Meuwissen and Luo (1992) algorithm for inverting 
-relatedness matrices, and Hadfield and Nakagawa (2009) algorithm for inverting 
+relatedness matrices, and Hadfield and Nakagawa (2010) algorithm for inverting 
 phylogenetic covariance matrices. 
 }
 \usage{
@@ -26,9 +26,9 @@ to unit length (distance from root to tip)?}}
 \references{
 	Henderson, C.R. (1976) Biometrics 32 (1) 69:83
 	
-	Meuwissen, T.H.E, and Luo, Z. (1992) 24 (4) 305:313
+	Meuwissen, T.H.E, and Luo, Z. (1992) Genetic Selection Evolution 24 (4) 305:313
 	
-	Hadfield, J.D.  and Nakagawa, S. (2009) \emph{submitted}
+	Hadfield, J.D.  and Nakagawa, S. (2010)  Journal of Evolutionary Biology 23 494-508
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 \examples{

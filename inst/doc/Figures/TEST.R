@@ -1,14 +1,15 @@
 #source("~/Desktop/MCMCglmmTEST.R")
-#source("~/Work/AManal/MCMCglmm_2.04/inst/doc/Figures/TEST.R")
-library(MCMCglmm)
+#source("~/Desktop/recovery//MCMCglmm_2.05/inst/doc/Figures/TEST.R")
 library(VGAM)
+library(MASS)
+library(MCMCglmm)
 verbose=FALSE
 plotit=TRUE
 leg=TRUE
 nsim<-1
-nitt<-13
+nitt<-130
 thin<-1
-burnin<-3
+burnin<-30
 
 # poisson test 1.2 seconds OK
 print("res1")
@@ -37,7 +38,7 @@ res2<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1))
 tpar<-c(1,1)
 for(i in 1:nsim){
-y<-rbinom(100,10,inv.logit(rnorm(100,1,1)))
+y<-rbinom(100,10,plogis(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=10-y)
 m1<-MCMCglmm(cbind(y1,y2)~1, family="multinomial2", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -56,7 +57,7 @@ res3<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 tapr<-c(1,1)
 for(i in 1:nsim){
-y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
+y<-rbinom(100,1,plogis(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
@@ -76,7 +77,7 @@ res3b<-matrix(NA, nsim,2)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 tpar<-c(1,1)
 for(i in 1:nsim){
-y<-rbinom(100,1,inv.logit(rnorm(100,1,1)))
+y<-rbinom(100,1,plogis(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, slice=TRUE)
@@ -125,7 +126,7 @@ prior=list(R=list(V=R, n=1, fix=1),G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, c(-1), R)+mvrnorm(75, c(0), G)[fac]
-data=data.frame(y1=rbinom(300, 1,inv.logit(y)), fac=fac, y2=y)
+data=data.frame(y1=rbinom(300, 1,plogis(y)), fac=fac, y2=y)
 m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, family="categorical",verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
@@ -323,8 +324,8 @@ prior=list(R=list(V=R, n=1),G=list(G1=list(V=G, n=1)))
 for(i in 1:nsim){
 fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, c(-1,1), R)+mvrnorm(75, c(0,0), G)[fac,]
-y1<-rbinom(300,10,inv.logit(y[,1]))
-y2<-rbinom(300,10,inv.logit(y[,2]))
+y1<-rbinom(300,10,plogis(y[,1]))
+y2<-rbinom(300,10,plogis(y[,2]))
 data=data.frame(y1s=y1,y1f=10-y1,y2s=y2,y2f=10-y2, fac=fac)
 m1<-MCMCglmm(cbind(y1s,y1f,y2s,y2f)~trait-1, random=~us(trait):fac, family=c("multinomial2","multinomial2"), rcov=~idh(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -387,7 +388,7 @@ if(file.exists("~/Work/Jenny/Data/Intermediate/ThirdC.R")){
     reffects<-reffects+rnorm(nlevels(firstP$f2rep),0,sqrt(G[[2]]))[as.numeric(firstP$f2rep)]
     l<-location+resid+reffects
     firstP$l<-l
-    y<-rbinom(dim(firstP)[1], firstP$total, inv.logit(l))
+    y<-rbinom(dim(firstP)[1], firstP$total, plogis(l))
     firstP$noalive<-y
     firstP$nodead<-firstP$total-y
     tpar<-coef
@@ -506,14 +507,14 @@ print(i)
 }
 
 print("res19")
-res19<-matrix(0, nsim, 6)
+res19<-matrix(0, nsim, 4)
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
 tune=list(diag(2))
 tpar<-c(1,-1,1,0,0,1)
 for(i in 1:nsim){
 l<-mvrnorm(300,c(0,-1), R)
-y<-rzipois(300, exp(1+l[,1]), inv.logit(l[,2]))
+y<-rzipois(300, exp(1+l[,1]), plogis(l[,2]))
 data=data.frame(y1=y)
 m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -527,7 +528,7 @@ print(i)
 }
 
 print("res19b")
-res19b<-matrix(0, nsim, 8)
+res19b<-matrix(0, nsim, 6)
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2),G=list(G1=list(V=1, n=1)))
 tune=list(diag(2))
@@ -537,7 +538,7 @@ for(i in 1:nsim){
 	l<-mvrnorm(300,c(0,-0.5), R)
         fac<-gl(50,6)
         r<-rnorm(50)
-	y<-rzipois(300, exp(1+l[,1]+r[fac]+0.2*x), inv.logit(l[,2]))
+	y<-rzipois(300, exp(1+l[,1]+r[fac]+0.2*x), plogis(l[,2]))
 	data=data.frame(y1=y, x=x, fac=fac)
 	m1<-MCMCglmm(y1~trait+at.level(trait, 1):x-1, random=~us(at.level(trait,1)):fac, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -561,7 +562,7 @@ prior=list(R=list(V=R, n=2, fix=2))
 tpar<-c(-1,1,2,0.25, 0.25,1)
 for(i in 1:nsim){
 y<-mvrnorm(300, c(-1,1), R)
-data=data.frame(y1=y[,1], y2=rbinom(300, 1, inv.logit(y[,2])), y3=y[,2])
+data=data.frame(y1=y[,1], y2=rbinom(300, 1, plogis(y[,2])), y3=y[,2])
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","categorical"), rcov=~us(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
@@ -748,13 +749,13 @@ for(j in 1:300){
 data=data.frame(y1=y1, fac=fac, xcov=x)
 m1<-MCMCglmm(y1~xcov,data=data, prior=prior, family="ordinal", verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
-plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+plot(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)), ask=FALSE)
 }
 tpar<-c(cp,-1,1,1)
-if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
-print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res24 different from expected"))
+if(any(HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res24 different from expected"))
 }
-res24[i,]<-c(posterior.mode(mcmc(cbind(m1$Sol, m1$VCV))))
+res24[i,]<-c(posterior.mode(mcmc(cbind(m1$CP, m1$Sol, m1$VCV))))
 print(i)
 }
 
@@ -790,13 +791,13 @@ table(y1,y2)
 data=data.frame(y1=y1, y2=y2, fac=fac, xcov=x)
 m1<-MCMCglmm(cbind(y1,y2)~trait+trait:xcov-1,random=~us(trait):fac, rcov=~idh(trait):units, data=data, prior=prior, family=cbind("ordinal", "ordinal"),verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
-plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+plot(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)), ask=FALSE)
 }
 tpar<-c(cp1, cp2,-1,-0.5,1,-1,1,0.5,0.5,1,1,1)
-if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
-print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res25 different from expected"))
+if(any(HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res25 different from expected"))
 }
-res25[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+res25[i,]<-posterior.mode(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))
 print(i)
 }
 
@@ -810,7 +811,7 @@ fac1<-as.factor(sample(1:75,300,replace=TRUE))
 fac2<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, 0, R)+mvrnorm(75, 0, G)[fac1]+mvrnorm(75, 0, G)[fac2]
 data=data.frame(y=y, fac1=fac1,fac2=fac2)
-m1<-MCMCglmm(y~1,random=~idv(fac1+fac2), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+m1<-MCMCglmm(y~1,random=~idv(as.numeric(fac1)+fac2), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -862,7 +863,7 @@ prior=list(R=list(V=diag(T), nu=T+1))
 
 for(i in 1:nsim){
 	y<-mvrnorm(300, mu, R)
-	data=data.frame(apply(y,2, function(x){rbinom(length(x), 1, inv.logit(x))}))
+	data=data.frame(apply(y,2, function(x){rbinom(length(x), 1, plogis(x))}))
 	m1<-MCMCglmm(cbind(X1, X2)~trait-1,rcov=~cor(trait):units, family=rep("categorical", T), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 	
 	if(plotit){
@@ -904,15 +905,74 @@ for(i in 1:nsim){
 	data=data.frame(y1=y1, y2=y2, fac=fac, xcov=x)
 	m1<-MCMCglmm(cbind(y1, y2)~trait+trait:xcov-1,rcov=~cor(trait):units, data=data, prior=prior, family=c("ordinal", "ordinal"), verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 	if(plotit){
-		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+		plot(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)), ask=FALSE)
 	}
 	tpar<-c(cp,cp2, -1,0,-1,0.5, c(R))
-        if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
-        print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res29 different from expected"))
+        if(any(HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,2]<tpar)){
+        print(paste(sum(HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res29 different from expected"))
         }
-	res29[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
+	res29[i,]<-c(posterior.mode(m1$CP),posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 	print(i)
 }
+
+# hurdle Poisson
+print("res30")
+res30<-matrix(NA, nsim,12)
+data("bioChemists", package = "pscl")
+prior = list(R = list(V = diag(2), nu = 1.002, fix = 2)) 
+c2<-(16*sqrt(3)/(15*pi))^2
+
+for(i in 1:nsim){
+m5d.1 <- MCMCglmm(art ~ trait-1+trait:(fem+mar+kid5 +phd+ment), rcov = ~idh(trait):units,  data = bioChemists, prior = prior, family = "hupoisson", nitt=13000, thin=10, burnin=3000) 
+res30[i,][seq(2,12,2)]<-colMeans(m5d.1$Sol[,seq(2,12,2)]/sqrt(1+c2))
+res30[i,][seq(1,11,2)]<-colMeans(m5d.1$Sol[,seq(1,11,2)]+0.5*m5d.1$VCV[,1])
+}
+
+n<-100
+l<-rnorm(n, -1, sqrt(1))
+t<-(-log(1-runif(n)*(1-exp(-exp(l)))))
+y<-rpois(n,exp(l)-t)+1
+y<-c(rep(0, length(y)/2), y)
+data=data.frame(y=y)
+prior=list(R=list(V=diag(2), fix=2, nu=1))
+m1<-MCMCglmm(y~trait-1, rcov=~idh(trait):units, data=data, family="hupoisson", prior=prior)
+# truncated Poisson
+
+print("res31")
+res31<-matrix(NA, nsim,2)
+
+n<-200
+
+for(i in 1:nsim){
+l<-rnorm(n, -1, sqrt(1))
+t<-(-log(1-runif(n)*(1-exp(-exp(l)))))
+y<-rpois(n,exp(l)-t)+1
+
+dat<-data.frame(y=y)
+m1<-MCMCglmm(y~1, family="ztpoisson", data=dat)
+
+res31[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
+}
+
+
+# geometric
+
+n<-200
+print("res32")
+res32<-matrix(NA, nsim,2)
+
+for(i in 1:nsim){
+
+y<-rgeom(n,plogis(rnorm(n,-1,sqrt(0.5))))
+
+dat<-data.frame(y=y)
+m1<-MCMCglmm(y~1, family="geometric", data=dat)
+
+res32[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
+
+}
+
+
 
 tpar<-c(1, 1,1,1,1,1,1,1,-1,1,2,-1,1,2,-1,1,2,-1, 1, 0,0,1,2,-1, 1, 0.5, 0.5, 2, 2,-1, 1, 2, 2,-1, 1,0,0, 2, 2,-1,1,1,0.5,0.5,2,-1,1,1,2,-1,1,2,1,1,2,-1,1,2,0.5,0.5,1,1,2,0,1,2, coef, coef,-1,1,2,0,1,0,1,0,1,1,-1,1,0,0,1,1, -0.5, 0.2, 1,1,0,0,1,-1,1,2,0.25, 0.25,1,-1, 0, 2,1,1,-1, 0, 2,1,1,-1, 0, 2,0,0,1,1,-1,0,2,0.5,0.5,1,1,0,0,1,-1,0.5,1,0.5,1,-1,1,1,0.5,1,0.75,-1,-0.5,1,-1,1,0.5,0.5,1,1,1,0,1,1,0,0,0,1,1,1,0.3,0.9,1,-0.25,-0.25,1,0.5,1,1,2,-1,0,-1,0.5,1,-0.35, -0.35,1)
 

@@ -16,11 +16,10 @@ spl<-function(x, k=10, knots=NULL, type="LRTP"){
   }
 
   Bsvd<-svd(B)
-  Z<-t(solve(t(Bsvd$v%*%(t(Bsvd$u)*sqrt(Bsvd$d))), t(Z)))
+  nonzeros<-which(Bsvd$d>sqrt(.Machine$double.eps))
+  Z<-Z%*%Bsvd$v[,nonzeros, drop=FALSE]%*%diag(sqrt(1/Bsvd$d[nonzeros]))%*%t(Bsvd$u[,nonzeros, drop=FALSE])
 
   return(Z)
 } 
-
-
 
 

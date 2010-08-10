@@ -15,22 +15,7 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
-\usepackage{hyperref}
 
-\let\proglang=\textsf
-\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
-  \hypersetup{%
-    hyperindex = {true},
-    colorlinks = {true},
-    linktocpage = {true},
-    plainpages = {false},
-    linkcolor = {blue},
-    citecolor = {blue},
-    urlcolor = {red},
-    pdfstartview = {Fit},
-    pdfpagemode = {UseOutlines},
-    pdfview = {XYZ null null null}
-  }
 
 \title{Continuous Random Interactions}
 
@@ -218,7 +203,7 @@ but notice that the the estimate of intercept-slope correlation is close to the 
 \end{Sinput}
 \begin{Soutput}
       var1 
--0.9708628 
+-0.9730981 
 \end{Soutput}
 \end{Schunk}
 
@@ -233,10 +218,10 @@ and shows strong autocorrelation
 
                 [,1]
 Lag 0    1.000000000
-Lag 10   0.178474485
-Lag 50  -0.008167032
-Lag 100 -0.035599104
-Lag 500 -0.012882882
+Lag 10   0.148337103
+Lag 50   0.004348220
+Lag 100 -0.029317356
+Lag 500  0.013168731
 \end{Soutput}
 \end{Schunk}
 and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran:
@@ -310,19 +295,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.925
+[1] 5525.461
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.568
+[1] 4544.417
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3933.005
+[1] 3932.273
 \end{Soutput}
 \end{Schunk}
 
@@ -562,9 +547,27 @@ where $\beta_{1}$ is the expected value, $m_{i}$ is some deviation due to measur
 
 fixing $\sigma^{2}_{m}=1$ in the prior, the expected variance in the measurement errors are therefore the standard errors squared (the sampling variance) and all measurement errors are assumed to be independent of each other. The random regression therefore fits a random effect meta-analysis.   
 
+\section{Splines}
+
+blah blah
+
+\begin{Schunk}
+\begin{Sinput}
+> random = ~idv(spl(covariate))
+\end{Sinput}
+\end{Schunk}
+
+fits a penalised thin-plate spline,
+
+\begin{Schunk}
+\begin{Sinput}
+> random = ~idv(smspline(covariate))
+\end{Sinput}
+\end{Schunk}
+
+fits a penalised cubic spline. The coefficients are random effects, stored in the \texttt{Sol} element of the model output and the single variance component (the penalising bit) is in the \texttt{VCV} element. Its usually a good idea to scale the covariate to lie in the interval [0,1] or some such thing. 
+
 \ifalone
-\bibliographystyle{JSS}
-\bibliography{JarLib}
 \end{document}
 \else
 \fi

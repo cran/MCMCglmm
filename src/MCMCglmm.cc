@@ -20,21 +20,17 @@ void MCMCglmm(
         double *liabP,   // starting liabilities (= y if gaussian, and no missing data)
         int *mvtype,     // missing data types 
         int *nyP,        // number of records
+	int *dimP,	 // dimensions of X,Z,A and L 
+        int *nzmaxP,     // number of non-zero's in X,Z,A and L 
         int *iXP,        // X       
 	int *pXP,	         
-	double *xXP,	      
-	int *dimXP,	         
-	int *nzmaxXP,
+	double *xXP,	               
         int *iZP,        // Z       
 	int *pZP,	         
-	double *xZP,	         
-	int *dimZP,	         
-	int *nzmaxZP,
+	double *xZP,	                  
         int *iAP,        // A       
 	int *pAP,	         
-	double *xAP,	      
-	int *dimAP,	         
-	int *nzmaxAP,
+	double *xAP,	               
         double *MSsdP,       // Mendelian sampling standard deviation for each individual (*1.5 if an individual doesn't have both parents)
         int *idP,            // idenitifier note this is the position in the pedigree of analysed indiviuals
         int *damP,           // dam idenitifier     
@@ -73,11 +69,18 @@ void MCMCglmm(
         double *stcutpointsP,// starting vector of cutpoints    
         double *CPP,
         double *AmupP,
-        int *iAVpP,         
+        int *iAVpP,          // priors for redundant parameters in parameter expanded models.      
         int *pAVpP,        
         double *xAVpP,     
         int *nzmaxAVpP,        
-        int *PXtermsP  
+        int *PXtermsP,
+        int *iLXP,              // Design matrix to form Gianola & Sorensen's Lambda         
+        int *pLXP,        
+        double *xLXP,
+        double *lambdaP,        
+        double *LvpP,          // prior for structural parameters
+        double *LmupP  
+  
 ){         
 
 int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
@@ -95,7 +98,8 @@ int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
         burnin = burninP[0], 
         post_cnt = 0,
         tvc =0,          // total number of (co)variance components 
-        nordinal = nordinalP[0];
+        nordinal = nordinalP[0],
+        diagR = diagP[0];  // is the us R-structure diagionalised 0-no, 1-yes, 2-yes with identical variances
 
 	int *cond = new int[GRdim[nG]];
 	int *keep = new int[GRdim[nG]];
@@ -108,9 +112,11 @@ double   mndenom1 = 1.0,  // sum(exp(l_{j}) for all j) and l_old
          mndenom2 = 1.0,  // sum(exp(l_{j}) for all j) and l_new
          u;               // slice sampling runifs
 
-int     nrowX =  dimXP[0], ncolX =  dimXP[1],  nzmaxX = nzmaxXP[0]; 
-int     nrowZ =  dimZP[0], ncolZ =  dimZP[1],  nzmaxZ = nzmaxZP[0];
-int     nrowA =  dimAP[0], ncolA =  dimAP[1],  nzmaxA = nzmaxAP[0];
+int     nrowX =  dimP[0], ncolX =  dimP[1],  nzmaxX = nzmaxP[0]; 
+int     nrowZ =  dimP[2], ncolZ =  dimP[3],  nzmaxZ = nzmaxP[1];
+int     nrowA =  dimP[4], ncolA =  dimP[5],  nzmaxA = nzmaxP[2];
+int     nrowLX =  dimP[6], ncolLX =  dimP[7],  nzmaxLX = nzmaxP[3];
+int     nL = ncolLX/nrowLX;  // number of structural parameters
 
 int 	dimAS =  ncolX+ncolZ;
 int     nMH = 0;
@@ -121,6 +127,18 @@ bool    pl = prP[1];
 bool    cp = nordinal>0;
 bool    Aexists = FALSE;
 bool    missing = FALSE;
+
+double detLambda[2];   // holds old and proposed fabs(det(Lambda))
+int sign_detLambda[2];    // holds sign of fabs(det(Lambda))
+int lambda_old = 0;    // indexes freed Lambda
+int lambda_new = 1;    // indexes freed Lambda
+int *diagLambdaL = new int[ny]; // indexes diagonal elements of L and U from LU decomposition of Lambda
+int *diagLambdaU = new int[ny];
+
+
+double log_alphaL;     // MH ratio for lambda
+
+
 
         for(i=0; i<nG; i++){if(AtermP[i]==1){Aexists=TRUE;}}
 
@@ -206,10 +224,10 @@ double  densityl1,
           zn[k]=0.0;
         }
 
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *pred_tmp, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl;
 
-csn	*L, *pvBL, *alphaL, *AlphainvL;
-css     *S, *pvBS, *alphaS, *AlphainvS;
+csn	*L, *pvBL, *alphaL, *AlphainvL, *pvLL, *LambdaLU, *tYKrinvYL;
+css     *S, *pvBS, *alphaS, *AlphainvS, *pvLS, *LambdaS, *tYKrinvYS;
 
 cs*     *Ginv = new cs*[nGR];
 cs*     *muG = new cs*[nGR];	
@@ -226,6 +244,10 @@ csn*    *GinvL = new csn*[nGR];
 css*    *propCinvS = new css*[nGR*2];
 csn*    *propCinvL = new csn*[nGR*2];
 cs*     *KGinv = new cs*[nGR];
+cs*     *lambda = new cs*[2];
+cs*     *lambdaI = new cs*[2];
+cs*     *Lambda = new cs*[2];
+cs*     *Lambda_tmp = new cs*[2];
 
 // read in fixed-effects design matrix X 
 
@@ -279,6 +301,73 @@ cs*     *KGinv = new cs*[nGR];
        pvBS = cs_schol(1, pvB);                    // Symbolic factorisation of B
        pvBL = cs_chol(pvB, pvBS);                  // cholesky factorisation of B^{-1} for forming N(0, B)
 
+
+if(nL>0){
+
+// read in parth analytic design matrix 
+
+        LambdaX = cs_spalloc(nrowLX, ncolLX, nzmaxLX, true, false); 
+                                                                   
+        for (i = 0 ; i < nzmaxLX ; i++){
+          LambdaX->i[i] = iLXP[i];
+          LambdaX->x[i] = xLXP[i];
+        }
+        for (i = 0 ; i <= ncolLX ; i++){
+          LambdaX->p[i] = pLXP[i];
+        }                                                         
+
+// lambda parameter vector and form kronecker(lamba, I)
+
+        lambda[0] = cs_spalloc(nL, 1, nL, true, false); 
+        lambda[1] = cs_spalloc(nL, 1, nL, true, false); 
+
+         for (i = 0 ; i < nL ; i++){
+          lambda[0]->i[i] = i;
+          lambda[0]->x[i] = i*0.01+0.01;
+        }
+        lambda[0]->p[0] = 0;
+        lambda[0]->p[1] = nL;
+        
+// read in prior covaraince matrix and mean vector for structural parameters.
+
+       pvL = cs_spalloc(nL, nL, pow(nL, 2.0-LvpP[nL*nL]), true, false);
+       pmuL = cs_spalloc(nL, 1, nL, true, false);
+       Lrv = cs_spalloc(nL, 1, nL, true, false);
+
+       cnt = 0;
+       for (i = 0 ; i < nL ; i++){
+         pmuL->i[i] = i;
+         Lrv->i[i] = i;
+         pmuL->x[i] = LmupP[i];
+       }
+       pmuL->p[0] = 0; 
+       pmuL->p[1] = nL;
+       Lrv->p[0] = 0; 
+       Lrv->p[1] = nL;
+
+       if(LvpP[nL*nL]>0.5){   // prior for structural parameters is diagonal
+         for (i = 0 ; i < nL ; i++){
+           pvL->p[i] = i; 
+           pvL->i[i] = i;
+           pvL->x[i] = LvpP[nL*i+i];
+         }
+         pvL->p[nL] = nL;
+       }else{
+         cnt = 0;
+         for (i = 0 ; i < nL; i++){
+           pvB->p[i] = i*nL; 
+           for (j = 0 ; j < nL; j++){
+             pvL->i[cnt] = j;
+             pvL->x[cnt] = LvpP[cnt];
+             cnt++;
+           }
+         }
+         pvL->p[nL] = nL*nL;
+       }
+
+       pvLS = cs_schol(1, pvL);                    // Symbolic factorisation of L
+       pvLL = cs_chol(pvL, pvLS);                  // cholesky factorisation of L^{-1} for forming N(0, L)
+}
 // read in random-effects design matrix Z 
                                                             /*     Za_1 0   0   Zb_1 0   0  */
         Z = cs_spalloc(nrowZ, ncolZ, nzmaxZ, true, false);  /* Z =  0  Za_2 0    0  Zb_2 0  */
@@ -557,6 +646,24 @@ cs*     *KGinv = new cs*[nGR];
         mulinky->p[0] = 0; 
 	mulinky->p[1] = ny;
 
+        if(nL==0){       
+          linky = cs_spalloc(ny, 1, ny, true, false);
+          for (i = 0 ; i < ny; i++){   
+            linky->i[i] = i;
+            linky->x[i] = liabP[i];                        
+          }
+          linky->p[0] = 0; 
+          linky->p[1] = ny; 
+        }else{                                    /* for rec/sim models need to presevere non-transformed latent variable i.e. solve(Lambda, linky) - This =y (in gaussian case) */
+          linky_orig = cs_spalloc(ny, 1, ny, true, false);
+          for (i = 0 ; i < ny; i++){   
+            linky_orig->i[i] = i;
+            linky_orig->x[i] = liabP[i];                        
+          }
+          linky_orig->p[0] = 0; 
+          linky_orig->p[1] = ny; 
+        }
+
         for (i = 0 ; i < dimAS; i++){
            astar->i[i] = i;    
         }
@@ -663,6 +770,85 @@ cs*     *KGinv = new cs*[nGR];
         MME = cs_add(M, Omega, 1.0, 1.0); 
         S = cs_schol(1, MME);                            // Symbolic factorisation - only has to be done once
 
+// If sim/rec model then:
+
+       if(nL>0){
+     
+         lambdaI[0] = cs_kroneckerI(lambda[0], LambdaX->m);
+         lambdaI[1] = cs_kroneckerI(lambda[0], LambdaX->m);
+
+         Lambda_tmp[0] = cs_multiply(LambdaX, lambdaI[0]);
+
+         I = cs_spalloc(ny, ny, ny, true, false); // ny by ny I matrix
+
+         for (i = 0 ; i<ny ; i++){
+           I->p[i] = i;                                                               
+           I->i[i] = i;
+           I->x[i] = 1.0;
+         }
+         I->p[ny] = ny;   
+
+         Lambda[0] = cs_add(I, Lambda_tmp[0], 1.0, -1.0);
+
+         LambdaS = cs_sqr(1, Lambda[0], true);                            // Symbolic LU factorisation of Lambda for determinant calculation
+
+         LambdaLU = cs_lu(Lambda[0], LambdaS, 1e-16);      
+
+         for (i = 0 ; i<ny ; i++){           
+           for (j = LambdaLU->L->p[i] ; j<(LambdaLU->L->p[i+1]); j++){
+              if(LambdaLU->L->i[j]==i){
+                diagLambdaL[i]=j;
+              }
+           }
+         }
+
+         for (i = 0 ; i<ny ; i++){           
+           for (j = LambdaLU->U->p[i] ; j<(LambdaLU->U->p[i+1]); j++){
+              if(LambdaLU->U->i[j]==i){
+                diagLambdaU[i]=j;
+              }
+           }
+         }
+
+         detLambda[0] = 0.0;
+         sign_detLambda[0] = 1;
+
+         for (i = 0 ; i<ny ; i++){ 
+            if(LambdaLU->L->x[diagLambdaL[i]]<0.0){
+              sign_detLambda[0] *= -1;
+            }
+            if(LambdaLU->U->x[diagLambdaU[i]]<0.0){
+              sign_detLambda[0] *= -1;
+            }
+            detLambda[0] += log(fabs(LambdaLU->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU->U->x[diagLambdaU[i]]));
+         }
+
+ 
+         linky = cs_multiply(Lambda[0], linky_orig);   
+
+         cs_sortdv(linky);
+
+         ILY = cs_spalloc(ny*nL, nL, ny*nL, true, false); // form kronecker(I,y) where I has dimension nL
+       
+         for (i = 0 ; i<nL ; i++){
+           ILY->p[i] = ny*i;                                                               
+           for (j = 0 ; j < ny ; j++){
+             ILY->i[j+ny*i] = j+ny*i;
+             ILY->x[j+ny*i] = linky_orig->x[j];
+           }
+         }
+         ILY->p[nL] = nL*ny;   
+         Y = cs_multiply(LambdaX, ILY);
+
+         tY = cs_transpose(Y, true);
+
+         tYKrinv = cs_multiply(tY, KRinv);
+         tYKrinvY = cs_multiply(tYKrinv,Y);
+         
+         tYKrinvYS = cs_schol(1, tYKrinvY);
+         tYKrinvYL = cs_chol(tYKrinvY, tYKrinvYS);
+       }
+
         if(nalpha>0){
 
           XtmKRinv = cs_multiply(tXalpha, KRinv); 
@@ -697,7 +883,7 @@ cs*     *KGinv = new cs*[nGR];
               }
             }
             cs_spfree(astar_tmp);
-            cs_spfree(pred_tmp);
+            cs_spfree(pred);
             cs_spfree(dev);
   	    cs_nfree(L);
 
@@ -718,11 +904,21 @@ cs*     *KGinv = new cs*[nGR];
 	  cs_spfree(WtmKRinv);     
 	  cs_spfree(M);                               
 	  cs_spfree(MME);  
+
           if(nalpha>0){
             cs_spfree(tXalpha);
             cs_spfree(XtmKRinv);
             cs_spfree(alphaM);
             cs_spfree(alphaMME);
+          }
+
+          if(nL>0){
+  	     cs_nfree(LambdaLU);
+             cs_nfree(tYKrinvYL);     
+             cs_spfree(tYKrinv);
+             cs_spfree(tYKrinvY);                
+           //  cs_spfree(Y);     // for non-gaussian or missing data Y and tY need updating as linky_orig changes
+           //  cs_spfree(tY); 
           }
 
 /******************/
@@ -749,6 +945,7 @@ cs*     *KGinv = new cs*[nGR];
 			
 			MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
 
+
 /*************************/
 /*  sample vectors from  */
 /*      their prior      */
@@ -772,7 +969,8 @@ cs*     *KGinv = new cs*[nGR];
 
 /* pedigree and phylogeny effects - to become non iid effects generally  */
 
-		      if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar				  
+		
+             if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar				  
                 for(i=0; i<nlGR[k]; i++){
                   for(j=0; j<dimG; j++){
                     Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
@@ -920,10 +1118,8 @@ cs*     *KGinv = new cs*[nGR];
 /* sample VCV matrices */
 /***********************/
 
-         pred_tmp = cs_multiply(W, location);
-         for (i = 0 ; i < ny ; i++){
-           pred->x[pred_tmp->i[i]] = pred_tmp->x[i];
-         }
+         pred = cs_multiply(W, location);
+         cs_sortdv(pred);
          dev = cs_add(linky, pred, 1.0, -1.0);    
          cnt2 = ncolX;
 
@@ -1006,17 +1202,23 @@ cs*     *KGinv = new cs*[nGR];
                 }
               }
               cnt2 += nlGR[i]*dimG;
-	          if(diagP[i]==1){
+	          if(diagR>0){
 	            cnt=0;  
 	            for(j=0; j<dimG; j++){
-		          for(k=0; k<(dimG-1); k++){
-		            if(j==k){cnt++;}
-					Gtmp[i]->x[cnt] = 0.0;
-		            cnt++;
-		          }
+		      for(k=0; k<dimG; k++){
+		        if(j==k){
+                          if(diagR==2 && cnt!=0){
+                            Gtmp[i]->x[0] += Gtmp[i]->x[cnt] - pG[i]->x[cnt];
+                          }
+                        }else{
+			  Gtmp[i]->x[cnt] = 0.0;
+                        }
+		        cnt++;
+		      }
 	            }	
 	          }
-		  switch(updateP[i]){					   
+                  switch(updateP[i]){
+
 	            case 1: 
 		      cs_invR(Gtmp[i], Ginv[i]);
 		      G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
@@ -1032,12 +1234,17 @@ cs*     *KGinv = new cs*[nGR];
 		      G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i]);  
 	            break;
 	          }					
-	          if(diagP[i]==1){
+	          if(diagR>0){
 	            cnt=0;  
 	            for(j=0; j<dimG; j++){
-		      for(k=0; k<(dimG-1); k++){
-		        if(j==k){cnt++;}
-		        G[i]->x[cnt] = 0.0;
+		      for(k=0; k<dimG; k++){
+		        if(j==k){
+                          if(diagR==2){
+                            G[i]->x[cnt] = G[i]->x[0];
+                          }                          
+                        }else{
+		          G[i]->x[cnt] = 0.0;
+                        }
 			cnt++;
 		      }
 		    }	
@@ -1138,6 +1345,123 @@ cs*     *KGinv = new cs*[nGR];
        }
      }
 
+/********************************************************/
+/* update recusrive-simultaneous structural parameters  */   
+/********************************************************/
+
+
+    if(nL>0){    
+                
+      for (i = 0 ; i<ny ; i++){            // updates missing values for records i when Lambda[i,i] = 1 and Lambda[i,\i] = 0
+         if(observedP[i]==0){
+           linky_orig->x[i] = linky->x[i];
+         }
+      }
+
+              
+      w = cs_add(linky_orig, pred, 1.0, -1.0);
+      tYKrinv = cs_multiply(tY, KRinv);
+      tYKrinvY = cs_multiply(tYKrinv,Y);
+      tYKrinvw = cs_multiply(tYKrinv,w);
+
+      for(i=0; i<nL; i++){
+        Lrv->x[i] = rnorm(0.0,1.0);
+      }
+
+
+      tYKrinvYL = cs_chol(tYKrinvY, tYKrinvYS); 
+
+      cs_ltsolve(tYKrinvYL->L, Lrv->x);       // ~ N(0, V_lambda)
+
+      cs_ipvec (tYKrinvYS->pinv, tYKrinvw->x, w->x, nL);	 
+      cs_lsolve(tYKrinvYL->L,w->x);                                
+      cs_ltsolve (tYKrinvYL->L, w->x);		                 
+      cs_pvec (tYKrinvYS->pinv, w->x, tYKrinvw->x, nL);       
+
+      lambda[lambda_new] = cs_add(Lrv, lambda[lambda_old], 1.0, 1.0);
+
+      cs_kroneckerIupdate(lambda[lambda_new], LambdaX->m, lambdaI[lambda_new]);    
+      Lambda_tmp[lambda_new] = cs_multiply(LambdaX, lambdaI[lambda_new]);    
+      
+      Lambda[lambda_new] = cs_add(I, Lambda_tmp[lambda_new], 1.0, -1.0);
+
+      LambdaLU = cs_lu(Lambda[lambda_new], LambdaS, 1e-16);     
+
+      detLambda[lambda_new] = 0.0;
+      sign_detLambda[lambda_new] = 1;
+
+      for (i = 0 ; i<ny ; i++){ 
+         if(LambdaLU->L->x[diagLambdaL[i]]<0.0){
+           sign_detLambda[lambda_new] *= -1;
+         }
+         if(LambdaLU->U->x[diagLambdaU[i]]<0.0){
+           sign_detLambda[lambda_new] *= -1;
+         }
+
+         detLambda[lambda_new] += log(fabs(LambdaLU->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU->U->x[diagLambdaU[i]]));
+      }
+
+        log_alphaL = detLambda[lambda_new] - detLambda[lambda_old];
+
+        lambda_dev = cs_add(lambda[lambda_new], tYKrinvw, 1.0, -1.0);
+
+        tl = cs_transpose(lambda_dev, true);
+        tlV = cs_multiply(tl, tYKrinvY);
+        tlVl = cs_multiply(tlV, lambda_dev);
+
+        log_alphaL -= 0.5*tlVl->x[0];
+
+        cs_spfree(lambda_dev);
+        cs_spfree(tl);
+        cs_spfree(tlV);
+        cs_spfree(tlVl);
+
+        lambda_dev = cs_add(lambda[lambda_old], tYKrinvw, 1.0, -1.0);
+
+        tl = cs_transpose(lambda_dev, true);
+        tlV = cs_multiply(tl, tYKrinvY);
+        tlVl = cs_multiply(tlV, lambda_dev);
+
+        log_alphaL += 0.5*tlVl->x[0];
+
+        cs_spfree(lambda_dev);
+        cs_spfree(tl);
+        cs_spfree(tlV);
+        cs_spfree(tlVl);
+
+      if(sign_detLambda[lambda_old]==sign_detLambda[lambda_new] && log_alphaL>log(runif(0.0,1.0))){
+
+        cs_spfree(linky);  
+        linky = cs_multiply(Lambda[lambda_new], linky_orig);
+        cs_sortdv(linky);                                    // re-sort latent variable (data in Gaussian case)
+ 
+      // only needs upadting if latent variables exist - need to free memory for Y and tY when implemented
+
+      /*
+        for (i = 0 ; i<nL ; i++){
+          for (j = 0 ; j < ny ; j++){
+            ILY->x[j+ny*i] = linky_orig->x[j];
+          }
+        }
+        Y = cs_multiply(LambdaX, ILY);
+        tY = cs_transpose(Y, true);
+      */      
+
+        detLambda[0] = detLambda[lambda_new];
+        detLambda[1] = detLambda[lambda_new];
+        sign_detLambda[0] = sign_detLambda[lambda_new];
+        sign_detLambda[1] = sign_detLambda[lambda_new];
+        lambda_old =  lambda_new;
+        lambda_new -= 1;
+        lambda_new = abs(lambda_new);
+
+      }
+      cs_spfree(Lambda_tmp[lambda_new]);                                     
+      cs_spfree(Lambda[lambda_new]);   
+      cs_spfree(lambda[lambda_new]);   
+      cs_spfree(w);
+      cs_spfree(tYKrinvw);
+    }
 
 /***********************/
 /* sample liabilities  */   
@@ -1260,16 +1584,16 @@ cs*     *KGinv = new cs*[nGR];
                    case 6: /* Censored Gaussian */
 
                      if(linki_tmp->x[i]<yP[record] || linki_tmp->x[i]>y2P[record]){
-                       if(linki_tmp->x[i]<yP[record]){
-                         if(int(interval)%2==1){
-                           linki_tmp->x[i] = y2P[record] - remainder;
-                         }else{
-                           linki_tmp->x[i] = yP[record] + remainder;
-                        }
-                      }else{
                         interval = (linki_tmp->x[i]-y2P[record])/(y2P[record]-yP[record]);
                         remainder = (linki_tmp->x[i]-y2P[record])-double(int(interval))*(y2P[record]-yP[record]);
-                        if(int(interval)%2==1){
+                       if(linki_tmp->x[i]<yP[record]){
+                         if(int(interval)%2==1){
+                           linki_tmp->x[i] = yP[record] - remainder;
+                         }else{
+                           linki_tmp->x[i] = y2P[record] + remainder;
+                        }
+                      }else{
+                         if(int(interval)%2==1){
                           linki_tmp->x[i] = yP[record] + remainder;
                         }else{
                           linki_tmp->x[i] = y2P[record] - remainder;
@@ -1357,8 +1681,67 @@ cs*     *KGinv = new cs*[nGR];
                      }
                    break;
 
-                   case 15: /*  Nominal Multinomial Probit */
+                   case 15:  /* Hurdle Poisson */
+
+                    if(mfacP[rterm+i]==0){
+                       if(yP[record]>0.5){
+                         mndenom1 = dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));
+                         mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i]))); 
+                       } 
+                     }else{
+	               if(yP[record]>0.5){
+                         mndenom1 = (linki->x[i] - log1p(exp(linki->x[i])));
+			 mndenom2 = (linki_tmp->x[i] - log1p(exp(linki_tmp->x[i]))); 		       		 
+		       }else{
+                         mndenom1 += -linki->x[i] - log1p(exp(-linki->x[i]));
+			 mndenom2 += -linki_tmp->x[i] - log1p(exp(-linki_tmp->x[i]));     
+                       }
+                        densityl1 += mndenom1;
+                        densityl2 += mndenom2;
+                        mndenom1 = 1.0;
+                        mndenom2 = 1.0;
+                     }
                    break;
+
+                   case 16:  /* Zero-truncated Poisson */
+
+                     densityl1 += dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));;
+                     densityl2 += dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i])));
+
+                   break;
+
+                   case 17:  /* Geometric */
+
+                     densityl1 += linki->x[i]-log1p(exp(linki->x[i]))-yP[record]*(linki->x[i]+log1p(exp(-linki->x[i]))); 
+                     densityl2 += linki_tmp->x[i]-log1p(exp(linki_tmp->x[i]))-yP[record]*(linki_tmp->x[i]+log1p(exp(-linki_tmp->x[i])));  
+
+                   break;
+
+                   case 18:  /* Zero-altered Poisson */
+
+                    if(mfacP[rterm+i]==0){
+                       if(yP[record]>0.5){
+                         mndenom1 = dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));
+                         mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i]))); 
+                       } 
+                     }else{
+	               if(yP[record]>0.5){
+                         mndenom1 = log1p(-pexp(exp(linki->x[i]), 1.0,true, false));
+        		   mndenom2 = log1p(-pexp(exp(linki_tmp->x[i]),1.0, true, false));	
+		       		 	       		 
+		       }else{
+                         mndenom1 += pexp(exp(linki->x[i]),1.0,true, true);
+   			 mndenom2 += pexp(exp(linki_tmp->x[i]),1.0,true, true);     
+                       }
+                        densityl1 += mndenom1;
+                        densityl2 += mndenom2;
+                        mndenom1 = 1.0;
+                        mndenom2 = 1.0;
+                     }
+
+                   break;
+
+
                  }
                }
              }
@@ -1627,6 +2010,11 @@ cs*     *KGinv = new cs*[nGR];
        for (i = 0 ; i < ncolX ; i++){
          LocP[i+post_cnt*(ncolX+pr*ncolZ)] = location->x[i];
        }
+       if(nL>0){
+         for (i = 0 ; i < nL; i++){
+           lambdaP[i+post_cnt*nL] = lambda[lambda_old]->x[i];        
+         }
+       }
        if(pr){
          if(nalpha>0){
            cnt=0;
@@ -1713,15 +2101,37 @@ cs*     *KGinv = new cs*[nGR];
         cs_spfree(linki);
         cs_spfree(linki_tmp);
         cs_spfree(pred);
-        cs_spfree(pred_tmp);
    	cs_spfree(mupred);
    	cs_spfree(mulinky);
         cs_spfree(predi);
         cs_spfree(dev);                              
         cs_spfree(pvB);
         cs_spfree(pmuB);  
-        cs_spfree(Brv);                                
-                                                              
+        cs_spfree(Brv); 
+
+        if(nL>0){                               
+          cs_spfree(LambdaX);
+          cs_spfree(pvL);
+          cs_spfree(pmuL);
+          cs_spfree(Lrv);
+          cs_spfree(Lambda_tmp[lambda_old]);                                     
+          cs_spfree(Lambda[lambda_old]);   
+          cs_spfree(lambda[lambda_old]);   
+          cs_spfree(lambdaI[0]);   
+          cs_spfree(lambdaI[1]);   
+          cs_spfree(I);
+          cs_spfree(linky_orig);
+          cs_spfree(ILY);
+          cs_spfree(Y);
+          cs_spfree(tY);
+          cs_nfree(pvLL);
+          cs_sfree(pvLS);
+	  cs_sfree(LambdaS);
+	  cs_nfree(LambdaLU);
+          cs_sfree(tYKrinvYS);
+          cs_nfree(tYKrinvYL);
+        }
+                                               
         if(Aexists){
           cs_spfree(A);               
           cs_spfree(bv);                                                              

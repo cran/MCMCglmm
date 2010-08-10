@@ -21,7 +21,7 @@ find.components<-function(x, data){
   openB<-gregexpr("\\(", fformula)[[1]]
   closeB<-gregexpr("\\)", fformula)[[1]]
 
-  if(openB!=-1){
+  if(openB[1]!=-1){
     while(openB[1]<closeB[1]){
       openB<-openB[-1]
       closeB<-closeB[-1]
@@ -48,8 +48,10 @@ find.components<-function(x, data){
   if(notrait){
     ndata$trait<-gl(2, 1,min(dim(data)[1], 10))
   }
+
   X<-model.matrix(fformula, data=ndata)
 
+  
   fformula=names(attr(X, "contrasts"))
 
   # IDEALLY - WHEN ANIMAL SPECIFIED at.level/set.level TERMS SHOULD BE RETAINED IN fformula
@@ -74,13 +76,16 @@ find.components<-function(x, data){
   }
   # if any terms are interacted they have to be added
   if(length(interact)>0){
-    for(i in 1:length(interact)){
+    i<-1
+    while(i<=length(interact)){
       if(sum(interact[[i]]%in%fformula)>1){
         interact[[i]]<-interact[[i]][which(interact[[i]]%in%fformula)]
         fformula<-fformula[-which(fformula%in%interact[[i]])]
       }else{
         interact<-interact[-i]
+        i<-i-1
       }
+      i<-i+1
     }  
   }
 

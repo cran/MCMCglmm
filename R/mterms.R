@@ -1,4 +1,5 @@
 at.level<-function(x,level){
+          if(is.factor(x)==FALSE){stop("x in at.level is not a factor")}
 	  if(is.numeric(level)){
 	  	 M<-outer(x, levels(x)[level], "==")
 	  	}else{
@@ -9,6 +10,7 @@ at.level<-function(x,level){
 	}
 	
 at.set<-function(x,level){
+         if(is.factor(x)==FALSE){stop("x in at.set is not a factor")}
 	  if(is.numeric(level)){
 	    M<-x%in%(levels(x)[level])
 	  	}else{
@@ -18,7 +20,8 @@ at.set<-function(x,level){
 	   as.matrix(M)
 	}
 		
-leg<-function(x,degree, normalized=TRUE){			
+leg<-function(x,degree, normalized=TRUE){
+             if(require(orthopolynom, quietly = TRUE)==FALSE){stop("orthopolynom not loaded")}			
 	     lp<-legendre.polynomials(n=abs(degree), normalized=normalized)
              if(degree<0){
                lp<-lp[-1]

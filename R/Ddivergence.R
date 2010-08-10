@@ -1,10 +1,12 @@
 Ddivergence<-function(CA=NULL, CB=NULL, n=10000){
 
+  if(require(mvtnorm, quietly = TRUE)==FALSE){stop("mvtnorm not loaded")}
+
   if(dim(CA)[1]!=dim(CB)[1] | dim(CA)[2]!=dim(CB)[2] | dim(CA)[1]!=dim(CA)[2]){
      stop("matrices must be the same dimension and square")
   }
 
-  xi<-mvrnorm(n, rep(0,dim(CA)[1]), CA)
+  xi<-rmvnorm(n, rep(0,dim(CA)[1]), CA)
   fx<-dmvnorm(xi, rep(0,dim(CA)[1]), CA)
   gx<-dmvnorm(xi, rep(0,dim(CA)[1]), CB)
 

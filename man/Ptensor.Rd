@@ -15,7 +15,7 @@ Ptensor(x, k)
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 \examples{
 n<-1000
-y<-mvrnorm(n, c(0,0), diag(2))
+y<-matrix(rnorm(n), n/2, 2)
 Ptensor(y,2)
 cov(y)*((n-1)/n)
 }

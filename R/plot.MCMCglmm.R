@@ -1,0 +1,14 @@
+"plot.MCMCglmm"<-function(x, random=FALSE, ...){
+
+  nF<-x$Fixed$nfl
+
+  if(random){
+    nF<-sum(rep(x$Random$nrl, x$Random$nfl))+nF
+    if(nF!=dim(x$Sol)[2]){stop("random effects not saved and cannot be plotted")}    
+  }
+
+  plot(x$Sol[,1:nF, drop=FALSE], ...)
+  devAskNewPage(TRUE)
+  plot(x$VCV, ...)
+}
+

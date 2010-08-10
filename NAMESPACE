@@ -24,11 +24,12 @@ export(
   kunif,
   list2bdiag,
   MCMCglmm,
+  mult.memb,
+  sir,
   posterior.mode,
   posterior.cor,
   posterior.evals,
   plotsubspace,
-  plotprior,
   Ptensor,
   Tri2M,
   rbv,
@@ -42,7 +43,16 @@ export(
   at.level,
   leg,
   rtnorm,
-  spl
+  spl,
+  summary.MCMCglmm,
+  predict.MCMCglmm,
+  residuals.MCMCglmm,
+  plot.MCMCglmm
 ) 
+S3method(summary, MCMCglmm)
+S3method(print, summary.MCMCglmm)
+S3method(predict, MCMCglmm)
+S3method(residuals, MCMCglmm)
+S3method(plot, MCMCglmm)
 
 

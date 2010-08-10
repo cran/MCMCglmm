@@ -89,6 +89,7 @@ These are (incomplete) course notes about generalised linear mixed models (GLMM)
 \include{Lecture6}
 \include{Lecture7}
 \include{Lecture8}
+\include{Lecture9}
 
 \chapter*{Acknowledgments}
 \addcontentsline{toc}{chapter}{Acknowledgments}

@@ -14,7 +14,7 @@ cs *cs_kroneckerI(const cs *A, int nI){
     Cp = C->p ; Ci = C->i ; Cx = C->x ;   
     cnt = 0;	
     for (j = 0 ; j < cn ; j++){
-         for (i = 0 ; i < an ; i++){
+         for (i = 0 ; i < am ; i++){
             Ci[cnt] = i*nI+j%nI;
             cnt++;
          }      
@@ -24,13 +24,13 @@ cs *cs_kroneckerI(const cs *A, int nI){
     for(i = 0; i<an; i++){
      	for (j = 0 ; j < nI ; j++){
           cnt++;
-          Cp[cnt] = Cp[cnt-1]+an;
+          Cp[cnt] = Cp[cnt-1]+am;
 	}
     }
     cnt = 0;
     for(i = 0; i < an; i++){
      	for(j = 0 ; j < nI ; j++){
-            for(k = 0; k < an; k++){
+            for(k = 0; k < am; k++){
               Cx[cnt] = Ax[i*an+k];
               cnt++;
             }

@@ -1,4 +1,7 @@
 KPPM<-function(m,k){
+
+  if(require(combinat, quietly = TRUE)==FALSE){stop("combinat not loaded")}
+
   K<-matrix(0,m^k, m^k)
   H<-matrix(0,m,m)
 

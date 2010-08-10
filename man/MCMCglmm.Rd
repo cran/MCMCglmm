@@ -11,8 +11,8 @@ and phylogenies (Hadfield 2010). Please read the course notes: \code{vignette("C
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
     data,start=NULL, prior=NULL, tune=NULL, pedigree=NULL,
     nodes="ALL", scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
-    pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=FALSE,
-    saveZ=FALSE, slice=FALSE)
+    pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE,
+    saveZ=TRUE, slice=FALSE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
@@ -23,10 +23,9 @@ Currently, the only \code{variance.functions} available are \code{idv}, \code{id
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
-\code{"multinomial"},  \code{"ordinal"}, \code{"exponential"},  \code{"cengaussian"},  
-\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"} are 
-supported, where the prefix \code{"cen"} means censored and the prefix 
-\code{"zi"} means zero inflated. If \code{NULL} \code{data} needs to contain a 
+\code{"multinomial"},  \code{"ordinal"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
+\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"hupoisson"} and \code{"ztpoisson"} are 
+supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, the prefix \code{"hu"} means hurdle and the  the prefix \code{"zt"} means zero truncated. If \code{NULL} \code{data} needs to contain a 
 \code{family} column.}
   \item{mev}{optional vector of measurement error variances for each data point 
 for random effect meta-analysis.}
@@ -69,14 +68,18 @@ saved?}
 \value{
   \item{Sol}{Posterior Distribution of MME solutions, including fixed effects}
   \item{VCV}{Posterior Distribution of (co)variance matrices}
+  \item{CP}{Posterior Distribution of cut-points from an ordinla model}
   \item{Liab}{Posterior Distribution of latent variables}
-  \item{Fixed}{formula: fixed terms}
-  \item{Random}{formula: random terms}
-  \item{Residual}{formula: residual terms}
+  \item{Fixed}{list: fixed formula and number of fixed effects}
+  \item{Random}{list: random fromula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in random formula to which each covariance belongs}
+  \item{Residual}{list: residual fromula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in residual formula to which each covariance belongs}
   \item{Deviance}{deviance -2*log(p(y|...))}
   \item{DIC}{deviance information criterion}
   \item{X}{sparse fixed effect design matrix}
   \item{Z}{sparse random effect design matrix}
+  \item{error.term}{residual term for each datum}
+  \item{family}{distribution of each datum}
+
 }
 \references{
 	General analyses: Hadfield, J.D. (2010) Journal of Statistical Software 33 2 1-22

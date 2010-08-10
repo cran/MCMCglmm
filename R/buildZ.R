@@ -14,13 +14,12 @@ buildZ<-function(x, data, formZ=TRUE){
   if(length(grep("^idv\\(", x))>0){
     vtype<-"idv"
   }
-
   fformula<-gsub("^(us|cor|corh|idh|idv)\\(", "", x)
 
   openB<-gregexpr("\\(", fformula)[[1]]
   closeB<-gregexpr("\\)", fformula)[[1]]
 
-  if(openB!=-1){
+  if(openB[1]!=-1){
     while(openB[1]<closeB[1]){
       openB<-openB[-1]
       closeB<-closeB[-1]
@@ -38,6 +37,10 @@ buildZ<-function(x, data, formZ=TRUE){
   }
 
   fformula<-substr(fformula,1,closeB-1)
+  fformula<-gsub(" ", "", fformula)
+
+  idv.vnames<-paste(fformula, collapse="")
+
   if(fformula!=""){fformula<-c("+", fformula)}
 
   fformula<-as.formula(paste("~", "-1",  paste(fformula, collapse=""), sep=""))
@@ -46,13 +49,17 @@ buildZ<-function(x, data, formZ=TRUE){
   options("na.action"="na.pass")
 
   X<-model.matrix(fformula, data)
+  Xterms<-names(attr(X, "contrasts"))
 
   X[which(is.na(X))]<-1e-64        # structural zeros needed when us() because may be things like slope terms in leg for animal
-
 
   options("na.action"=orig.na.action)
 
   X<-as(X, "sparseMatrix")
+
+  if(is.null(Xterms)==FALSE){
+    colnames(X)<-substr(colnames(X),nchar(Xterms)+1, nchar(colnames(X)))
+  }
 
   if(length(rterms)==0){
     rfactor<-rep(as.factor(1), dim(data)[1]) 	
@@ -107,17 +114,17 @@ buildZ<-function(x, data, formZ=TRUE){
       if(any(data$MCMC_dummy==0 & is.na(rfactor))){stop("missing values in random predictors")}
 
       nfl<-1
+
       return(list(Z=Ztmp, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=paste(rterms, collapse=":"), ordering=NULL, trait.ordering=NULL))
 
     }else{
-  
-       vnames<-paste(colnames(X), paste(rterms, collapse=":"), sep=".")
 
       if(vtype=="idh"){
         nrl<-rep(nrl, nfl)
-      }else{
-        vnames<- paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=".")
       }
+
+      vnames<-paste(colnames(X), paste(rterms, collapse=":"), sep=".")
+
       for(i in 1:nfl){
         Xtmp<-Matrix(0,nd,nd)
         Xcol<-X[,i,drop=FALSE]
@@ -164,11 +171,14 @@ buildZ<-function(x, data, formZ=TRUE){
         Aterm<-rep(Aterm, nfl)
         vtype<-rep(vtype, nfl)
         nfl<-rep(1, nfl)
-      }
-      if(vtype[1]=="idv"){
-        nrl<-nfl*nrl[1]
-	nfl<-1
-	vnames<-vnames[1]  
+      }else{
+        if(vtype[1]=="idv"){
+          nrl<-nfl*nrl[1]
+	  nfl<-1
+	  vnames<-idv.vnames
+        }else{
+          vnames<-paste(paste(expand.grid(colnames(X), colnames(X))[,1],expand.grid(colnames(X), colnames(X))[,2], sep=":"),paste(rterms, collapse=":"), sep=".")
+        }
       }
       return(list(Z=Zsave, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=NULL, trait.ordering=NULL))
     }
@@ -176,12 +186,16 @@ buildZ<-function(x, data, formZ=TRUE){
   }else{
 
     if(nfl==0){
+
       nfl=1
       ordering<-order(as.numeric(rfactor))
       trait.ordering<-data$trait[1]
       vnames<-paste(rterms, collapse=":")
+
     }else{
+
       vnames<-paste(colnames(X), paste(rterms, collapse=":"), sep=".")
+
       trait.ordering<-as.numeric(data$trait[X@i[X@p[1:ncol(X)]+1]+1])
       ordering<-order(100000000*as.numeric(X%*%Matrix(1:nfl,nfl,1))+as.numeric(rfactor))
 
@@ -195,12 +209,13 @@ buildZ<-function(x, data, formZ=TRUE){
         if(vtype=="idv"){
           nrl<-nfl*nrl[1]
 	  nfl<-1
-	  vnames<-vnames[1]  
+          vnames<-idv.vnames          
         }else{
-          vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=".")
+          vnames<-paste(paste(expand.grid(colnames(X), colnames(X))[,1],expand.grid(colnames(X), colnames(X))[,2], sep=":"),paste(rterms, collapse=":"), sep=".")
         }
       }
     }
+
     return(list(Z=NULL, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=ordering, trait.ordering=trait.ordering))
   }
 }

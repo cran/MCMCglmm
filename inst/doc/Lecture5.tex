@@ -15,23 +15,6 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
-\usepackage{hyperref}
-
-\let\proglang=\textsf
-\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
-  \hypersetup{%
-    hyperindex = {true},
-    colorlinks = {true},
-    linktocpage = {true},
-    plainpages = {false},
-    linkcolor = {blue},
-    citecolor = {blue},
-    urlcolor = {red},
-    pdfstartview = {Fit},
-    pdfpagemode = {UseOutlines},
-    pdfview = {XYZ null null null}
-  }
-
 \title{Multi-response models}
 
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
@@ -69,7 +52,7 @@ In practice does this matter? Lets imagine there was only one unmeasured variabl
 \end{Sinput}
 \end{Schunk}
 
-A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.
+A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.002.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -81,18 +64,18 @@ lm(formula = y.car ~ y.hol, data = Spending)
 
 Residuals:
       Min        1Q    Median        3Q       Max 
--0.792442 -0.188389  0.006055  0.186797  1.080091 
+-0.850510 -0.202108  0.001863  0.178943  1.105812 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)  1.04102    0.03638  28.615   <2e-16 ***
-y.hol       -0.01432    0.03434  -0.417    0.677    
+(Intercept)  1.03552    0.03740  27.687   <2e-16 ***
+y.hol       -0.04138    0.03559  -1.163    0.245    
 ---
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+Signif. codes:  0 `***' 0.001 `**' 0.01 `*' 0.05 `.' 0.1 ` ' 1 
 
-Residual standard error: 0.2991 on 798 degrees of freedom
-Multiple R-squared: 0.0002178,	Adjusted R-squared: -0.001035 
-F-statistic: 0.1739 on 1 and 798 DF,  p-value: 0.6768 
+Residual standard error: 0.2985 on 798 degrees of freedom
+Multiple R-squared: 0.001692,	Adjusted R-squared: 0.0004406 
+F-statistic: 1.352 on 1 and 798 DF,  p-value: 0.2452 
 \end{Soutput}
 \end{Schunk}
 
@@ -118,12 +101,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-     -0.128690       0.036635       0.001158       0.001098 
+     -0.127571       0.036885       0.001166       0.001206 
 
 2. Quantiles for each variable:
 
-   2.5%     25%     50%     75%   97.5% 
--0.1974 -0.1542 -0.1297 -0.1034 -0.0593 
+    2.5%      25%      50%      75%    97.5% 
+-0.19899 -0.15353 -0.12859 -0.10337 -0.05673 
 \end{Soutput}
 \end{Schunk}
 
@@ -135,22 +118,22 @@ It is useful to think of a new data frame where the response variables have been
 \begin{array}{cc}
 \begin{array}{cccc}
 &{\color{blue} \texttt{y.hol}}&{\color{blue} \texttt{y.car}}&\texttt{id}\\
-{\color{red} \texttt{1}}&\texttt{1.177480}&\texttt{0.926008}&\texttt{1}\\
-{\color{red} \texttt{2}}&\texttt{1.004828}&\texttt{1.126588}&\texttt{1}\\
+{\color{red} \texttt{1}}&\texttt{0.732160}&\texttt{0.952275}&\texttt{1}\\
+{\color{red} \texttt{2}}&\texttt{1.418769}&\texttt{0.807679}&\texttt{1}\\
 \vdots&\vdots&\vdots\\
-{\color{red} \texttt{800}}&\texttt{0.964754}&\texttt{1.247835}&\texttt{200}\\
+{\color{red} \texttt{800}}&\texttt{1.101234}&\texttt{1.173521}&\texttt{200}\\
 \end{array}&
 \Longrightarrow
 \begin{array}{ccccc}
 &\texttt{y}&{\color{blue} \texttt{trait}}&\texttt{id}&{\color{red} \texttt{units}}\\
-1&\texttt{1.177480}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
-2&\texttt{1.004828}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
+1&\texttt{0.732160}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
+2&\texttt{1.418769}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-800&\texttt{0.964754}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
-801&\texttt{0.926008}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
-802&\texttt{1.126588}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
+800&\texttt{1.101234}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
+801&\texttt{0.952275}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
+802&\texttt{0.807679}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-1600&\texttt{1.247835}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
+1600&\texttt{1.173521}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
 \end{array}
 \end{array}
 \end{displaymath}
@@ -418,16 +401,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
         Mean      SD  Naive SE Time-series SE
-[1,] 0.65458 0.01725 0.0005456       0.001507
-[2,] 0.09921 0.01067 0.0003374       0.001333
-[3,] 0.24621 0.01550 0.0004902       0.001438
+[1,] 0.65424 0.01792 0.0005668       0.001689
+[2,] 0.09756 0.01033 0.0003268       0.001336
+[3,] 0.24821 0.01679 0.0005310       0.001709
 
 2. Quantiles for each variable:
 
-       2.5%     25%    50%    75%  97.5%
-var1 0.6215 0.64267 0.6537 0.6660 0.6873
-var2 0.0789 0.09257 0.0990 0.1062 0.1204
-var3 0.2150 0.23627 0.2461 0.2567 0.2775
+        2.5%     25%    50%    75%  97.5%
+var1 0.61912 0.64146 0.6542 0.6667 0.6879
+var2 0.07646 0.09097 0.0981 0.1044 0.1172
+var3 0.21623 0.23612 0.2481 0.2600 0.2806
 \end{Soutput}
 \end{Schunk}
 
@@ -494,16 +477,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-[1,] 0.3446 0.02918 0.0009227       0.003010
-[2,] 0.2620 0.02840 0.0008982       0.003243
-[3,] 0.3934 0.02931 0.0009269       0.003214
+[1,] 0.3434 0.03197 0.0010111       0.003293
+[2,] 0.2685 0.02824 0.0008932       0.003155
+[3,] 0.3881 0.03250 0.0010276       0.003884
 
 2. Quantiles for each variable:
 
        2.5%    25%    50%    75%  97.5%
-var1 0.2931 0.3246 0.3446 0.3632 0.4027
-var2 0.2071 0.2426 0.2625 0.2802 0.3187
-var3 0.3377 0.3721 0.3926 0.4145 0.4510
+var1 0.2753 0.3233 0.3441 0.3657 0.4017
+var2 0.2151 0.2487 0.2678 0.2880 0.3221
+var3 0.3250 0.3663 0.3874 0.4105 0.4491
 \end{Soutput}
 \end{Schunk}
 
@@ -537,17 +520,17 @@ Sample size per chain = 1000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-         Mean       SD  Naive SE Time-series SE
-[1,] 0.827970 0.018130 0.0005733       0.002178
-[2,] 0.009746 0.004478 0.0001416       0.000579
-[3,] 0.162285 0.017203 0.0005440       0.002036
+        Mean       SD  Naive SE Time-series SE
+[1,] 0.83015 0.017635 0.0005577      0.0020337
+[2,] 0.00764 0.004443 0.0001405      0.0006113
+[3,] 0.16221 0.016930 0.0005354      0.0019481
 
 2. Quantiles for each variable:
 
          2.5%      25%      50%     75%   97.5%
-var1 0.791813 0.816702 0.827846 0.84042 0.86340
-var2 0.003829 0.006102 0.008674 0.01291 0.01917
-var3 0.130266 0.150443 0.162100 0.17319 0.19869
+var1 0.794039 0.817693 0.831036 0.84252 0.86303
+var2 0.001928 0.003751 0.007011 0.01055 0.01761
+var3 0.130222 0.149833 0.162063 0.17449 0.19541
 \end{Soutput}
 \end{Schunk}
 
@@ -566,12 +549,12 @@ compared to the observed frequencies:
 
 \section{Zero-inflated Models}
 
-Each datum in a zero-inflated model is associated with two latent variables. The first latent variable is associated with the named distribution and the second latent variable is associated with zero inflation. I'll work through a zero-inflated Poisson (ZIP) model to make things clearer. As the name suggests, a ZIP distribution is a Poisson distribution with extra zero's. The observed zeros are therefore a mixture distribution of zero's originating form the Poisson process and zero's arising through zero-inflation. It is the probability (on the logit scale) that a zero is from the zero-inflation process that we aim to model with the second latent variable. The likelihood has the form:
+Each datum in a zero-inflated model is associated with two latent variables. The first latent variable is associated with the named distribution and the second latent variable is associated with zero inflation. I'll work through a zero-inflated Poisson (ZIP) model to make things clearer. As the name suggests, a ZIP distribution is a Poisson distribution with extra zero's. The observed zeros are modelled as a mixture distribution of zero's originating form the Poisson process and zero's arising through zero-inflation. It is the probability (on the logit scale) that a zero is from the zero-inflation process that we aim to model with the second latent variable. The likelihood has the form:
 
 \begin{equation} 
-\begin{array}{cc}
-Pr(y | y=0) =& \texttt{inv.logit}(l_{2})+\texttt{inv.logit}(-l_{2})\ast dpois(0, l_{1})\\
-Pr(y | y>0) =& \texttt{inv.logit}(-l_{2})\ast dpois(y, l_{1})\\
+\begin{array}{rl}
+Pr(y | y=0) =& \texttt{plogis}(l_{2})+\texttt{plogis}(-l_{2})\ast \texttt{dpois}(0, \texttt{exp}(l_{1}))\\
+Pr(y | y>0) =& \texttt{plogis}(-l_{2})\ast \texttt{dpois}(y, \texttt{exp}(l_{1}))\\
 \end{array}
 \end{equation}
 
@@ -594,7 +577,7 @@ Pr(y | y>0) =& \texttt{inv.logit}(-l_{2})\ast dpois(y, l_{1})\\
 \end{Soutput}
 \end{Schunk}
 
-\texttt{art} is the response variable, and the remaining variables are to be fitted as fixed effects.  Naively, we may expect zero-inflation to be a problem given  30\% of the data are zeros, and based on the global mean we only expect around 18\%.
+\texttt{art} is the response variable - the number of papers published by a Ph.D student - and the remaining variables are to be fitted as fixed effects.  Naively, we may expect zero-inflation to be a problem given  30\% of the data are zeros, and based on the global mean we only expect around 18\%.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -612,27 +595,27 @@ FALSE  TRUE
 \end{Soutput}
 \end{Schunk}
 
-As with binary models we do not observe any residual variance for the zero-inflated process, and in addition the residual covariance between the zero-inflation and the Poisson process cannot be estimated because both processes cannot be observed in a single data point. To deal with this I've fixed the residual variance for the zero-inflation at 1, and the covariance is set to zero using the idh structure. Setting \texttt{V=diag(2)} and \texttt{nu=1.002} we have the inverse-gamma prior with \texttt{shape=scale=0.001} for the residual component of the Poisson process which captures over-dispersion:
+As with binary models we do not observe any residual variance for the zero-inflated process, and in addition the residual covariance between the zero-inflation and the Poisson process cannot be estimated because both processes cannot be observed in a single data point. To deal with this I've fixed the residual variance for the zero-inflation at 1, and the covariance is set to zero using the idh structure. Setting \texttt{V=diag(2)} and \texttt{nu=0.002}\footnote{Earlier versions of the CourseNotes had \texttt{nu=1.002}. In versions $<$2.05 the marginal prior of a variance associated with an \texttt{idh} structure was inverse-Wishart with $\texttt{nu}^{\ast}=\texttt{nu}-1$ where $\texttt{nu}^{\ast}$ is the marginal degree of belief. In versions $>=$2.05 I changed this so that $\texttt{nu}^{\ast}=\texttt{nu}$ as it was leading to confusion.} we have the inverse-gamma prior with \texttt{shape=scale=0.001} for the residual component of the Poisson process which captures over-dispersion:
 
 \begin{Schunk}
 \begin{Sinput}
-> prior = list(R = list(V = diag(2), nu = 1.002, fix = 2))
+> prior.m5d.1 = list(R = list(V = diag(2), nu = 0.002, fix = 2))
 > m5d.1 <- MCMCglmm(art ~ trait - 1 + at.level(trait, 1):fem + 
 +     at.level(trait, 1):mar + at.level(trait, 1):kid5 + at.level(trait, 
 +     1):phd + at.level(trait, 1):ment, rcov = ~idh(trait):units, 
-+     data = bioChemists, prior = prior, family = "zipoisson", 
++     data = bioChemists, prior = prior.m5d.1, family = "zipoisson", 
 +     verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
-As is often the case the parameters of the zero-inflation model mixes poorly (See Figure \ref{ZIP}). Poor mixing is often associated with distributions that may \emph{not} be zero-inflated but instead over-dispersed.\\  
+As is often the case the parameters of the zero-inflation model mixes poorly (See Figure \ref{ZIP}) especially when compared to equivalent hurdle models (See Section \ref{Hurdle}). Poor mixing is often associated with distributions that may \emph{not} be zero-inflated but instead over-dispersed.\\  
 
 
 \begin{figure}[!h]
 \begin{center}
 \includegraphics{Lecture5-039}
 \end{center}
-\caption{Posterior distribution of fixed effects from model \texttt{m5d.1} in which traits 1 and 2 are zero-inflation and the Poisson Process respectively.}
+\caption{Posterior distribution of fixed effects from model \texttt{m5d.1} in which trait 1 (\texttt{art}) is the Poisson process and trait 2 (\texttt{zi.art}) is the zero-inflation.}
 \label{ZIP}
 \end{figure}
 
@@ -640,11 +623,11 @@ The model would have to be run for (much) longer to say something concrete about
 
 \begin{Schunk}
 \begin{Sinput}
-> quantile(inv.logit(m5d.1$Sol[, 2]/sqrt(1 + c2)))
+> quantile(plogis(m5d.1$Sol[, 2]/sqrt(1 + c2)))
 \end{Sinput}
 \begin{Soutput}
          0%         25%         50%         75%        100% 
-0.000475858 0.001418384 0.006448641 0.018001446 0.045078794 
+0.001300970 0.009026084 0.012031749 0.015368460 0.028299720 
 \end{Soutput}
 \end{Schunk}
 
@@ -654,9 +637,9 @@ Another useful check is to fit the standard Poisson model and use posterior pred
 
 \begin{Schunk}
 \begin{Sinput}
-> prior = list(R = list(V = diag(1), nu = 0.002))
+> prior.m5d.2 = list(R = list(V = diag(1), nu = 0.002))
 > m5d.2 <- MCMCglmm(art ~ fem + mar + kid5 + phd + ment, data = bioChemists, 
-+     prior = prior, family = "poisson", saveX = TRUE, verbose = FALSE)
++     prior = prior.m5d.2, family = "poisson", saveX = TRUE, verbose = FALSE)
 > nz <- 1:1000
 > oz <- sum(bioChemists$art == 0)
 > for (i in 1:1000) {
@@ -677,10 +660,198 @@ Figure \ref{PPZIP}  shows a histogram of the posterior predictive distribution o
 \label{PPZIP}
 \end{figure}
 
+\section{Hurdle Models}
+\label{Hurdle}
+
+Hurdle models are very similar to zero-inflated models but they can be used to model zero-deflation as well as zero-inflation and seem to have much better mixing properties.  As in ZIP models each datum in the hurdle model is associated with two latent variables. However, whereas in a ZIP model the first latent variable is the mean parameter of a Poisson distribution the equivalent latent variable in the hurdle model is the mean parameter of a zero-truncated Poisson distribution (i.e. a Poisson distribution without the zeros  observed). In addition the second latent variable in a ZIP model is the probability that an observed zero is due to zero-inflation rather than the Poisson process. In hurdle models the second latent variable is simply the probability (on the logit scale) that the response variable is zero or not. The likelihood is:
+
+\begin{equation} 
+\begin{array}{rl}
+Pr(y | y=0) =& \texttt{plogis}(l_{2})\\
+Pr(y | y>0) =& \texttt{plogis}(-l_{2})\ast \texttt{dpois}(y, \texttt{exp}(l_{1}))/(1-\texttt{ppois}(0, \texttt{exp}(l_{1})))\\
+\end{array}
+\end{equation}
+
+To illustrate, we will refit the ZIP model (\texttt{m5d.1}) as a hurdle-Poisson model.
+
+\begin{Schunk}
+\begin{Sinput}
+> m5d.3 <- MCMCglmm(art ~ trait - 1 + at.level(trait, 1):fem + 
++     at.level(trait, 1):mar + at.level(trait, 1):kid5 + at.level(trait, 
++     1):phd + at.level(trait, 1):ment, rcov = ~idh(trait):units, 
++     data = bioChemists, prior = prior.m5d.1, family = "hupoisson", 
++     verbose = FALSE)
+\end{Sinput}
+\end{Schunk}
+
+Plotting the Markov chain for the equivalent parameters that were plotted for the ZIP model shows that the mixing properties are much better (compare Figure \ref{ZIP} with Figure \ref{HU}).
+
+
+\begin{figure}[!h]
+\begin{center}
+\includegraphics{Lecture5-046}
+\end{center}
+\caption{Posterior distribution of fixed effects from model \texttt{m5d.3} in which trait 1 (\texttt{art}) is the zero-truncated Poisson process and trait 2 (\texttt{hu.art}) is the binary trait zero or non-zero.}
+\label{HU}
+\end{figure}
+
+The interpretation of the model is slightly different. Fitting just an intercept in the hurdle model implies that the proportion of zeros observed across different combinations of those fixed effects fitted for the Poisson process is constant. Our 95\% credible intervals for this proportion is (See section \ref{pred-sec}):
+
+\begin{Schunk}
+\begin{Sinput}
+> c2 <- (16 * sqrt(3)/(15 * pi))^2
+> HPDinterval(plogis(m5d.3$Sol[, 2]/sqrt(1 + c2)))
+\end{Sinput}
+\begin{Soutput}
+         lower     upper
+var1 0.2634544 0.3212228
+attr(,"Probability")
+[1] 0.95
+\end{Soutput}
+\end{Schunk}
+
+and we can compare this to the predicted number of zero's from the Poisson process if it had not been zero-truncated:
+
+\begin{Schunk}
+\begin{Sinput}
+> HPDinterval(ppois(0, exp(m5d.3$Sol[, 1] + 0.5 * m5d.3$VCV[, 1])))
+\end{Sinput}
+\begin{Soutput}
+         lower     upper
+var1 0.1681660 0.3593197
+attr(,"Probability")
+[1] 0.95
+\end{Soutput}
+\end{Schunk}
+
+The credible intervals largely overlap, strongly suggesting a standard Poisson model would be adequate. However, our prediction for the number of zero's that would arise form a non-truncated Poisson process only involved the intercept term. This prediction therefore pertains to the number of articles published by single women with no young children who obtained their Ph.D's from departments scoring zero for prestige (\texttt{phd}) and whose mentors had published nothing in the previous 3 years.  Our equivalent prediction for men is a little lower 
+
+\begin{Schunk}
+\begin{Sinput}
+> HPDinterval(ppois(0, exp(m5d.3$Sol[, 1] + m5d.3$Sol[, 3] + 0.5 * 
++     m5d.3$VCV[, 1])))
+\end{Sinput}
+\begin{Soutput}
+         lower     upper
+var1 0.1021770 0.2817334
+attr(,"Probability")
+[1] 0.95
+\end{Soutput}
+\end{Schunk}
+
+suggesting that perhaps the number of zero's is greater than we expected for this group. However, this may just be a consequence of us fixing the proportion of zero's to be constant across these groups. We can relax this assumption by fitting a separate term for the proportion of zeros for men:
+
+\begin{Schunk}
+\begin{Sinput}
+> m5d.4 <- MCMCglmm(art ~ trait - 1 + at.level(trait, 1:2):fem + 
++     at.level(trait, 1):mar + at.level(trait, 1):kid5 + at.level(trait, 
++     1):phd + at.level(trait, 1):ment, rcov = ~idh(trait):units, 
++     data = bioChemists, prior = prior.m5d.1, family = "hupoisson", 
++     verbose = FALSE)
+\end{Sinput}
+\end{Schunk}
+
+which reveals that although this proportion is expected to be (slightly) smaller: 
+
+
+\begin{Schunk}
+\begin{Sinput}
+> HPDinterval(plogis((m5d.4$Sol[, 2] + m5d.4$Sol[, 4])/sqrt(1 + 
++     c2)))
+\end{Sinput}
+\begin{Soutput}
+         lower     upper
+var1 0.2281676 0.3069854
+attr(,"Probability")
+[1] 0.95
+\end{Soutput}
+\end{Schunk}
+
+
+the proportion of zeros expected for men is probably still less than what we expect from a non-truncated Poisson process for which the estimates have changed very little:
+
+\begin{Schunk}
+\begin{Sinput}
+> HPDinterval(ppois(0, exp(m5d.4$Sol[, 1] + m5d.4$Sol[, 3] + 0.5 * 
++     m5d.4$VCV[, 1])))
+\end{Sinput}
+\begin{Soutput}
+          lower     upper
+var1 0.08947376 0.2560794
+attr(,"Probability")
+[1] 0.95
+\end{Soutput}
+\end{Schunk}
+
+
+This highlights one of the disadvantages of hurdle models. If explanatory variables have been fitted that affect the expectation of the Poisson process than this implies that the proportion of zero's observed will also vary across these same explanatory variables, even in the absence of zero-inflation. It may then be necessary to fit an equally complicated model for both processes even though a single parameter would suffice in a ZIP model. However, in the absence of zero-inflation the intercept of the zero-inflation process in a ZIP model is $-\infty$ on the logit scale causing numerical and inferential problems. An alternative model are zero-altered models. 
+
+\section{Zero-altered Models}
+\label{ZAP}
+
+Zero-altered Poisson (ZAP) models are identical to Poisson-hurdle models except a complementary log-log link is used instead of the logit link when modeling the proportion of zeros. However for reasons that will become clearer below, the zero-altered process (\texttt{za}) is predicting non-zeros as opposed to the ZIP and hurdle-Poisson models where it is the number of zeros.  The likelihood is:
+
+\begin{equation} 
+\begin{array}{rl}
+Pr(y | y=0) =& 1-\texttt{pexp}(\texttt{exp}(l_{2}))\\
+Pr(y | y>0) =& \texttt{pexp}(\texttt{exp}(l_{2}))\ast \texttt{dpois}(y, \texttt{exp}(l_{1}))/(1-\texttt{ppois}(0, \texttt{exp}(l_{1})))\\
+\end{array}
+\end{equation}
+
+since the inverse of the complementary log-log transformation is the distribution function of the extreme value (log-exponential) distribution.\\
+
+It happens that $\texttt{ppois}(0,\texttt{exp}(l)) = \texttt{dpois}(0,\texttt{exp}(l)) = 1-\texttt{pexp}(\texttt{exp}(l))$ so that if $l = l_{1} = l_{2}$ then the likelihood reduces to:
+
+\begin{equation} 
+\begin{array}{rl}
+Pr(y | y=0) =& \texttt{dpois}(0,\texttt{exp}(l))\\
+Pr(y | y>0) =& \texttt{dpois}(y, \texttt{exp}(l))\\
+\end{array}
+\end{equation}
+
+which is equivalent to a standard Poisson model.
+
+We can then test for zero-flation by constraining the over-dispersion to be the same for both process using a \texttt{trait} by \texttt{units} interaction in the R-structure, and by setting up the contrasts so that the zero-altered regression coefficients are expressed as differences from the Poisson regression coefficients. When this difference is zero the variable causes no zero-flation, when it is negative it causes zero-inflation and when it is positive it causes zero-deflation:
+  
+\begin{Schunk}
+\begin{Sinput}
+> m5d.5 <- MCMCglmm(art ~ trait + trait:(fem + mar + kid5 + phd + 
++     ment), rcov = ~trait:units, data = bioChemists, family = "zapoisson", 
++     verbose = FALSE)
+> summary(m5d.4)
+\end{Sinput}
+\begin{Soutput}
+ Iterations = 12991
+ Thinning interval  = 3001
+ Sample size  = 1000 
+
+ DIC: 3105.93 
+
+ R-structure:  ~idh(trait):units
+
+       post.mean l-95% CI u-95% CI eff.samp
+art       0.3529   0.2517   0.4610    90.67
+hu_art    1.0000   1.0000   1.0000     0.00
+
+ Location effects: art ~ trait - 1 + at.level(trait, 1:2):fem + at.level(trait, 1):mar + at.level(trait, 1):kid5 + at.level(trait, 1):phd + at.level(trait, 1):ment 
+
+                             post.mean l-95% CI u-95% CI eff.samp  pMCMC    
+traitart                       0.22800 -0.04751  0.54043    203.6  0.144    
+traithu_art                   -0.84385 -1.07762 -0.59689    217.6 <0.001 ***
+at.level(trait, 1:2)1:femMen   0.19978  0.02811  0.36856    346.5  0.028 *  
+at.level(trait, 1:2)2:femMen  -0.33134 -0.68957  0.02823    158.8  0.078 .  
+at.level(trait, 1):marSingle  -0.08586 -0.28187  0.10500    260.7  0.390    
+at.level(trait, 1):kid5       -0.12502 -0.24613  0.01367    162.9  0.066 .  
+at.level(trait, 1):phd         0.01441 -0.06090  0.10175    330.1  0.734    
+at.level(trait, 1):ment        0.01950  0.01251  0.02660    324.5 <0.001 ***
+---
+Signif. codes:  0 `***' 0.001 `**' 0.01 `*' 0.05 `.' 0.1 ` ' 1 
+\end{Soutput}
+\end{Schunk}
+
+we can see from this that having kids causes `significant' zero-inflation and the more papers a mentor produces, the more zero-deflation (or conversely the less papers a mentor produces, the more zero-inflation).
 
 \ifalone
-\bibliographystyle{JSS}
-\bibliography{JarLib}
 \end{document}
 \else
 \fi

@@ -14,24 +14,8 @@
 \usepackage{Sweave}
 \usepackage{lscape}
 \usepackage{makeidx}
-\usepackage{hyperref}
 
-\let\proglang=\textsf
-\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
-  \hypersetup{%
-    hyperindex = {true},
-    colorlinks = {true},
-    linktocpage = {true},
-    plainpages = {false},
-    linkcolor = {blue},
-    citecolor = {blue},
-    urlcolor = {red},
-    pdfstartview = {Fit},
-    pdfpagemode = {UseOutlines},
-    pdfview = {XYZ null null null}
-  }
-
-\title{Bayesian Statistics \& Markov chain Monte Carlo}
+\title{MCMC}
 
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
 \begin{document}
@@ -80,7 +64,7 @@ We can generate 5 observations from this distribution using \texttt{rnorm}:
 > Ndata$y
 \end{Sinput}
 \begin{Soutput}
-[1]  0.1546081 -0.7675464  0.4463670 -0.7183264  1.3032925
+[1] -0.4737545  1.0294523  0.8516533  1.3901149 -2.1373260
 \end{Soutput}
 \end{Schunk}
 
@@ -124,7 +108,7 @@ The likelihood of these data, conditioning on $\mu=0$ and $\sigma^2=1$, is propo
 > prod(dnorm(Ndata$y, mean = 0, sd = sqrt(1)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.002224747
+[1] 0.0001434179
 \end{Soutput}
 \end{Schunk}
 
@@ -139,11 +123,11 @@ Of course we don't know the true mean and variance and so we may want to ask how
 > prod(dnorm(Ndata$y, mean = 0, sd = sqrt(0.5)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.002770678
+[1] 1.151413e-05
 \end{Soutput}
 \end{Schunk}
 
-It would seem that the data are more likely under this set of parameters than the true parameters, which we must expect some of the time just from random sampling. To get some idea as to why this might be the case we can overlay the two densities (Figure \ref{dnorm1-fig}), and we can see that although some data points (e.g. 1.303) are more likely with the true parameters, in aggregate the new parameters produce a higher likelihood.\\
+It would seem that the data are more likely under this set of parameters than the true parameters, which we must expect some of the time just from random sampling. To get some idea as to why this might be the case we can overlay the two densities (Figure \ref{dnorm1-fig}), and we can see that although some data points (e.g. 1.029) are more likely with the true parameters, in aggregate the new parameters produce a higher likelihood.\\
 
 
 \begin{figure}[!h]
@@ -196,8 +180,8 @@ The first call to \texttt{optim} are starting values for the optimisation algori
 > MLest
 \end{Sinput}
 \begin{Soutput}
-      mean        var 
-0.08367895 0.59836553 
+    mean      var 
+0.132028 1.684591 
 \end{Soutput}
 \end{Schunk}
 
@@ -213,32 +197,32 @@ Call:
 glm(formula = y ~ 1, data = Ndata)
 
 Deviance Residuals: 
-       1         2         3         4         5  
- 0.07093  -0.85123   0.36269  -0.80201   1.21961  
+      1        2        3        4        5  
+-0.6058   0.8974   0.7196   1.2581  -2.2694  
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)
-(Intercept)  0.08368    0.38677   0.216     0.84
+(Intercept)    0.132      0.649   0.203    0.849
 
-(Dispersion parameter for gaussian family taken to be 0.747957)
+(Dispersion parameter for gaussian family taken to be 2.105738)
 
-    Null deviance: 2.9918  on 4  degrees of freedom
-Residual deviance: 2.9918  on 4  degrees of freedom
-AIC: 15.622
+    Null deviance: 8.423  on 4  degrees of freedom
+Residual deviance: 8.423  on 4  degrees of freedom
+AIC: 20.797
 
 Number of Fisher Scoring iterations: 2
 \end{Soutput}
 \end{Schunk}
  
-Here we see that although the estimate of the mean (intercept) is the same, the estimate of the variance (the dispersion parameter: 0.748) is higher when fitting the model using \texttt{glm}. In fact the ML estimate is a factor of $\frac{n}{n-1}$ smaller.
+Here we see that although the estimate of the mean (intercept) is the same, the estimate of the variance (the dispersion parameter: 2.106) is higher when fitting the model using \texttt{glm}. In fact the ML estimate is a factor of $\frac{n}{n-1}$ smaller.
 
 \begin{Schunk}
 \begin{Sinput}
 > MLest["var"] * (5/4)
 \end{Sinput}
 \begin{Soutput}
-      var 
-0.7479569 
+     var 
+2.105738 
 \end{Soutput}
 \end{Schunk}
 
@@ -344,8 +328,8 @@ The prior has some influence on the posterior mode of the variance, and we can u
 > Best
 \end{Sinput}
 \begin{Soutput}
-      mean        var 
-0.08367895 0.42756750 
+     mean       var 
+0.1320280 1.2032211 
 \end{Soutput}
 \end{Schunk}
 
@@ -407,7 +391,7 @@ A very nice property of MCMC is that we can normalise the density so that it int
 +     1), Ndata$y, prior$R, prior$B))
 \end{Sinput}
 \begin{Soutput}
-[1] 2.68591
+[1] 1.113338
 \end{Soutput}
 \end{Schunk}
 
@@ -421,11 +405,11 @@ Now, if we wanted to know the probability that the parameters lay in the region 
 \end{Sinput}
 \begin{Soutput}
  FALSE   TRUE 
-0.0375 0.9625 
+0.2072 0.7928 
 \end{Soutput}
 \end{Schunk}
 
-There is Monte Carlo error in the answer (0.963) but if we collect a large number of samples then this can be minimised.\\ 
+There is Monte Carlo error in the answer (0.793) but if we collect a large number of samples then this can be minimised.\\ 
 
 Using a similar logic we can obtain the marginal distribution of the variance by simply evaluating the draws in \texttt{VCV} ignoring (averaging over) the draws in \texttt{Sol}:
 
@@ -510,12 +494,12 @@ When fitting a model using \texttt{MCMCglmm} the parameter values through which 
 \begin{Soutput}
 , , (Intercept)
 
-        (Intercept)
-Lag 0   1.000000000
-Lag 1   0.011703450
-Lag 5  -0.011937858
-Lag 10  0.012987873
-Lag 50  0.001980680
+         (Intercept)
+Lag 0   1.0000000000
+Lag 1  -0.0362252386
+Lag 5  -0.0005869924
+Lag 10  0.0115385187
+Lag 50 -0.0106649224
 \end{Soutput}
 \begin{Sinput}
 > autocorr(m1a.2$VCV)
@@ -523,16 +507,16 @@ Lag 50  0.001980680
 \begin{Soutput}
 , , units
 
-               units
-Lag 0   1.0000000000
-Lag 1   0.2711401169
-Lag 5  -0.0048522057
-Lag 10  0.0075806291
-Lag 50 -0.0003579332
+              units
+Lag 0   1.000000000
+Lag 1   0.273367336
+Lag 5  -0.004625846
+Lag 10 -0.006015545
+Lag 50 -0.003984247
 \end{Soutput}
 \end{Schunk}
 
- The correlation between successive samples is low for the mean (0.012) but a bit high for the variance (0.271).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
+ The correlation between successive samples is low for the mean (-0.036) but a bit high for the variance (0.273).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
 
 The approximation obtained from the Markov chain is conditional on the set of parameter values that were used to initialise the chain.  In many cases the first iterations show a strong dependence on the starting parametrisation, but as the chain progresses this dependence may be lost.  As the dependence on the starting parametrisation diminishes the chain is said to converge and the argument \texttt{burnin} can be passed to \texttt{MCMCped} specifying the number of iterations which must pass before samples are stored. The default burn-in period is 3,000 iterations. Assessing convergence of the chain is notoriously difficult, but visual inspection and diagnostic tools such as \texttt{gelman.diag} often suffice.
 
@@ -664,8 +648,6 @@ but the marginal distribution of the variance component is equivalent to the REM
 
 
 \ifalone
-\bibliographystyle{JSS}
-\bibliography{JarLib}
 \end{document}
 \else
 \fi

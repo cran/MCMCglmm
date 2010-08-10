@@ -1,12 +1,13 @@
-#source("~/Desktop/Work/MCMCglmm_2.03/inst/doc/Figures/buildCN.R")
-alone=TRUE
-lectures<-6
-forCRAN=FALSE
+#source("~/Work/AManal/MCMCglmm_2.05/inst/doc/Figures/buildCN.R")
+alone=FALSE
+lectures<-9
+forCRAN=TRUE
 JSS<-FALSE
+LINUX=TRUE
 options(width=80)
 
-UPpath="~/Desktop/Work/UP_course/Tex/"
-MCpath="~/Desktop/Work/MCMCglmm_2.02/inst/doc/"
+UPpath="~/Work/AManal/UP_course/Tex/"
+MCpath="~/Work/AManal/MCMCglmm_2.05/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)
@@ -55,7 +56,18 @@ for(i in lectures){
 #	system(paste("ex",Tex, "+:s/alonefalse/alonetrue +:x"))
 
   if(alone){
-  	
+  	if(LINUX){
+	  system(paste("cp ", MCpath, "JarLib.bib ", UPpath_tmp, sep=""))
+
+	  system(paste("pdflatex", Tex))
+	  system(paste("bibtex", Bib))
+	  system(paste("pdflatex", Tex))
+	  system(paste("pdflatex", Tex))
+	
+	  if(length(lectures)==1){system(paste("evince", Pdf, "&"))}
+
+       }else{
+
 	  system(paste("cp ", MCpath, "JarLib.bib ", UPpath_tmp, sep=""))
 
 	  system(paste("~/Library/TeXShop/bin/pdflatexc", Tex))
@@ -64,6 +76,9 @@ for(i in lectures){
 	  system(paste("~/Library/TeXShop/bin/pdflatexc", Tex))
 	
 	  if(length(lectures)==1){system(paste("open -a Preview", Pdf))}
+
+
+       }
     
   }else{
 
@@ -78,11 +93,20 @@ if(alone==FALSE){
 	setwd(MCpath)
 	system(paste("cp ", MCpath, "Figures/CourseNotes.Rnw ", MCpath, sep="")) # copy master file back out of figures
 	Sweave("CourseNotes.Rnw") 
+
+    if(LINUX){
+	system("pdflatex CourseNotes.tex")
+	system("bibtex CourseNotes")
+	system("pdflatex CourseNotes.tex")
+	system("pdflatex CourseNotes.tex")
+        system("evince CourseNotes.pdf&")
+    }else{
 	system("~/Library/TeXShop/bin/pdflatexc CourseNotes.tex")
 	system("~/Library/TeXShop/bin/bibtexc CourseNotes")
 	system("~/Library/TeXShop/bin/pdflatexc CourseNotes.tex")
 	system("~/Library/TeXShop/bin/pdflatexc CourseNotes.tex")
-    system("open -a Preview CourseNotes.pdf")
+        system("open -a Preview CourseNotes.pdf")
+    }
 }
 
 if(forCRAN){

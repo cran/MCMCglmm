@@ -13,7 +13,6 @@
     if(any(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))){
       stop(paste(names(data)[which(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))], " is a reserved variable please rename it"))
     }
-
     family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson")
 
     if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
@@ -34,7 +33,7 @@
 
     response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
     data[,response.names]<-model.frame(as.formula(paste(as.character(fixed)[2], "~1")), data)[[1]]
-    
+
 ######################################################################################
 # for phyloegnetic/pedigree analyses form A and augment with missing nodes if needed #
 ###################################################################################### 	
@@ -58,7 +57,6 @@
       rterms<-c(split.direct.sum(as.character(random)[2]), split.direct.sum(as.character(rcov)[2]))
 
       data$MCMC_dummy<-rep(1,dim(data)[1])
-
 
       for(i in 1:length(rterms)){
  
@@ -444,7 +442,6 @@
     for(r in 1:length(rmodel.terms)){
 
        if(r==(ngstructures+1)){nG<-nr-1}  # number of (new) G structures
-
        if(r<length(rmodel.terms)){
          Zlist<-buildZ(rmodel.terms[r], data=data)
        }else{
@@ -626,8 +623,7 @@
 # Build Fixed Effect Model #
 ############################
 
-   fixed<-as.formula(paste("~",paste(deparse(fixed[[3]]), collapse="")))
-
+  fixed<-as.formula(paste("~",paste(deparse(fixed[[3]]), collapse="")))
    X<-model.matrix(fixed,data)
 
    if(nadded>0){
@@ -635,9 +631,9 @@
 #      X[ncol(X),]<-0
    }
 
-   if(any(grepl("path\\(", dimnames(X)[[2]]))){  # Do structural parameters exist?
+   if(any(grepl("sir\\(", dimnames(X)[[2]]))){  # Do structural parameters exist?
      if(any(family.names!="gaussian")){stop("currently simultaneous/recursive models can only be fitted to Gaussian data ")}
-     L<-X[,grep("path\\(", dimnames(X)[[2]]),drop=FALSE]
+     L<-X[,grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
      L<-as(L, "sparseMatrix")
      nL<-dim(L)[2]/dim(L)[1]  # number of structural parameters
      if(any(is.na(data$MCMC_y) & rowSums(L)!=0)){
@@ -649,12 +645,12 @@
      if(any(apply(L,1, function(x){all(x==0)}))){
        L[1,][which(apply(L,1, function(x){all(x==0)}))]<-1e-18
      }
-     pL<-unique(cumsum(((duplicated(attr(X, "assign"))==FALSE)+(grepl("path\\(", dimnames(X)[[2]])==FALSE))>0)[grep("path\\(", dimnames(X)[[2]])])
-     Lnames<-grep("path\\(", attr(terms(fixed), "term.labels"))
+     pL<-unique(cumsum(((duplicated(attr(X, "assign"))==FALSE)+(grepl("sir\\(", dimnames(X)[[2]])==FALSE))>0)[grep("sir\\(", dimnames(X)[[2]])])
+     Lnames<-grep("sir\\(", attr(terms(fixed), "term.labels"))
      Lnames<-attr(terms(fixed), "term.labels")[Lnames]
      # position of structural parameters
-     X<-X[,-grep("path\\(", dimnames(X)[[2]]),drop=FALSE]
-     warning("priors for path parameters not implemented")
+     X<-X[,-grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
+     warning("priors for sir parameters not implemented")
    }else{
      L<-as(matrix(0,1,0), "sparseMatrix")
      nL<-0
@@ -696,7 +692,7 @@
       if((dim(X)[2]+nL)!=dim(prior$B$V)[1] | (dim(X)[2]+nL)!=dim(prior$B$V)[2]){stop("fixed effect V prior is the wrong dimension")}
 
       if(nL>0){
-        if(any(prior$B$V[pL,-pL, drop=FALSE]!=0)){stop("sorry - path effects and classic fixed effects have to be independent a priori")}
+        if(any(prior$B$V[pL,-pL, drop=FALSE]!=0)){stop("sorry - sir effects and classic fixed effects have to be independent a priori")}
         prior$L$mu<-prior$B$mu[pL,1, drop=FALSE]
         prior$L$V<-prior$B$V[pL,pL, drop=FALSE]
         prior$B$mu<-prior$B$mu[-pL,1, drop=FALSE]
@@ -709,6 +705,12 @@
 ################
 # Missing data #
 ################
+
+    if(any(substr(data$MCMC_family.names, 1,3)=="cen" & data$MCMC_y==data$MCMC_y.additional)){      # replace liabilities of family of censored variables with y=y.additional          
+      cen_areknown<-which(substr(data$MCMC_family.names, 1,3)=="cen" & data$MCMC_y==data$MCMC_y.additional)                          
+      data$MCMC_family.names[cen_areknown]<-substr(data$MCMC_family.names[cen_areknown], 4, nchar(as.character(data$MCMC_family.names[cen_areknown])))
+    }
+
 
     cnt<-1
     mvtype<-c()
@@ -838,10 +840,6 @@
     data$MCMC_y[which(data$MCMC_y==-Inf | data$MCMC_y==Inf)]<-sign(data$MCMC_y[which(data$MCMC_y==-Inf | data$MCMC_y==Inf)])*1e+32
     data$MCMC_y.additional[which(data$MCMC_y.additional==-Inf | data$MCMC_y.additional==Inf)]<-sign(data$MCMC_y.additional[which(data$MCMC_y.additional==-Inf | data$MCMC_y.additional==Inf)])*1e+32
 	
-    if(any(substr(data$MCMC_family.names, 1,3)=="cen" & data$MCMC_y==data$MCMC_y.additional)){      # replace liabilities of family of censored variables with y=y.additional          
-      cen_areknown<-which(substr(data$MCMC_family.names, 1,3)=="cen" & data$MCMC_y==data$MCMC_y.additional)                          
-      data$MCMC_family.names[cen_areknown]<-substr(data$MCMC_family.names[cen_areknown], 4, nchar(as.character(data$MCMC_family.names[cen_areknown])))
-    }
     if(any(data$MCMC_family.names=="gaussian")){                                       # replace liabilities of ovserved gaussian data with data                                    
       data$MCMC_liab[which(data$MCMC_family.names=="gaussian" & observed)]<-data$MCMC_y[which(data$MCMC_family.names=="gaussian" & observed)]
     }

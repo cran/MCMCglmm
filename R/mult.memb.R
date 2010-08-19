@@ -10,6 +10,9 @@ mult.memb<-function(formula = NULL){
       Z<-Z+model.matrix(as.formula(paste("~", fac[i], -1), env=attr(formula, ".Environment")))
     }
   }
+  if(any(apply(Z, 2, function(x){all(x==0)}))){
+    Z<-Z[,-which(apply(Z, 2, function(x){all(x==0)})),drop=FALSE]
+  }
   return(Z)
 }
 

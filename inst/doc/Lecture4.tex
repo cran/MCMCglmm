@@ -203,7 +203,7 @@ but notice that the the estimate of intercept-slope correlation is close to the 
 \end{Sinput}
 \begin{Soutput}
       var1 
--0.9730981 
+-0.9819379 
 \end{Soutput}
 \end{Schunk}
 
@@ -216,12 +216,12 @@ and shows strong autocorrelation
 \begin{Soutput}
 , , 1
 
-                [,1]
-Lag 0    1.000000000
-Lag 10   0.148337103
-Lag 50   0.004348220
-Lag 100 -0.029317356
-Lag 500  0.013168731
+                 [,1]
+Lag 0    1.0000000000
+Lag 10   0.2171148928
+Lag 50   0.0437096644
+Lag 100 -0.0157343661
+Lag 500  0.0008179009
 \end{Soutput}
 \end{Schunk}
 and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran:
@@ -295,19 +295,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.461
+[1] 5525.443
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.417
+[1] 4544.445
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.273
+[1] 3933.659
 \end{Soutput}
 \end{Schunk}
 
@@ -566,6 +566,7 @@ fits a penalised thin-plate spline,
 \end{Schunk}
 
 fits a penalised cubic spline. The coefficients are random effects, stored in the \texttt{Sol} element of the model output and the single variance component (the penalising bit) is in the \texttt{VCV} element. Its usually a good idea to scale the covariate to lie in the interval [0,1] or some such thing. 
+
 
 \ifalone
 \end{document}

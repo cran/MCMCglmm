@@ -5,7 +5,7 @@
  Markov chain Monte Carlo Sampler for Multivariate Generalised Linear Mixed 
 Models with special emphasis on correlated random effects arising from pedigrees 
 and phylogenies (Hadfield 2010). Please read the course notes: \code{vignette("CourseNotes", 
-"MCMCglmm")} or the tutorial \code{vignette("Tutorial", "MCMCglmm")}
+"MCMCglmm")} or the overview \code{vignette("Overview", "MCMCglmm")}
 }
 \usage{
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
@@ -24,8 +24,8 @@ Currently, the only \code{variance.functions} available are \code{idv}, \code{id
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
 \code{"multinomial"},  \code{"ordinal"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
-\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"hupoisson"} and \code{"ztpoisson"} are 
-supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, the prefix \code{"hu"} means hurdle and the  the prefix \code{"zt"} means zero truncated. If \code{NULL} \code{data} needs to contain a 
+\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"} and \code{"hupoisson"} are 
+supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, he prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL} \code{data} needs to contain a 
 \code{family} column.}
   \item{mev}{optional vector of measurement error variances for each data point 
 for random effect meta-analysis.}

@@ -90,13 +90,13 @@ The prior densities in the two models are very similar across the range of varia
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture8-004}
+\includegraphics{Lecture8-005}
 \end{center}
 \caption{Traces of the sampled posterior distribution for between female variance in sex ratio. The black trace is from a parameter expanded model, and the red trace from a non-parameter expanded model.}
 \label{sexratio-fig}
 \end{figure}
 
-The parameter expanded model is 25\% slower per iteration but the effective sample size is 3.599 times greater:
+The parameter expanded model is 25\% slower per iteration but the effective sample size is 6.879 times greater:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -104,14 +104,14 @@ The parameter expanded model is 25\% slower per iteration but the effective samp
 \end{Sinput}
 \begin{Soutput}
     var1 
-205.4397 
+201.7206 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.2$VCV[, 1])
 \end{Sinput}
 \begin{Soutput}
     var1 
-57.08615 
+29.32439 
 \end{Soutput}
 \end{Schunk}
 
@@ -166,12 +166,12 @@ The response variable \texttt{estimate} is the relative effect of Scholastic Apt
 \end{Sinput}
 \end{Schunk}
 
-In this example there is information on the between school variance although we only have a single estimate for each school. This is possible because the within school variance was available for each school and we were able to fix the residual variance for each school at this value. The posterior distribution of the between school standard deviation is shown in Figure \ref{school1} with the flat prior shown as a solid line.\\ 
+In this example there is information on the between school variance although we only have a single estimate for each school. This is possible because the within school variance was available for each school and we were able to fix the residual variance for each school at this value. The posterior distribution of the between school standard deviation is shown in Figure \ref{school1} with the flat prior shown as a solid line. 
 
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture8-011}
+\includegraphics{Lecture8-012}
 \end{center}
 \caption{Between school standard deviation in educational test scores, with an improper uniform prior}
 \label{school1-fig}
@@ -193,7 +193,7 @@ but Figure \ref{school2} indicates that such a prior in this context may put too
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture8-014}
+\includegraphics{Lecture8-015}
 \end{center}
 \caption{Between school standard deviation in educational test scores, with an inverse-gamma prior with shape and scale set to 0.001}
 \label{school2-fig}
@@ -216,7 +216,7 @@ and Figure \ref{school3} shows that the prior may have better properties than th
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture8-017}
+\includegraphics{Lecture8-018}
 \end{center}
 \caption{Between school standard deviation in educational test scores, with a Cauchy prior with a scale of 25.}
 \label{school3-fig}
@@ -245,7 +245,7 @@ The two models appear to give completely different posteriors (Figure \ref{sexra
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture8-020}
+\includegraphics{Lecture8-021}
 \end{center}
 \caption{Between mother variation in sex ratio with the residual variance fixed at 1 (black trace) and 10 (red trace).}
 \label{sexratio2}
@@ -263,7 +263,7 @@ but rescaling indicates that they are very similar:
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture8-022}
+\includegraphics{Lecture8-023}
 \end{center}
 \caption{Between mother variation in sex ratio with the residual variance fixed at 1 (black trace) and 10 (red trace) but with both estimates rescaled to what would be observed under no residual variance.}
 \label{sexratio2}
@@ -278,14 +278,14 @@ The prior specification for the between mother variance is different in the two 
 \end{Sinput}
 \begin{Soutput}
     var1 
-205.4397 
+201.7206 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
 \end{Sinput}
 \begin{Soutput}
     var1 
-728.1682 
+573.1667 
 \end{Soutput}
 \end{Schunk}
 
@@ -298,8 +298,8 @@ Although the chain mixes faster as the residual variance is set to be larger, nu
 > effectiveSize(m7b.4$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
 \end{Sinput}
 \begin{Soutput}
-    var1 
-789.9363 
+   var1 
+767.395 
 \end{Soutput}
 \end{Schunk}
 

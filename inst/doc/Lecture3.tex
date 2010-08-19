@@ -45,28 +45,34 @@ The data are morphological measurements (\texttt{tarsus} length and \texttt{back
 \end{Sinput}
 \end{Schunk}
 
-fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as random effects.\\  
-
-The traces from the Markov chain look reasonable (Figure \ref{mBTVCV-fig}), and the autocorrelation between successive stored samples is reasonably low. 
-
-
-\begin{figure}[!h]
-\begin{center}
-\includegraphics{Lecture3-005}
-\end{center}
-\caption{MCMC summary plot for the variance components from model \texttt{m3a.1}.}
-\label{mBTVCV-fig}
-\end{figure}
+fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as random effects.  
 
 \begin{Schunk}
 \begin{Sinput}
 > diag(autocorr(m3a.1$VCV)[2, , ])
 \end{Sinput}
 \begin{Soutput}
-       dam fosternest      units 
-0.03523757 0.36354766 0.03573931 
+        dam  fosternest       units 
+0.074601677 0.381514717 0.003330548 
+\end{Soutput}
+\begin{Sinput}
+> plot(m3a.1$VCV)
+\end{Sinput}
+\end{Schunk}
+
+\begin{figure}[!h]
+\begin{center}
+\begin{Schunk}
+\begin{Soutput}
+        dam  fosternest       units 
+0.074601677 0.381514717 0.003330548 
 \end{Soutput}
 \end{Schunk}
+\includegraphics{Lecture3-005}
+\end{center}
+\caption{MCMC summary plot for the variance components from model \texttt{m3a.1}.}
+\label{mBTVCV-fig}
+\end{figure}
 
 Perhaps the autocorrelation for the \texttt{fosternest} variance is a little higher than we would like, and so we may like to run it for longer.
 
@@ -76,7 +82,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
- 1000.0000   420.1402  1000.0000 
+  915.6996   447.2382   944.6921 
 \end{Soutput}
 \end{Schunk}
 
@@ -90,9 +96,9 @@ The posterior correlation between the parameters is low
 \end{Sinput}
 \begin{Soutput}
                    dam fosternest       units
-dam         1.00000000 -0.2365864 -0.01506860
-fosternest -0.23658635  1.0000000 -0.18019989
-units      -0.01506860 -0.1801999  1.00000000
+dam         1.00000000 -0.2179331 -0.03701361
+fosternest -0.21793311  1.0000000 -0.15619239
+units      -0.03701361 -0.1561924  1.00000000
 \end{Soutput}
 \end{Schunk}
 
@@ -105,10 +111,10 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 > HPDinterval(m3a.1$VCV)
 \end{Sinput}
 \begin{Soutput}
-                lower     upper
-dam        0.14342762 0.3246902
-fosternest 0.01329887 0.1217600
-units      0.51081979 0.6395181
+                 lower     upper
+dam        0.139813978 0.3215853
+fosternest 0.008835799 0.1204842
+units      0.507523214 0.6318353
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -125,13 +131,13 @@ and perhaps a model without it would be better supported, although the DIC sugge
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.712
+[1] 2014.393
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.346
+[1] 1991.861
 \end{Soutput}
 \end{Schunk}
 
@@ -143,8 +149,8 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 > HPDinterval(m3a.1$VCV[, 1]/rowSums(m3a.1$VCV))
 \end{Sinput}
 \begin{Soutput}
-         lower     upper
-var1 0.1857216 0.3557963
+        lower     upper
+var1 0.180847 0.3524168
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -166,16 +172,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
                Mean      SD Naive SE Time-series SE
-(Intercept) -0.4085 0.06669 0.002109       0.002134
-sexMale      0.7708 0.05749 0.001818       0.001793
-sexUNK       0.2009 0.12643 0.003998       0.004357
+(Intercept) -0.4077 0.06661 0.002106       0.002399
+sexMale      0.7707 0.05751 0.001819       0.001764
+sexUNK       0.2029 0.12757 0.004034       0.004139
 
 2. Quantiles for each variable:
 
                 2.5%     25%     50%     75%   97.5%
-(Intercept) -0.53459 -0.4548 -0.4089 -0.3639 -0.2825
-sexMale      0.65902  0.7315  0.7733  0.8096  0.8861
-sexUNK      -0.05072  0.1200  0.2062  0.2850  0.4407
+(Intercept) -0.53484 -0.4539 -0.4092 -0.3636 -0.2648
+sexMale      0.66454  0.7308  0.7717  0.8082  0.8852
+sexUNK      -0.04425  0.1178  0.2045  0.2880  0.4484
 \end{Soutput}
 \end{Schunk}
 
@@ -258,7 +264,7 @@ In the simpler models we had fitted in Lectures \ref{chap1} and \ref{chap2} ${\b
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture3-019}
+\includegraphics{Lecture3-018}
 \end{center}
 \caption{MCMC summary plot for the sex-specific dam variance components from model \texttt{m3a.3}. The number of chicks with unknown (\texttt{UNK}) sex is low, with very little replication within dams. The posterior distribution for the \texttt{UNK} variance component is dominated by the prior which has a marginal distribution of \texttt{V=1} and \texttt{nu=0.002}.}
 \label{BTidh-fig}
@@ -276,9 +282,9 @@ We can extract the marginal means for each variance and place them into a matrix
 \end{Sinput}
 \begin{Soutput}
        Fem.dam  Male.dam   UNK.dam
-[1,] 0.2499673 0.0000000 0.0000000
-[2,] 0.0000000 0.2361258 0.0000000
-[3,] 0.0000000 0.0000000 0.3757356
+[1,] 0.2499392 0.0000000 0.0000000
+[2,] 0.0000000 0.2371669 0.0000000
+[3,] 0.0000000 0.0000000 0.3781115
 \end{Soutput}
 \end{Schunk}
 
@@ -336,9 +342,9 @@ The posterior mean (co)variances for this model show that the covariances are al
 \end{Sinput}
 \begin{Soutput}
      Fem:Fem.dam Male:Fem.dam UNK:Fem.dam
-[1,]   0.2317375    0.2003078   0.2248232
-[2,]   0.2003078    0.2137959   0.2173269
-[3,]   0.2248232    0.2173269   0.2931478
+[1,]   0.2334452    0.2010293   0.2264327
+[2,]   0.2010293    0.2118694   0.2165657
+[3,]   0.2264327    0.2165657   0.2906382
 \end{Soutput}
 \end{Schunk}
 
@@ -369,7 +375,7 @@ Covariances can be hard to interpret, and I usually find correlations easier to 
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture3-026}
+\includegraphics{Lecture3-025}
 \end{center}
 \caption{MCMC summary plot for the between sex correlations in dam effects from model \texttt{m3a.4}.}
 \label{BTcor-fig}
@@ -382,13 +388,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1997.476
+[1] 1996.94
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.346
+[1] 1991.861
 \end{Soutput}
 \end{Schunk}
 
@@ -619,7 +625,7 @@ An uninformative prior for the correlations is an improper prior with \texttt{V=
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics{Lecture3-029}
+\includegraphics{Lecture3-028}
 \end{center}
 \caption{Marginal prior distribution of a variance using an inverse Wishart prior for the covariance matrix with \texttt{V=diag(3)*0.02} and \texttt{nu=4}.}
 \label{NIc-fig}

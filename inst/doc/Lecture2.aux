@@ -1,0 +1,81 @@
+\relax 
+\@writefile{toc}{\contentsline {chapter}{\numberline {2}GLMM}{28}{chapter.2}}
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap2}{{2}{28}{GLMM\relax }{chapter.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}Linear Model (LM)}{28}{section.2.1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Linear Predictors}{28}{subsection.2.1.1}}
+\newlabel{SE-eq}{{2.1.1}{29}{Linear Predictors\relax }{subsection.2.1.1}{}}
+\newlabel{lm-eq}{{2.1}{29}{Linear Predictors\relax }{equation.2.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces Histogram of residuals from model \texttt  {m2a.1} which assumed they followed a Gaussian distribution.}}{30}{figure.2.1}}
+\newlabel{mcmc.traffic-fig}{{2.1}{30}{Histogram of residuals from model \texttt {m2a.1} which assumed they followed a Gaussian distribution}{figure.2.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Generalised Linear Model (GLM)}{30}{section.2.2}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Over-dispersion}{33}{section.2.3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Multiplicative Over-dispersion}{33}{subsection.2.3.1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}Additive Over-dispersion}{35}{subsection.2.3.2}}
+\newlabel{addod-sec}{{2.3.2}{35}{Additive Over-dispersion\relax }{subsection.2.3.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces MCMC summary plot for the coefficients from a Poisson glm (model \texttt  {m2a.5}).}}{35}{figure.2.2}}
+\newlabel{mcmc.traffic-fig}{{2.2}{35}{MCMC summary plot for the coefficients from a Poisson glm (model \texttt {m2a.5})}{figure.2.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.3}{\ignorespaces MCMC summary plot for the residual (\texttt  {units}) variance from a Poisson glm (model \texttt  {m2a.5}). The residual variance models any over-dispersion, and a residual variance of zero implies that the response conforms to a standard Poisson.}}{37}{figure.2.3}}
+\newlabel{vcv.traffic-fig}{{2.3}{37}{MCMC summary plot for the residual (\texttt {units}) variance from a Poisson glm (model \texttt {m2a.5}). The residual variance models any over-dispersion, and a residual variance of zero implies that the response conforms to a standard Poisson}{figure.2.3}{}}
+\newlabel{prediction1-fig}{{2.3.2}{38}{Additive Over-dispersion\relax }{figure.2.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.4}{\ignorespaces The predicted number of injuries on the log scale (left) and data scale (right) as a function of the continuous covariate \texttt  {day} for 1961 without a speed limit. In order to highlight a point, the slope of the plotted relationship is an order of magnitude steeper than the model \texttt  {m2a.5} estimate.The black line is the value of the linear predictor, and the red dashed lines represent noise around the linear predictor. Each dashed line is a residual from the model, which is only observed for a particular data point. The vertical distance between the black dot and the solid black line is the observed residual on day 92. The black dashed line is the predicted value of a data point observed on other days but with the same residual value. All lines are parallel and linear on the log scale, but this is not the case on the data scale. }}{38}{figure.2.4}}
+\newlabel{prediction3-fig}{{2.3.2}{39}{Additive Over-dispersion\relax }{figure.2.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.5}{\ignorespaces The hypothetical distribution for the number of injuries on the log scale (left) and data scale (right) for day 92 in 1961 without a speed limit. These can viewed as vertical slices from Figure \ref  {prediction1-fig} on day 92. On the log scale the distribution is assumed to be normal and so the residuals are symmetrically distributed around the linear predictor. As a consequence the linear predictor ($\eta $) is equal to the mean, median and mode of the distribution on the log scale. Because the exponential function is non-linear this symmetry is lost on the data scale, and the different measures of central tendency do not coincide. Since the residuals are normal on the log scale, the distribution on the data scale is log-normal and so analytical solutions exist for the mean, mode and median. $\sigma ^{2}$ is the residual variance. }}{39}{figure.2.5}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.4}Random effects}{40}{section.2.4}}
+\newlabel{ranef-sec}{{2.4}{40}{Random effects\relax }{section.2.4}{}}
+\newlabel{MM-eq}{{2.10}{41}{Random effects\relax }{equation.2.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.6}{\ignorespaces MCMC summary plots for the intercept, speed limit and day coefficients from model \texttt  {m2a.6} where year effects were treated as random. Note the high posterior variance for the intercept.}}{43}{figure.2.6}}
+\newlabel{yrandom-fig}{{2.6}{43}{MCMC summary plots for the intercept, speed limit and day coefficients from model \texttt {m2a.6} where year effects were treated as random. Note the high posterior variance for the intercept}{figure.2.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.7}{\ignorespaces MCMC summary plots for the year effects from a model where year effects were treated as fixed (black) and where they were treated as random (black) but with the variance component set at a large value rather than being estimated. The posterior distributions are virtually identical.}}{44}{figure.2.7}}
+\newlabel{y.pred-fig}{{2.7}{44}{MCMC summary plots for the year effects from a model where year effects were treated as fixed (black) and where they were treated as random (black) but with the variance component set at a large value rather than being estimated. The posterior distributions are virtually identical}{figure.2.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.8}{\ignorespaces Joint posterior distribution of the intercept and the mean of the two random year effects. The variance component associated with year was fixed at a large value ($10^8$) and so the effects are almost completely confounded.}}{45}{figure.2.8}}
+\newlabel{yfixed-fig}{{2.8}{45}{Joint posterior distribution of the intercept and the mean of the two random year effects. The variance component associated with year was fixed at a large value ($10^8$) and so the effects are almost completely confounded}{figure.2.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.5}Prediction with Random effects}{45}{section.2.5}}
+\newlabel{pred-sec}{{2.5}{45}{Prediction with Random effects\relax }{section.2.5}{}}
+\citation{McCulloch.2001}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.9}{\ignorespaces MCMC summary plot of the variance component associated with day (top) and the residual variance component (below). The trace for the residual variance shows strong autocorrelation and needs to be ran for longer.}}{46}{figure.2.9}}
+\newlabel{GLMM.VCV-fig}{{2.9}{46}{MCMC summary plot of the variance component associated with day (top) and the residual variance component (below). The trace for the residual variance shows strong autocorrelation and needs to be ran for longer}{figure.2.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Categorical Data}{47}{section.2.6}}
+\citation{Diggle.2004}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.10}{\ignorespaces MCMC summary plots for the intercept of a binary GLMM where the residual variance was fixed at one (black) and two (red).}}{50}{figure.2.10}}
+\newlabel{Bin1-fig}{{2.10}{50}{MCMC summary plots for the intercept of a binary GLMM where the residual variance was fixed at one (black) and two (red)}{figure.2.10}{}}
+\citation{vanDyk.2001}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.11}{\ignorespaces MCMC summary plots for the between family variance component of a binary GLMM where the residual variance was fixed at one (black) and two (red).}}{51}{figure.2.11}}
+\newlabel{Bin2-fig}{{2.11}{51}{MCMC summary plots for the between family variance component of a binary GLMM where the residual variance was fixed at one (black) and two (red)}{figure.2.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.12}{\ignorespaces MCMC summary plots for the intra-family correlation from a binary GLMM where the residual variance was fixed at one (black) and two (red).}}{52}{figure.2.12}}
+\newlabel{IC-fig}{{2.12}{52}{MCMC summary plots for the intra-family correlation from a binary GLMM where the residual variance was fixed at one (black) and two (red)}{figure.2.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.13}{\ignorespaces MCMC summary plots for the expected proportion of caterpillars pupating from a binary GLMM where the residual variance was fixed at one (black) and two (red).}}{53}{figure.2.13}}
+\newlabel{ICI-fig}{{2.13}{53}{MCMC summary plots for the expected proportion of caterpillars pupating from a binary GLMM where the residual variance was fixed at one (black) and two (red)}{figure.2.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.14}{\ignorespaces Histogram of 1000 random deviates from a normal distribution with a mean of zero and a large variance ($10^8$) after undergoing an inverse logit transformation.}}{54}{figure.2.14}}
+\newlabel{invlogit-fig}{{2.14}{54}{Histogram of 1000 random deviates from a normal distribution with a mean of zero and a large variance ($10^8$) after undergoing an inverse logit transformation}{figure.2.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.15}{\ignorespaces MCMC summary plots for the intercept and treatment effect in a binary GLM. In treatment 2 all 25 observations were failures and so the ML estimator on the probability scale is zero and $-\infty $ on the logit scale. With a flat prior on the treatment effect the posterior distribution is improper, and with a diffuse prior (as used here) the posterior is dominated by the high prior densities at extreme values.}}{56}{figure.2.15}}
+\newlabel{separation1-fig}{{2.15}{56}{MCMC summary plots for the intercept and treatment effect in a binary GLM. In treatment 2 all 25 observations were failures and so the ML estimator on the probability scale is zero and $-\infty $ on the logit scale. With a flat prior on the treatment effect the posterior distribution is improper, and with a diffuse prior (as used here) the posterior is dominated by the high prior densities at extreme values}{figure.2.15}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.7}A note on fixed effect priors and covariances}{56}{section.2.7}}
+\newlabel{PriorContr-sec}{{2.7}{56}{A note on fixed effect priors and covariances\relax }{section.2.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.16}{\ignorespaces MCMC summary plots for the intercept and treatment effect in a binary GLM. In treatment 2 all 25 observations were failures and so the ML estimator on the probability scale is zero and $-\infty $ on the logit scale. A flat prior on the probability scale was used and the posterior distribution is better behaved than if a flat prior on the logit scale had been used (see Figure \ref  {separation1-fig}).}}{57}{figure.2.16}}
+\newlabel{separation2-fig}{{2.16}{57}{MCMC summary plots for the intercept and treatment effect in a binary GLM. In treatment 2 all 25 observations were failures and so the ML estimator on the probability scale is zero and $-\infty $ on the logit scale. A flat prior on the probability scale was used and the posterior distribution is better behaved than if a flat prior on the logit scale had been used (see Figure \ref {separation1-fig})}{figure.2.16}{}}
+\@setckpt{Lecture2}{
+\setcounter{page}{60}
+\setcounter{equation}{20}
+\setcounter{enumi}{0}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{1}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{7}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{16}
+\setcounter{table}{0}
+\setcounter{NAT@ctr}{0}
+\setcounter{FancyVerbLine}{2}
+\setcounter{Item}{0}
+\setcounter{Hfootnote}{2}
+\setcounter{section@level}{1}
+}

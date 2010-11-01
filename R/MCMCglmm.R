@@ -390,7 +390,7 @@
       if(is.null(random)){
         random = ~us(leg(MCMC_mev, -1, FALSE)):MCMC_meta
         if(is.null(prior$R)==FALSE){
-          prior$G<-list(G1=list(V=as.matrix(1), nu=1, fix=1, alpha.mu=1, alpha.V=as.matrix(0)))
+          prior$G<-list(G1=list(V=as.matrix(1), nu=1, fix=1))
         }
       }else{
         random<-update(random,~.+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta)
@@ -398,7 +398,7 @@
           start$G[[length(start$G)+1]]<-as.matrix(1)
         }
         if(is.null(prior$G)==FALSE){
-          prior$G[[length(prior$G)+1]]<-list(V=as.matrix(1), nu=1, fix=1, alpha.mu=1, alpha.V=as.matrix(0))
+          prior$G[[length(prior$G)+1]]<-list(V=as.matrix(1), nu=1, fix=1)
         }
       } 
     }
@@ -486,8 +486,8 @@
          if(is.null(GRprior[[nr]]$V)){stop("V not specified for some priorG/priorR elements")}
          if(is.matrix(GRprior[[nr]]$V)==FALSE){GRprior[[nr]]$V<-as.matrix(GRprior[[nr]]$V)}
          if(diagR==2 & r>ngstructures){     # need to expand trait:units prior to us(trait):units prior      
-           if(dim(GRprior[[nr]]$V)[1]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
-           GRprior[[nr]]$V<-diag(sum(Zlist$nfl))*as.numeric(GRprior[[nr]]$V)
+         if(dim(GRprior[[nr]]$V)[1]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
+          GRprior[[nr]]$V<-diag(sum(Zlist$nfl))*as.numeric(GRprior[[nr]]$V)
          }else{
            if(dim(GRprior[[nr]]$V)[1]!=sum(Zlist$nfl)  | dim(GRprior[[nr]]$V)[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some priorG/priorR elements")}
          }
@@ -806,7 +806,7 @@
                 }else{
                    mu<-log(-log(mu))
                 }
-                v<-diag(GRprior[[nR]]$V)[length(diag(GRprior[[nR]]$V))]
+                v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
               }else{
                 data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
                 mu<-mean(data_tmp$MCMC_y, na.rm=TRUE)
@@ -857,10 +857,9 @@
     #             : 2 block diagonal constrained 
     #             : 3 correlation
     #             : 4 I*v for residual term eg (trait:units) but parameterised as a trait x trait matrix
-
     if(diagR==1){  # need to reform priors such that the marginal distribution of us is equal to distribution of idh 
-      GRprior[[nR]]$V<-GRprior[[nR]]$V*GRprior[[nR]]$n/(GRprior[[nR]]$n+(dim(GRprior[[nR]]$V)[1]+1))
-      GRprior[[nR]]$n<-GRprior[[nR]]$n+(dim(GRprior[[nR]]$V)[1]+1)
+      GRprior[[nG+nR]]$V<-GRprior[[nG+nR]]$V*GRprior[[nG+nR]]$n/(GRprior[[nG+nR]]$n+(dim(GRprior[[nG+nR]]$V)[1]+1))
+      GRprior[[nG+nR]]$n<-GRprior[[nG+nR]]$n+(dim(GRprior[[nG+nR]]$V)[1]+1)
     }	
     GRinv<-unlist(lapply(GR, function(x){c(solve(x))}))
     GRvpP<-lapply(GRprior, function(x){(x$V)*(x$n)})
@@ -872,7 +871,7 @@
 	}	 
     GRvpP<-unlist(GRvpP)
     if(diagR==2){  # need to add aditional prior nu because of way trait:units are updated
-      GRprior[[nR]]$n<-GRprior[[nR]]$n+(nrl[nR]+1)*(dim(GRprior[[nR]]$V)[1]-1)
+      GRprior[[nG+nR]]$n<-GRprior[[nG+nR]]$n+(nrl[nG+nR]+1)*(dim(GRprior[[nG+nR]]$V)[1]-1)
     }
     GRnpP<-unlist(lapply(GRprior, function(x){c(x$n)}))      
     BvpP<-c(solve(prior$B$V), sum(prior$B$V!=0)==dim(prior$B$V)[1])

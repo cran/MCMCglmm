@@ -52,8 +52,8 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 > diag(autocorr(m3a.1$VCV)[2, , ])
 \end{Sinput}
 \begin{Soutput}
-        dam  fosternest       units 
-0.074601677 0.381514717 0.003330548 
+       dam fosternest      units 
+0.06208048 0.43168032 0.07631275 
 \end{Soutput}
 \begin{Sinput}
 > plot(m3a.1$VCV)
@@ -64,8 +64,8 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 \begin{center}
 \begin{Schunk}
 \begin{Soutput}
-        dam  fosternest       units 
-0.074601677 0.381514717 0.003330548 
+       dam fosternest      units 
+0.06208048 0.43168032 0.07631275 
 \end{Soutput}
 \end{Schunk}
 \includegraphics{Lecture3-005}
@@ -82,7 +82,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
-  915.6996   447.2382   944.6921 
+  882.2125   316.4188   857.3369 
 \end{Soutput}
 \end{Schunk}
 
@@ -96,9 +96,9 @@ The posterior correlation between the parameters is low
 \end{Sinput}
 \begin{Soutput}
                    dam fosternest       units
-dam         1.00000000 -0.2179331 -0.03701361
-fosternest -0.21793311  1.0000000 -0.15619239
-units      -0.03701361 -0.1561924  1.00000000
+dam         1.00000000 -0.2314351 -0.02590970
+fosternest -0.23143511  1.0000000 -0.19464946
+units      -0.02590970 -0.1946495  1.00000000
 \end{Soutput}
 \end{Schunk}
 
@@ -111,10 +111,10 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 > HPDinterval(m3a.1$VCV)
 \end{Sinput}
 \begin{Soutput}
-                 lower     upper
-dam        0.139813978 0.3215853
-fosternest 0.008835799 0.1204842
-units      0.507523214 0.6318353
+                lower     upper
+dam        0.14040755 0.3170128
+fosternest 0.01095326 0.1270363
+units      0.50756215 0.6347210
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -131,13 +131,13 @@ and perhaps a model without it would be better supported, although the DIC sugge
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.393
+[1] 2014.773
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.861
+[1] 1992.620
 \end{Soutput}
 \end{Schunk}
 
@@ -149,8 +149,8 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 > HPDinterval(m3a.1$VCV[, 1]/rowSums(m3a.1$VCV))
 \end{Sinput}
 \begin{Soutput}
-        lower     upper
-var1 0.180847 0.3524168
+         lower     upper
+var1 0.1772288 0.3437442
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -172,16 +172,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
                Mean      SD Naive SE Time-series SE
-(Intercept) -0.4077 0.06661 0.002106       0.002399
-sexMale      0.7707 0.05751 0.001819       0.001764
-sexUNK       0.2029 0.12757 0.004034       0.004139
+(Intercept) -0.4031 0.06731 0.002128       0.002114
+sexMale      0.7682 0.05579 0.001764       0.001868
+sexUNK       0.2061 0.13357 0.004224       0.004113
 
 2. Quantiles for each variable:
 
                 2.5%     25%     50%     75%   97.5%
-(Intercept) -0.53484 -0.4539 -0.4092 -0.3636 -0.2648
-sexMale      0.66454  0.7308  0.7717  0.8082  0.8852
-sexUNK      -0.04425  0.1178  0.2045  0.2880  0.4484
+(Intercept) -0.53963 -0.4457 -0.4029 -0.3610 -0.2759
+sexMale      0.65252  0.7322  0.7692  0.8048  0.8737
+sexUNK      -0.05735  0.1127  0.2117  0.2933  0.4681
 \end{Soutput}
 \end{Schunk}
 
@@ -282,13 +282,13 @@ We can extract the marginal means for each variance and place them into a matrix
 \end{Sinput}
 \begin{Soutput}
        Fem.dam  Male.dam   UNK.dam
-[1,] 0.2499392 0.0000000 0.0000000
-[2,] 0.0000000 0.2371669 0.0000000
-[3,] 0.0000000 0.0000000 0.3781115
+[1,] 0.2458499 0.0000000 0.0000000
+[2,] 0.0000000 0.2347004 0.0000000
+[3,] 0.0000000 0.0000000 0.3741683
 \end{Soutput}
 \end{Schunk}
 
-Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.226)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
+Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.225)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -342,9 +342,9 @@ The posterior mean (co)variances for this model show that the covariances are al
 \end{Sinput}
 \begin{Soutput}
      Fem:Fem.dam Male:Fem.dam UNK:Fem.dam
-[1,]   0.2334452    0.2010293   0.2264327
-[2,]   0.2010293    0.2118694   0.2165657
-[3,]   0.2264327    0.2165657   0.2906382
+[1,]   0.2312574    0.2009577   0.2200374
+[2,]   0.2009577    0.2133270   0.2121479
+[3,]   0.2200374    0.2121479   0.2774135
 \end{Soutput}
 \end{Schunk}
 
@@ -388,13 +388,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1996.94
+[1] 1997.654
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.861
+[1] 1992.620
 \end{Soutput}
 \end{Schunk}
 
@@ -599,9 +599,13 @@ if ${\bf Z}$ is non-square and/or singular, where \texttt{$^{-}$} is a generalis
 
  
 \section{Priors for Covariance Matrices}
+\label{VCVprior-sec}
 
-Priors for covariance matrices are tricky. What maybe non-informative for a covariance may be informative for a correlation and \emph{vice versa}. A useful result is that the marginal distribution of a variance is also inverse - Wishart distributed:
+Priors for covariance matrices are tricky. What maybe non-informative for a covariance may be informative for a correlation and \emph{vice versa}.
 
+\subsection{Priors for \texttt{us} structures}
+
+A useful result is that the marginal distribution of a variance is also inverse - Wishart distributed:
 
 \begin{displaymath}
 \sigma^{2}_{1} \sim IW\left(\texttt{nu}^{\ast}\texttt{=nu-dim(V)+1},\ \texttt{V}^{\ast}=\frac{\texttt{nu}}{\texttt{nu}^{\ast}}\texttt{V[1,1]}\right)
@@ -641,6 +645,29 @@ In Lecture \ref{chap2} we saw that a non-informative prior for a variance compon
 
 \end{array}
 \end{displaymath}
+
+\subsection{Priors for \texttt{idh} structures}
+
+For \texttt{idh} the diagonal elements of the matrix are independent and each variance is distributed as\footnote{IMPORTANT: In versions $<$ 2.05 priors on each variance of an \texttt{idh} structure were distributed as $IW\left(\texttt{nu}^{\ast}\texttt{=nu-dim(V)+1},\ \texttt{V}^{\ast}=\texttt{V[1,1]}\right)$ but this was as ource of confusion and was changed}:
+
+\begin{displaymath}
+\sigma^{2}_{1} \sim IW\left(\texttt{nu}^{\ast}\texttt{=nu},\ \texttt{V}^{\ast}=\texttt{V[1,1]}\right)
+\end{displaymath}
+
+
+\subsection{Priors for \texttt{cor} structures}
+
+For \texttt{cor} structures I use the prior specification in \citet{Barnard.2000}. Here the specification of \texttt{V} is redundant and \texttt{nu} controls how much the correlation matrix approaches an identity matrix.  The marginal distribution of individual correlations ($r$) is given by \citet{Barnard.2000}   \citep[and][]{Box.1973}):
+
+\begin{equation}
+\begin{array}{lr}
+Pr(r) \propto (1-r^{2})^\frac{\texttt{nu-dim(V)-1}}{\texttt{2}}, & |r|<1\\
+\end{array}
+\end{equation}
+
+and as shown above setting \texttt{nu} =\texttt{dim(V)+1} results in marginal correlations that are uniform on the interval [-1,1].\\
+
+In most cases correlation matrices do not have known form and so cannot be directly Gibbs sampled. \texttt{MCMCglmm} uses a method proposed by \citet{Liu.2006} with the target prior as in \citet{Barnard.2000}.  Generally this algorithm is very efficient as the Metropolis-Hastings acceptance probability only depends on the degree to which the candidate prior  and the target prior (the prior you specify) conflict. The candidate prior is equivalent to the prior  in \citet{Barnard.2000} with \texttt{nu=0} so as long as a diffuse prior is set, mixing is generally not a problem. If  \texttt{nu=0} is set (the default) then the Metropolis-Hastings steps are always accepted resulting in Gibbs sampling. However, a prior of this form puts high density on extreme correlations which can cause problems if the data give support to correlations in this region.\\ 
 
 \label{VCVprior-sec}
 \ifalone

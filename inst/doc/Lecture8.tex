@@ -96,7 +96,7 @@ The prior densities in the two models are very similar across the range of varia
 \label{sexratio-fig}
 \end{figure}
 
-The parameter expanded model is 25\% slower per iteration but the effective sample size is 6.879 times greater:
+The parameter expanded model is 25\% slower per iteration but the effective sample size is 3.825 times greater:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -104,14 +104,14 @@ The parameter expanded model is 25\% slower per iteration but the effective samp
 \end{Sinput}
 \begin{Soutput}
     var1 
-201.7206 
+304.8930 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.2$VCV[, 1])
 \end{Sinput}
 \begin{Soutput}
     var1 
-29.32439 
+79.70575 
 \end{Soutput}
 \end{Schunk}
 
@@ -278,14 +278,14 @@ The prior specification for the between mother variance is different in the two 
 \end{Sinput}
 \begin{Soutput}
     var1 
-201.7206 
+304.8930 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
 \end{Sinput}
 \begin{Soutput}
     var1 
-573.1667 
+650.5319 
 \end{Soutput}
 \end{Schunk}
 
@@ -299,7 +299,7 @@ Although the chain mixes faster as the residual variance is set to be larger, nu
 \end{Sinput}
 \begin{Soutput}
    var1 
-767.395 
+589.596 
 \end{Soutput}
 \end{Schunk}
 

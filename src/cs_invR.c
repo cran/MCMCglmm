@@ -1,6 +1,6 @@
 #include "cs_inv.h"
-#define Ctol  1e-12
-#define Dtol  1e-12
+#define Ctol  1e-10
+#define Dtol  1e-10
 
 /* matrix inversion through Gauss-Jordan elimination: modified from numerical recipes: outputs the determinant */
 

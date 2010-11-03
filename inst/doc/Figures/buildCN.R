@@ -1,4 +1,4 @@
-#source("~/Work/AManal/MCMCglmm_2.06/inst/doc/Figures/buildCN.R")
+#source("~/Work/AManal/MCMCglmm_2.07/inst/doc/Figures/buildCN.R")
 alone=FALSE
 lectures<-1:9
 forCRAN=TRUE
@@ -7,7 +7,7 @@ LINUX=TRUE
 options(width=80)
 
 UPpath="~/Work/AManal/UP_course/Tex/"
-MCpath="~/Work/AManal/MCMCglmm_2.06/inst/doc/"
+MCpath="~/Work/AManal/MCMCglmm_2.07/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)

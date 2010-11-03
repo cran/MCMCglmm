@@ -1138,7 +1138,7 @@ if(nL>0){
                }
                cs_spfree(tbv);               
                cs_spfree(bvA);               
-			   cs_spfree(bvAbv);
+	       cs_spfree(bvAbv);
              }else{
                for(j=0; j<dimG; j++){
                  for(k=j; k<dimG; k++){
@@ -1248,8 +1248,8 @@ if(nL>0){
 			cnt++;
 		      }
 		    }	
-		  }		
-		  ldet[i] = log(cs_invR(G[i], Ginv[i]));	
+		  }
+		  ldet[i] = log(cs_invR(G[i], Ginv[i]));
 	          cs_nfree(GinvL[i]);	
 	          GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of R^{-1} for Gibbs sampling fully missing data. 
 		}
@@ -1705,7 +1705,7 @@ if(nL>0){
 
                    case 16:  /* Zero-truncated Poisson */
 
-                     densityl1 += dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));;
+                     densityl1 += dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));
                      densityl2 += dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i])));
 
                    break;

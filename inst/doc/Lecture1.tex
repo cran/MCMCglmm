@@ -64,7 +64,7 @@ We can generate 5 observations from this distribution using \texttt{rnorm}:
 > Ndata$y
 \end{Sinput}
 \begin{Soutput}
-[1]  0.9060817  0.4155958 -0.1951143 -0.8125874 -0.4257024
+[1]  0.2446354 -1.6489206  0.6888699  0.2059612  2.5682493
 \end{Soutput}
 \end{Schunk}
 
@@ -108,7 +108,7 @@ The likelihood of these data, conditioning on $\mu=0$ and $\sigma^2=1$, is propo
 > prod(dnorm(Ndata$y, mean = 0, sd = sqrt(1)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.003960679
+[1] 7.187957e-05
 \end{Soutput}
 \end{Schunk}
 
@@ -123,11 +123,11 @@ Of course we don't know the true mean and variance and so we may want to ask how
 > prod(dnorm(Ndata$y, mean = 0, sd = sqrt(0.5)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.008781404
+[1] 2.892248e-06
 \end{Soutput}
 \end{Schunk}
 
-It would seem that the data are more likely under this set of parameters than the true parameters, which we must expect some of the time just from random sampling. To get some idea as to why this might be the case we can overlay the two densities (Figure \ref{dnorm1-fig}), and we can see that although some data points (e.g. 0.906) are more likely with the true parameters, in aggregate the new parameters produce a higher likelihood.\\
+It would seem that the data are more likely under this set of parameters than the true parameters, which we must expect some of the time just from random sampling. To get some idea as to why this might be the case we can overlay the two densities (Figure \ref{dnorm1-fig}), and we can see that although some data points (e.g. -1.649) are more likely with the true parameters, in aggregate the new parameters produce a higher likelihood.\\
 
 
 \begin{figure}[!h]
@@ -180,8 +180,8 @@ The first call to \texttt{optim} are starting values for the optimisation algori
 > MLest
 \end{Sinput}
 \begin{Soutput}
-       mean         var 
--0.02234531  0.37415955 
+     mean       var 
+0.4117591 1.8087848 
 \end{Soutput}
 \end{Schunk}
 
@@ -198,31 +198,31 @@ glm(formula = y ~ 1, data = Ndata)
 
 Deviance Residuals: 
       1        2        3        4        5  
- 0.9284   0.4379  -0.1728  -0.7902  -0.4034  
+-0.1671  -2.0607   0.2771  -0.2058   2.1565  
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)
-(Intercept) -0.02235    0.30584  -0.073    0.945
+(Intercept)   0.4118     0.6725   0.612    0.573
 
-(Dispersion parameter for gaussian family taken to be 0.4676994)
+(Dispersion parameter for gaussian family taken to be 2.260981)
 
-    Null deviance: 1.8708  on 4  degrees of freedom
-Residual deviance: 1.8708  on 4  degrees of freedom
-AIC: 13.274
+    Null deviance: 9.044  on 4  degrees of freedom
+Residual deviance: 9.044  on 4  degrees of freedom
+AIC: 21.153
 
 Number of Fisher Scoring iterations: 2
 \end{Soutput}
 \end{Schunk}
  
-Here we see that although the estimate of the mean (intercept) is the same, the estimate of the variance (the dispersion parameter: 0.468) is higher when fitting the model using \texttt{glm}. In fact the ML estimate is a factor of $\frac{n}{n-1}$ smaller.
+Here we see that although the estimate of the mean (intercept) is the same, the estimate of the variance (the dispersion parameter: 2.261) is higher when fitting the model using \texttt{glm}. In fact the ML estimate is a factor of $\frac{n}{n-1}$ smaller.
 
 \begin{Schunk}
 \begin{Sinput}
 > MLest["var"] * (5/4)
 \end{Sinput}
 \begin{Soutput}
-      var 
-0.4676994 
+     var 
+2.260981 
 \end{Soutput}
 \end{Schunk}
 
@@ -328,8 +328,8 @@ The prior has some influence on the posterior mode of the variance, and we can u
 > Best
 \end{Sinput}
 \begin{Soutput}
-       mean         var 
--0.02234532  0.26746613 
+    mean      var 
+0.411759 1.291906 
 \end{Soutput}
 \end{Schunk}
 
@@ -391,7 +391,7 @@ A very nice property of MCMC is that we can normalise the density so that it int
 +     1), Ndata$y, prior$R, prior$B))
 \end{Sinput}
 \begin{Soutput}
-[1] 7.796183
+[1] 1.731789
 \end{Soutput}
 \end{Schunk}
 
@@ -405,11 +405,11 @@ Now, if we wanted to know the probability that the parameters lay in the region 
 \end{Sinput}
 \begin{Soutput}
  FALSE   TRUE 
-0.0172 0.9828 
+0.2351 0.7649 
 \end{Soutput}
 \end{Schunk}
 
-There is Monte Carlo error in the answer (0.983) but if we collect a large number of samples then this can be minimised.\\ 
+There is Monte Carlo error in the answer (0.765) but if we collect a large number of samples then this can be minimised.\\ 
 
 Using a similar logic we can obtain the marginal distribution of the variance by simply evaluating the draws in \texttt{VCV} ignoring (averaging over) the draws in \texttt{Sol}:
 
@@ -496,10 +496,10 @@ When fitting a model using \texttt{MCMCglmm} the parameter values through which 
 
          (Intercept)
 Lag 0   1.0000000000
-Lag 1  -0.0004973069
-Lag 5  -0.0035864547
-Lag 10  0.0047755477
-Lag 50  0.0018860887
+Lag 1   0.0008241386
+Lag 5  -0.0164956905
+Lag 10 -0.0075232019
+Lag 50 -0.0126083928
 \end{Soutput}
 \begin{Sinput}
 > autocorr(m1a.2$VCV)
@@ -509,14 +509,14 @@ Lag 50  0.0018860887
 
               units
 Lag 0   1.000000000
-Lag 1   0.347520707
-Lag 5   0.021138821
-Lag 10 -0.003202762
-Lag 50 -0.005231248
+Lag 1   0.278556515
+Lag 5  -0.001218592
+Lag 10  0.001696702
+Lag 50 -0.001844956
 \end{Soutput}
 \end{Schunk}
 
- The correlation between successive samples is low for the mean (-0.000) but a bit high for the variance (0.348).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
+ The correlation between successive samples is low for the mean (0.001) but a bit high for the variance (0.279).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
 
 The approximation obtained from the Markov chain is conditional on the set of parameter values that were used to initialise the chain.  In many cases the first iterations show a strong dependence on the starting parametrisation, but as the chain progresses this dependence may be lost.  As the dependence on the starting parametrisation diminishes the chain is said to converge and the argument \texttt{burnin} can be passed to \texttt{MCMCped} specifying the number of iterations which must pass before samples are stored. The default burn-in period is 3,000 iterations. Assessing convergence of the chain is notoriously difficult, but visual inspection and diagnostic tools such as \texttt{gelman.diag} often suffice.
 

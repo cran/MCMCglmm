@@ -1,6 +1,4 @@
 #include "cs_inv.h"
-#define Ctol  1e-10
-#define Dtol  1e-10
 
 /* matrix inversion through Gauss-Jordan elimination: modified from numerical recipes: outputs the determinant */
 
@@ -45,7 +43,7 @@ double cs_invR(const cs *C, const cs *A){
                  indxr[i]=irow;
                  indxc[i]=icol;
     		 det *= A->x[A->i[icol]+A->p[icol]];
-		 pivinv=1.0/A->x[A->i[icol]+A->p[icol]];
+                 pivinv = 1.0/(A->x[A->i[icol]+A->p[icol]]);
                  A->x[A->i[icol]+A->p[icol]]=1.0;
                  for (l=0;l<n;l++) A->x[A->i[icol]+A->p[l]] *= pivinv;
                  for (ll=0;ll<n;ll++)
@@ -65,9 +63,9 @@ double cs_invR(const cs *C, const cs *A){
                  }
        }
 	  CN *= cs_norm(A);
-	  if(1.0/CN < Ctol || det < Dtol){
+	  if(1.0/CN < DBL_EPSILON || det < DBL_EPSILON){
              if(n==1){
-               A->x[0] = Dtol;
+               A->x[0] = 1.0/DBL_EPSILON;
              }else{
 	       PutRNGstate();
 	       error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");

@@ -24,7 +24,7 @@ Currently, the only \code{variance.functions} available are \code{idv}, \code{id
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
 \code{"multinomial"},  \code{"ordinal"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
-\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"} and \code{"hupoisson"} are 
+\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"}, \code{"hupoisson"} and \code{"zibinomial"} are 
 supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, he prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL} \code{data} needs to contain a 
 \code{family} column.}
   \item{mev}{optional vector of measurement error variances for each data point 

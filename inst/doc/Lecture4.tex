@@ -203,7 +203,7 @@ but notice that the the estimate of intercept-slope correlation is close to the 
 \end{Sinput}
 \begin{Soutput}
       var1 
--0.9703294 
+-0.9761638 
 \end{Soutput}
 \end{Schunk}
 
@@ -218,10 +218,10 @@ and shows strong autocorrelation
 
                [,1]
 Lag 0    1.00000000
-Lag 10   0.18261997
-Lag 50  -0.03597618
-Lag 100  0.02244870
-Lag 500  0.04872762
+Lag 10   0.16628904
+Lag 50  -0.01171606
+Lag 100 -0.03481633
+Lag 500 -0.02337053
 \end{Soutput}
 \end{Schunk}
 and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran:
@@ -295,19 +295,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.475
+[1] 5525.345
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.505
+[1] 4544.811
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.471
+[1] 3932.361
 \end{Soutput}
 \end{Schunk}
 

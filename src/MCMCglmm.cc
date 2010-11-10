@@ -792,7 +792,7 @@ if(nL>0){
 
          LambdaS = cs_sqr(1, Lambda[0], true);                            // Symbolic LU factorisation of Lambda for determinant calculation
 
-         LambdaLU = cs_lu(Lambda[0], LambdaS, 1e-16);      
+         LambdaLU = cs_lu(Lambda[0], LambdaS, DBL_EPSILON);      
 
          for (i = 0 ; i<ny ; i++){           
            for (j = LambdaLU->L->p[i] ; j<(LambdaLU->L->p[i+1]); j++){
@@ -1385,7 +1385,7 @@ if(nL>0){
       
       Lambda[lambda_new] = cs_add(I, Lambda_tmp[lambda_new], 1.0, -1.0);
 
-      LambdaLU = cs_lu(Lambda[lambda_new], LambdaS, 1e-16);     
+      LambdaLU = cs_lu(Lambda[lambda_new], LambdaS, DBL_EPSILON);     
 
       detLambda[lambda_new] = 0.0;
       sign_detLambda[lambda_new] = 1;
@@ -1555,7 +1555,6 @@ if(nL>0){
 
                        mndenom1 += exp(linki->x[i]);
                        mndenom2 += exp(linki_tmp->x[i]);
-
                        densityl1 += yP[record]*linki->x[i];
                        densityl2 += yP[record]*linki_tmp->x[i];
 
@@ -1741,6 +1740,24 @@ if(nL>0){
 
                    break;
 
+                   case 19:  /* Zero-inflated Binomial */
+
+                     if(mfacP[rterm+i]==0){  // non-zero bit
+                       mndenom1 = dbinom(yP[record], y2P[record], exp(linki->x[i])/(1.0+exp(linki->x[i])), true);  
+                       mndenom2 = dbinom(yP[record], y2P[record], exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])), true);  
+                     }else{
+			mndenom1 += log1p(-exp(linki->x[i])/(1.0+exp(linki->x[i])));
+			mndenom2 += log1p(-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
+                        if(yP[record]>0.5){
+			  mndenom1 = log(exp(mndenom1)+exp(linki->x[i])/(1.0+exp(linki->x[i])));
+			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));  
+			}
+                        densityl1 += mndenom1;
+                        densityl2 += mndenom2;
+                        mndenom1 = 1.0;
+                        mndenom2 = 1.0;
+                     }
+                   break;
 
                  }
                }
@@ -1994,7 +2011,7 @@ if(nL>0){
        }
      }
 
-     if(itt%thin == 0 && itt>=burnin && itt!=nitt){
+     if((itt-burnin)%thin == 0 && itt>=burnin && itt!=nitt){
        if(DICP[0]==1){
          dbarP[post_cnt] = dbar;
        }

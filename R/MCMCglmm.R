@@ -13,7 +13,7 @@
     if(any(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))){
       stop(paste(names(data)[which(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))], " is a reserved variable please rename it"))
     }
-    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson")
+    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial")
 
     if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
     if(((is.null(prior$G) & is.null(random)==FALSE) & is.null(prior$R)==FALSE) | (is.null(prior$R) & is.null(prior$G)==FALSE)){stop("either both or neither R and G structures need a prior")}
@@ -265,11 +265,15 @@
 
          if(dist.preffix=="mu"){
            nJ<-as.numeric(substr(family[i],12,nchar(family[i])))-1                                                                            # number of J-1 categories
-	       if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
+	   if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
            mfac<-c(mfac, rep(nJ-1,nJ))  
-           if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){stop("multinomial data must be positive integers")}
+           if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){
+             stop("multinomial data must be positive integers")
+           }
            y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
-			 if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:nJ+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){stop("multinomial responses must be either completely observed or completely missing")}	 
+	   if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:nJ+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
+             stop("multinomial responses must be either completely observed or completely missing")
+           }	 
            data<-data[,-which(names(data)==response.names[nt+nJ]),drop=FALSE]                                                        # remove first category
            response.names<-response.names[-(nt+nJ)]
            family.names[nt]<-"multinomial"
@@ -316,11 +320,23 @@
 # zero-infalted traits #
 ########################
 
-	 if(dist.preffix=="zi" || dist.preffix=="hu" || dist.preffix=="za"){                                                                         
-	   y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
-	   if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be integers")}
-	   cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
-	   colnames(cont)<-paste(dist.preffix, response.names[nt], sep="_")
+	 if(dist.preffix=="zi" || dist.preffix=="hu" || dist.preffix=="za"){
+           if(grepl("poisson", family[i])){
+	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+	     if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
+               stop("Poisson data must be non-negative integers")
+             }
+	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
+           }
+           if(grepl("binomial", family[i])){
+	     y.additional<-cbind(y.additional, rowSums(data[,match(response.names[0:1+nt], names(data))]), rep(0,nS))
+             if(all(data[,match(response.names[0:1+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:1+nt], names(data))]>=0, na.rm=T)==FALSE){
+               stop("binomial data must be non-negative integers")
+             } 
+	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
+             response.names<-response.names[-(nt+1)]
+           }
+           colnames(cont)<-paste(dist.preffix, response.names[nt], sep="_")
 	   data<-cbind(data, cont)
 	   mfac<-c(mfac, c(0,1))
 	   ones<-rep(1, length(response.names))
@@ -814,6 +830,18 @@
                 mu<-log(mu)-0.5*v
               }
             }
+            if(data_tmp$MCMC_family.names[1]=="zibinomial"){
+              if(max(data_tmp$MCMC_y, na.rm=T)==1){
+                mu<-mean(data_tmp$MCMC_y==1, na.rm=T)
+                mu<-log(mu/(1-mu))
+                v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
+              }else{
+                 data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
+                 m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional)~1, family="quasibinomial", data=data_tmp,subset=is.na(data_tmp$MCMC_y)==FALSE))
+                 v<-abs(((as.numeric(m1$dispersion[1])-0.5)/2)^2)
+                 mu<-as.numeric(m1$coef[1])
+              }
+            }
             if(length(missing_set)>0){
               data$MCMC_liab[trait_set][missing_set]<-sample(data$MCMC_liab[trait_set][-missing_set], length(missing_set), TRUE)
             }
@@ -911,7 +939,7 @@
     if(thin%%1!=0){stop("thin must be integer")}
     if(burnin%%1!=0){stop("burnin must be integer")}
 
-    nkeep<-floor((nitt-burnin)/thin)
+    nkeep<-ceiling((nitt-burnin)/thin)
 
     if(nkeep<1){stop("burnin is equal to, or greater than number of iterations")}
 
@@ -1031,13 +1059,13 @@
         if(nL>0){       
            lambda<-t(matrix(output[[63]], nL, nkeep))  
            colnames(lambda)<-Lnames     
-           lambda<-mcmc(lambda, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
+           lambda<-mcmc(lambda, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
         }else{
            lambda<-NULL
         }
 
        if(ncutpoints_store!=0){
-         CP<-mcmc(t(matrix(output[[53]],ncutpoints_store, nkeep)), start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
+         CP<-mcmc(t(matrix(output[[53]],ncutpoints_store, nkeep)), start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
          colnames(CP)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){1:x})), sep=""))
          colnames(CP)<-gsub("MCMC_", "", colnames(CP))
        }else{
@@ -1065,7 +1093,7 @@
         }
 
         if(DIC==TRUE & nL==0){
-         deviance<-mcmc(-2*output[[48]][1:nkeep], start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
+         deviance<-mcmc(-2*output[[48]][1:nkeep], start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
          DIC<--4*output[[48]][nkeep+1]+2*output[[48]][nkeep+2]
         }else{
          deviance<-NULL
@@ -1080,7 +1108,7 @@
           if(length(dummy.data)>0){
             Liab<-Liab[,-dummy.data,drop=FALSE]
           }
-          Liab<-mcmc(Liab, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin)
+          Liab<-mcmc(Liab, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
         }else{
           Liab<-NULL
         }
@@ -1136,9 +1164,9 @@
         Rnrt<-1
 
         output<-list(
-            Sol=mcmc(Sol, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin),
+            Sol=mcmc(Sol, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin),
             Lambda = lambda,
-            VCV=mcmc(VCV, start=burnin+1, end=nitt-(nitt-burnin)%%thin, thin=thin),
+            VCV=mcmc(VCV, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin),
             CP=CP,
             Liab=Liab,
             Fixed=list(formula=original.fixed, nfl=nF, nll=nL),

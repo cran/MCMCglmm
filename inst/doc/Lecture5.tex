@@ -52,7 +52,7 @@ In practice does this matter? Lets imagine there was only one unmeasured variabl
 \end{Sinput}
 \end{Schunk}
 
-A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.019.
+A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.01.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -63,19 +63,19 @@ Call:
 lm(formula = y.car ~ y.hol, data = Spending)
 
 Residuals:
-     Min       1Q   Median       3Q      Max 
--0.83788 -0.20558  0.00682  0.20223  1.06269 
+      Min        1Q    Median        3Q       Max 
+-0.812283 -0.185706  0.003196  0.199748  1.044004 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)  1.11888    0.03641  30.732  < 2e-16 ***
-y.hol       -0.13460    0.03409  -3.949 8.55e-05 ***
+(Intercept)  1.09700    0.03755   29.21  < 2e-16 ***
+y.hol       -0.10109    0.03650   -2.77  0.00574 ** 
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 
-Residual standard error: 0.2951 on 798 degrees of freedom
-Multiple R-squared: 0.01917,	Adjusted R-squared: 0.01794 
-F-statistic: 15.59 on 1 and 798 DF,  p-value: 8.548e-05 
+Residual standard error: 0.2893 on 798 degrees of freedom
+Multiple R-squared: 0.009521,	Adjusted R-squared: 0.00828 
+F-statistic: 7.671 on 1 and 798 DF,  p-value: 0.005743 
 \end{Soutput}
 \end{Schunk}
 
@@ -101,12 +101,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-    -0.1917098      0.0352772      0.0011156      0.0009755 
+     -0.164937       0.037675       0.001191       0.001107 
 
 2. Quantiles for each variable:
 
-   2.5%     25%     50%     75%   97.5% 
--0.2594 -0.2147 -0.1917 -0.1686 -0.1222 
+    2.5%      25%      50%      75%    97.5% 
+-0.24070 -0.19029 -0.16448 -0.13987 -0.08853 
 \end{Soutput}
 \end{Schunk}
 
@@ -118,22 +118,22 @@ It is useful to think of a new data frame where the response variables have been
 \begin{array}{cc}
 \begin{array}{cccc}
 &{\color{blue} \texttt{y.hol}}&{\color{blue} \texttt{y.car}}&\texttt{id}\\
-{\color{red} \texttt{1}}&\texttt{1.037390}&\texttt{1.282006}&\texttt{1}\\
-{\color{red} \texttt{2}}&\texttt{1.303637}&\texttt{0.648759}&\texttt{1}\\
+{\color{red} \texttt{1}}&\texttt{1.341595}&\texttt{1.294920}&\texttt{1}\\
+{\color{red} \texttt{2}}&\texttt{1.168534}&\texttt{1.340285}&\texttt{1}\\
 \vdots&\vdots&\vdots\\
-{\color{red} \texttt{800}}&\texttt{0.603167}&\texttt{0.964838}&\texttt{200}\\
+{\color{red} \texttt{800}}&\texttt{0.892193}&\texttt{1.249724}&\texttt{200}\\
 \end{array}&
 \Longrightarrow
 \begin{array}{ccccc}
 &\texttt{y}&{\color{blue} \texttt{trait}}&\texttt{id}&{\color{red} \texttt{units}}\\
-1&\texttt{1.037390}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
-2&\texttt{1.303637}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
+1&\texttt{1.341595}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
+2&\texttt{1.168534}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-800&\texttt{0.603167}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
-801&\texttt{1.282006}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
-802&\texttt{0.648759}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
+800&\texttt{0.892193}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
+801&\texttt{1.294920}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
+802&\texttt{1.340285}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-1600&\texttt{0.964838}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
+1600&\texttt{1.249724}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
 \end{array}
 \end{array}
 \end{displaymath}
@@ -401,16 +401,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
         Mean      SD  Naive SE Time-series SE
-[1,] 0.65499 0.01636 0.0005173       0.001416
-[2,] 0.09898 0.01090 0.0003447       0.001307
-[3,] 0.24603 0.01552 0.0004909       0.001508
+[1,] 0.65610 0.01890 0.0005976       0.002112
+[2,] 0.09878 0.01089 0.0003444       0.001363
+[3,] 0.24512 0.01783 0.0005637       0.002091
 
 2. Quantiles for each variable:
 
         2.5%     25%     50%    75%  97.5%
-var1 0.62219 0.64459 0.65481 0.6658 0.6876
-var2 0.08047 0.09158 0.09833 0.1056 0.1231
-var3 0.21566 0.23502 0.24585 0.2568 0.2760
+var1 0.62015 0.64287 0.65617 0.6687 0.6941
+var2 0.07981 0.09137 0.09816 0.1061 0.1216
+var3 0.21072 0.23324 0.24519 0.2573 0.2788
 \end{Soutput}
 \end{Schunk}
 
@@ -477,16 +477,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-[1,] 0.3513 0.03044 0.0009626       0.002997
-[2,] 0.2595 0.02691 0.0008511       0.002388
-[3,] 0.3892 0.02879 0.0009105       0.003235
+[1,] 0.3459 0.02698 0.0008530       0.002639
+[2,] 0.2645 0.02826 0.0008936       0.002818
+[3,] 0.3896 0.03032 0.0009589       0.003475
 
 2. Quantiles for each variable:
 
        2.5%    25%    50%    75%  97.5%
-var1 0.2958 0.3297 0.3513 0.3724 0.4097
-var2 0.2103 0.2405 0.2588 0.2775 0.3132
-var3 0.3362 0.3697 0.3884 0.4079 0.4440
+var1 0.2955 0.3277 0.3457 0.3645 0.3983
+var2 0.2117 0.2449 0.2638 0.2827 0.3193
+var3 0.3364 0.3682 0.3893 0.4106 0.4481
 \end{Soutput}
 \end{Schunk}
 
@@ -521,16 +521,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
          Mean       SD  Naive SE Time-series SE
-[1,] 0.826652 0.017969 0.0005682      0.0021322
-[2,] 0.006973 0.003691 0.0001167      0.0004824
-[3,] 0.166374 0.018085 0.0005719      0.0021722
+[1,] 0.828606 0.016713 0.0005285      0.0020787
+[2,] 0.007254 0.002621 0.0000829      0.0003470
+[3,] 0.164140 0.016198 0.0005122      0.0020002
 
 2. Quantiles for each variable:
 
          2.5%      25%      50%      75%   97.5%
-var1 0.787082 0.816109 0.827407 0.838409 0.86170
-var2 0.002533 0.004268 0.005882 0.008674 0.01600
-var3 0.131223 0.154416 0.165888 0.177355 0.20649
+var1 0.794110 0.817853 0.829137 0.840546 0.85903
+var2 0.003942 0.005168 0.006488 0.008977 0.01372
+var3 0.134479 0.152669 0.163500 0.174600 0.19792
 \end{Soutput}
 \end{Schunk}
 
@@ -626,8 +626,8 @@ The model would have to be run for (much) longer to say something concrete about
 > quantile(plogis(m5d.1$Sol[, 2]/sqrt(1 + c2)))
 \end{Sinput}
 \begin{Soutput}
-         0%         25%         50%         75%        100% 
-0.002621302 0.006396358 0.008289576 0.010693291 0.016856108 
+          0%          25%          50%          75%         100% 
+0.0005635939 0.0064080572 0.0146266288 0.0194580531 0.0432303842 
 \end{Soutput}
 \end{Schunk}
 
@@ -704,7 +704,7 @@ The interpretation of the model is slightly different. Fitting just an intercept
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.2639715 0.3228268
+var1 0.2667103 0.3240296
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -718,7 +718,7 @@ and we can compare this to the predicted number of zero's from the Poisson proce
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.1416241 0.3596839
+var1 0.1473020 0.3563966
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -732,8 +732,8 @@ The credible intervals largely overlap, strongly suggesting a standard Poisson m
 +     m5d.3$VCV[, 1])))
 \end{Sinput}
 \begin{Soutput}
-         lower     upper
-var1 0.0939242 0.2982136
+          lower     upper
+var1 0.09930964 0.2958267
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -761,7 +761,7 @@ which reveals that although this proportion is expected to be (slightly) smaller
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.2310072 0.3085805
+var1 0.2314585 0.3114890
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -777,7 +777,7 @@ the proportion of zeros expected for men is probably still less than what we exp
 \end{Sinput}
 \begin{Soutput}
           lower     upper
-var1 0.08556727 0.2451435
+var1 0.08079715 0.2484615
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -825,28 +825,28 @@ We can then test for zero-flation by constraining the over-dispersion to be the 
  Thinning interval  = 3001
  Sample size  = 1000 
 
- DIC: 3040.044 
+ DIC: 3040.922 
 
  R-structure:  ~trait:units
 
             post.mean l-95% CI u-95% CI eff.samp
-trait:units    0.3513   0.2556   0.4511    64.04
+trait:units    0.3453   0.2482   0.4272    63.32
 
  Location effects: art ~ trait + trait:(fem + mar + kid5 + phd + ment) 
 
-                       post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
-(Intercept)             0.369879  0.067267  0.690729    362.9  0.018 *  
-traitza_art            -0.599152 -1.194254 -0.068890    200.4  0.030 *  
-traitart:femWomen      -0.198237 -0.376178 -0.044519    300.0  0.008 ** 
-traitza_art:femWomen   -0.148079 -0.387571  0.053130    216.0  0.172    
-traitart:marMarried     0.082681 -0.090349  0.273456    305.8  0.356    
-traitza_art:marMarried  0.236665 -0.012941  0.484367    191.3  0.066 .  
-traitart:kid5          -0.129367 -0.262294  0.007003    111.3  0.052 .  
-traitza_art:kid5       -0.196143 -0.359391 -0.046256    238.4  0.012 *  
-traitart:phd            0.007502 -0.072980  0.095214    350.4  0.846    
-traitza_art:phd         0.029532 -0.088120  0.135599    197.5  0.560    
-traitart:ment           0.019675  0.012432  0.026540    386.9 <0.001 ***
-traitza_art:ment        0.047845  0.035106  0.062712    112.5 <0.001 ***
+                        post.mean   l-95% CI   u-95% CI eff.samp  pMCMC    
+(Intercept)             0.3432721  0.0425365  0.6911919   221.17  0.044 *  
+traitza_art            -0.5677632 -1.1046026  0.0009134   162.49  0.040 *  
+traitart:femWomen      -0.1977312 -0.3599425 -0.0216841   203.85  0.024 *  
+traitza_art:femWomen   -0.1671825 -0.3654685  0.0318293   233.12  0.090 .  
+traitart:marMarried     0.0887755 -0.0960692  0.2790121   298.52  0.382    
+traitza_art:marMarried  0.2426821  0.0141466  0.4792556   160.43  0.040 *  
+traitart:kid5          -0.1286110 -0.2598257 -0.0066072   268.55  0.036 *  
+traitza_art:kid5       -0.2140562 -0.4022002 -0.0743557   159.10  0.002 ** 
+traitart:phd            0.0165779 -0.0731299  0.1028394   245.22  0.670    
+traitza_art:phd         0.0302054 -0.0776700  0.1482114   152.31  0.584    
+traitart:ment           0.0193229  0.0119351  0.0263783   382.92 <0.001 ***
+traitza_art:ment        0.0479411  0.0331379  0.0627703    67.58 <0.001 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 \end{Soutput}

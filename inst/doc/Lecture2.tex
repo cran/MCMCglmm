@@ -387,18 +387,18 @@ Note that the latent variable does not exactly predict y, as it would if the dat
 > mean(resid92)
 \end{Sinput}
 \begin{Soutput}
-[1] -0.1526947
+[1] -0.1350337
 \end{Soutput}
 \end{Schunk}
 
-This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=21.652. In fact there would be a 20.067\% chance of having more injuries than if the residual had been zero:
+This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=22.027. In fact there would be a 22.466\% chance of having more injuries than if the residual had been zero:
 
 \begin{Schunk}
 \begin{Sinput}
 > 1 - ppois(exp(mean(eta92)), exp(mean(lat92)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2006737
+[1] 0.2246641
 \end{Soutput}
 \end{Schunk}
 
@@ -483,13 +483,13 @@ In the \texttt{Traffic} example the non linearities are small so the differences
 > exp(mean(m2a.5$Sol[, "(Intercept)"] + 0.5 * m2a.5$VCV[, 1]))
 \end{Sinput}
 \begin{Soutput}
-[1] 20.88188
+[1] 20.89213
 \end{Soutput}
 \begin{Sinput}
 > exp(mean(m2a.5$Sol[, "(Intercept)"]))
 \end{Sinput}
 \begin{Soutput}
-[1] 19.85145
+[1] 19.85906
 \end{Soutput}
 \begin{Sinput}
 > exp(m2a.3$coef["(Intercept)"])
@@ -728,7 +728,7 @@ A predict function has been implemented for \texttt{MCMCglmm} although it is cur
 > predict(m2a.7, marginal = ~day, type = "terms")[1:5]
 \end{Sinput}
 \begin{Soutput}
-[1] 3.007454 3.010035 3.012616 3.015197 3.017778
+[1] 3.006432 3.008972 3.011512 3.014052 3.016592
 \end{Soutput}
 \end{Schunk}
 
@@ -739,7 +739,7 @@ or we can predict on the data scale:
 > predict(m2a.7, marginal = ~day, type = "response")[1:5]
 \end{Sinput}
 \begin{Soutput}
-[1] 22.18083 22.23635 22.29205 22.34794 22.40400
+[1] 22.18010 22.23481 22.28969 22.34476 22.40000
 \end{Soutput}
 \end{Schunk}
 
@@ -752,11 +752,11 @@ In addition, credible intervals can be obtained
 \end{Sinput}
 \begin{Soutput}
        fit      lwr      upr
-1 22.18083 18.89985 25.22474
-2 22.23635 19.01042 25.25711
-3 22.29205 19.12163 25.28326
-4 22.34794 19.23349 25.31257
-5 22.40400 19.29555 25.24902
+1 22.18010 19.17429 25.31483
+2 22.23481 19.04716 25.11008
+3 22.28969 19.14483 25.12002
+4 22.34476 19.24300 25.14558
+5 22.40000 19.44682 25.28616
 \end{Soutput}
 \end{Schunk}
 
@@ -769,11 +769,11 @@ as can prediction intervals through posterior predictive simulation:
 \end{Sinput}
 \begin{Soutput}
        fit      lwr      upr
-1 22.39982 6.124662 40.97567
-2 22.40315 7.539920 43.52268
-3 22.26875 6.836582 43.27942
-4 22.22050 6.763766 41.15943
-5 22.25840 6.134716 42.15349
+1 22.09751 7.762836 42.19853
+2 22.77109 6.468017 42.59632
+3 21.94235 7.054751 39.60715
+4 22.51910 6.761624 43.10373
+5 22.38702 6.511929 41.56868
 \end{Soutput}
 \end{Schunk}
 
@@ -791,8 +791,8 @@ Response variables consisting of levels of some categorical factor are best anal
 \end{Sinput}
 \begin{Soutput}
         u.1 u.2
-success   2   4
-failure   3   1
+success   1   2
+failure   4   3
 \end{Soutput}
 \end{Schunk}
 
@@ -806,7 +806,7 @@ and then expand them into success or failure:
 \end{Sinput}
 \begin{Soutput}
      u.1 u.1 u.1 u.1 u.1 u.2 u.2 u.2 u.2 u.2
-[1,]   1   1   0   0   0   1   1   1   1   0
+[1,]   1   0   0   0   0   1   1   0   0   0
 \end{Soutput}
 \end{Schunk}
 
@@ -878,7 +878,7 @@ as do the variance components  (see Figure \ref{Bin2-fig}):
 \label{Bin2-fig}
 \end{figure}
 
-Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.796 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
+Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.766 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
 
 \begin{equation}
 \texttt{IC} =  \frac{\sigma^{2}_{\texttt{FSfamily}}}{\sigma^{2}_{\texttt{FSfamily}}+\sigma^{2}_{\texttt{units}}+\pi^{2}/3} 
@@ -960,7 +960,7 @@ This diffuse prior can cause problems if there is complete (or near complete) se
 \begin{Soutput}
          y
 treatment  0  1
-        1 10 15
+        1 11 14
         2 25  0
 \end{Soutput}
 \end{Schunk}
@@ -978,18 +978,18 @@ glm(formula = y ~ treatment, family = "binomial", data = data.bin)
 
 Deviance Residuals: 
        Min          1Q      Median          3Q         Max  
--1.354e+00  -7.976e-05  -7.976e-05   1.011e+00   1.011e+00  
+-1.281e+00  -7.976e-05  -7.976e-05   1.077e+00   1.077e+00  
 
 Coefficients:
              Estimate Std. Error z value Pr(>|z|)
-(Intercept)    0.4055     0.4082   0.993    0.321
-treatment2   -19.9715  2150.8026  -0.009    0.993
+(Intercept)    0.2412     0.4029   0.599    0.549
+treatment2   -19.8072  2150.8026  -0.009    0.993
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 61.086  on 49  degrees of freedom
-Residual deviance: 33.651  on 48  degrees of freedom
-AIC: 37.651
+    Null deviance: 59.295  on 49  degrees of freedom
+Residual deviance: 34.296  on 48  degrees of freedom
+AIC: 38.296
 
 Number of Fisher Scoring iterations: 18
 \end{Soutput}
@@ -1073,7 +1073,7 @@ looks a little better (see Figure \ref{separation1-fig}), and the posterior dist
 \end{Sinput}
 \begin{Soutput}
         fit         lwr         upr 
-0.042731332 0.001178997 0.119930619 
+0.043341536 0.002217133 0.104788821 
 \end{Soutput}
 \end{Schunk}
 

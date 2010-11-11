@@ -972,6 +972,38 @@ res32[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 
 }
 
+library(VGAM)
+library(MASS)
+library(MCMCglmm)
+verbose=FALSE
+plotit=TRUE
+leg=TRUE
+nsim<-30
+nitt<-13000
+thin<-10
+burnin<-3000
+
+print("res33")
+res33<-matrix(0, nsim, 4)
+R<-diag(2)
+prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
+tune=list(diag(2))
+tpar<-c(0, -1, 1, 1)
+for(i in 1:nsim){
+l<-mvrnorm(300,c(0,-1), R)
+y<-rzibinom(300, 20, exp(l[,1])/(1+exp(l[,1])), plogis(l[,2]))
+data=data.frame(success=y,failure=20-y)
+m1<-MCMCglmm(cbind(success,failure)~trait-1, rcov=~idh(trait):units, data=data, family="zibinomial",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(plotit){
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res19 different from expected"))
+}
+res33[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
+
 
 
 tpar<-c(1, 1,1,1,1,1,1,1,-1,1,2,-1,1,2,-1,1,2,-1, 1, 0,0,1,2,-1, 1, 0.5, 0.5, 2, 2,-1, 1, 2, 2,-1, 1,0,0, 2, 2,-1,1,1,0.5,0.5,2,-1,1,1,2,-1,1,2,1,1,2,-1,1,2,0.5,0.5,1,1,2,0,1,2, coef, coef,-1,1,2,0,1,0,1,0,1,1,-1,1,0,0,1,1, -0.5, 0.2, 1,1,0,0,1,-1,1,2,0.25, 0.25,1,-1, 0, 2,1,1,-1, 0, 2,1,1,-1, 0, 2,0,0,1,1,-1,0,2,0.5,0.5,1,1,0,0,1,-1,0.5,1,0.5,1,-1,1,1,0.5,1,0.75,-1,-0.5,1,-1,1,0.5,0.5,1,1,1,0,1,1,0,0,0,1,1,1,0.3,0.9,1,-0.25,-0.25,1,0.5,1,1,2,-1,0,-1,0.5,1,-0.35, -0.35,1)

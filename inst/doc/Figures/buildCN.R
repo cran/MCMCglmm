@@ -1,7 +1,7 @@
 #source("~/Work/AManal/MCMCglmm_2.07/inst/doc/Figures/buildCN.R")
 alone=FALSE
 lectures<-1:9
-forCRAN=TRUE
+forCRAN=FALSE
 JSS<-FALSE
 LINUX=TRUE
 options(width=80)

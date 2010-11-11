@@ -34,7 +34,7 @@
   }
   Rcovariances<-covariances[gterms+1:rterms,,drop=FALSE]
   cstats<-attr(object$VCV, "mcpar")
-  cstats[3]<-dim(object$VCV)[1]
+  cstats[4]<-dim(object$VCV)[1]
   if(is.null(object$CP)){
      cutpoints<-NULL
   }else{
@@ -53,12 +53,12 @@
   output
 }
 
-"print.summary.MCMCglmm"<-function (x, digits = max(3, getOption("digits") - 3), has.Pvalue=TRUE, eps.Pvalue = 1/(x$cstats[3]-1), ...) 
+"print.summary.MCMCglmm"<-function (x, digits = max(3, getOption("digits") - 3), has.Pvalue=TRUE, eps.Pvalue = 1/(x$cstats[4]-1), ...) 
 {
 
- cat("\n Iterations =", x$cstats[2])
- cat("\n Thinning interval  =" , x$cstats[1]) 
- cat("\n Sample size  =" , x$cstats[3], "\n") 
+ cat("\n Iterations =", paste(x$cstats[1], ":", x$cstats[2], sep=""))
+ cat("\n Thinning interval  =" , x$cstats[3]) 
+ cat("\n Sample size  =" , x$cstats[4], "\n") 
  cat("\n DIC:", x$DIC, "\n")
  if(is.null(x$random.formula)==FALSE){
    rcomponents<-split.direct.sum(as.character(x$random.formula)[2])

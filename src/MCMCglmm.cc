@@ -1975,18 +1975,28 @@ if(nL>0){
 /*   store posterior   */
 /***********************/
 
-     if(itt%1000 == 0 && verboseP[0]){
-         Rprintf("\n                      MCMC iteration = %i\n",itt);
-       if(nMH>0){
-         Rprintf("\n  Acceptance ratio for latent scores = %f\n", Eaccl/(nMH*1000.0));
-         Eaccl = 0.0;
-       }
-       if(cp){
-         for(i=0; i<nordinal; i++){
-           Rprintf(" Acceptance ratio for cutpoint set %i = %f\n", i+1, accp[i]/1000.0);
-           accp[i] = 0.0;
-         }
-       }
+     if(itt%1000 == 0){
+         if(verboseP[0]){
+           Rprintf("\n                      MCMC iteration = %i\n",itt);
+           if(nMH>0){
+             Rprintf("\n  Acceptance ratio for latent scores = %f\n", Eaccl/(nMH*1000.0));
+           }
+           if(cp){
+             for(i=0; i<nordinal; i++){
+               Rprintf(" Acceptance ratio for cutpoint set %i = %f\n", i+1, accp[i]/1000.0);
+             }
+           }
+           R_FlushConsole();
+           R_ProcessEvents();
+        }
+        if(nMH>0){
+          Eaccl = 0.0;
+        }
+        if(cp){
+          for(i=0; i<nordinal; i++){
+            accp[i] = 0.0;
+          }
+        }
      }
 
      if(itt>=burnin && DICP[0]==1){

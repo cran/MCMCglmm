@@ -182,8 +182,6 @@ $\sigma^{2}_{\color{blue}\texttt{(Intercept)}}$ is the amount of variation in in
 \end{Sinput}
 \end{Schunk}
 
-The traces look OKish for the chick (co)variance matrices
-
 
 \begin{figure}[!h]
 \begin{center}
@@ -193,7 +191,7 @@ The traces look OKish for the chick (co)variance matrices
 \label{RR2VCV-fig}
 \end{figure}
 
-but notice that the the estimate of intercept-slope correlation is close to the boundary of parameter space (-1):
+The traces look OKish for the chick (co)variance matrices (Figure \ref{RR2VCV-fig}) but notice that the the estimate of intercept-slope correlation is close to the boundary of parameter space (-1):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -202,8 +200,8 @@ but notice that the the estimate of intercept-slope correlation is close to the 
 > posterior.mode(int.slope.cor)
 \end{Sinput}
 \begin{Soutput}
-      var1 
--0.9761638 
+     var1 
+-0.978436 
 \end{Soutput}
 \end{Schunk}
 
@@ -218,19 +216,19 @@ and shows strong autocorrelation
 
                [,1]
 Lag 0    1.00000000
-Lag 10   0.16628904
-Lag 50  -0.01171606
-Lag 100 -0.03481633
-Lag 500 -0.02337053
+Lag 10   0.17918741
+Lag 50  -0.00643059
+Lag 100  0.04709953
+Lag 500 -0.02450272
 \end{Soutput}
 \end{Schunk}
-and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran:
+
+and we should run it for longer in order to sample the posterior adequately. For now we will carry on and obtain the predictions from the model we ran, but using the \texttt{perdict} function rather than dong it `by hand': 
 
 \begin{Schunk}
 \begin{Sinput}
-> W.2 <- cBind(m4a.2$X, m4a.2$Z)
-> prediction.2 <- W.2 %*% posterior.mode(m4a.2$Sol)
-> xyplot(weight + prediction.2@x ~ Time | Chick, data = ChickWeight)
+> xyplot(weight + predict(m4a.2, marginal = NULL) ~ Time | Chick, 
++     data = ChickWeight)
 \end{Sinput}
 \end{Schunk}
 
@@ -273,9 +271,8 @@ The model predicts the chick weights to an even better degree  (See Figure \ref{
 
 \begin{Schunk}
 \begin{Sinput}
-> W.3 <- cBind(m4a.3$X, m4a.3$Z)
-> prediction.3 <- W.3 %*% posterior.mode(m4a.3$Sol)
-> xyplot(weight + prediction.3@x ~ Time | Chick, data = ChickWeight)
+> xyplot(weight + predict(m4a.3, marginal = NULL) ~ Time | Chick, 
++     data = ChickWeight)
 \end{Sinput}
 \end{Schunk}
 
@@ -295,19 +292,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.345
+[1] 5525.835
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.811
+[1] 4544.437
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.361
+[1] 3931.883
 \end{Soutput}
 \end{Schunk}
 
@@ -349,7 +346,7 @@ It is worth seeing whether using an AIC measure using REML also suggests the hig
 
 \section{Expected Variances and Covariances}
 
-Random regression models make strong assumptions about how the variance should change as a function of the predictor variable. Imagine that the intercept variance was zero, such that all regressions give the same prediction when \texttt{Time}=0. Imagine also that there was variance for slope, the predictions would look something like this:
+Random regression models make strong assumptions about how the variance should change as a function of the predictor variable. Imagine that the intercept variance was zero, such that all regressions give the same prediction when \texttt{Time}=0. Imagine also that there was variance for slope, the predictions would look something like this (Figure \ref{RRtoy-fig}):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -434,7 +431,7 @@ and we can use this to predict the change in variance as a function of \texttt{T
 \label{VCVpred.1-fig}
 \end{figure}
 
-The simple model, without a slope term has constant variance across the range, and is clearly inconsistent with the data. The second model on the other hand
+The simple model, without a slope term has constant variance across the range, and is clearly inconsistent with the data (Figure \ref{VCVpred.1-fig}). The second model on the other hand
 
 \iftalk
 \begin{Schunk}
@@ -470,7 +467,7 @@ The simple model, without a slope term has constant variance across the range, a
 \label{VCVpred.2-fig}
 \end{figure}
 
-has an expected variance structure very close to that observed. The highest order model, which was the best using information criteria such as AIC an DIC, also does badly: 
+has an expected variance structure reasonably close to that observed (Figure \ref{VCVpred.2-fig}). The highest order model, which was the best using information criteria such as AIC an DIC, also does badly (Figure \ref{VCVpred.3-fig}): 
 
 \iftalk
 \begin{Schunk}
@@ -509,10 +506,10 @@ has an expected variance structure very close to that observed. The highest orde
 
 In general, I would not draw conclusions about changes in variance from random regression models \citep{Pletcher.1999a}.
 
-\section{\texttt{us} versus \texttt{idh} and mean centring}
+\section{\texttt{us} versus \texttt{idh} and mean centering}
 \label{RRcentering}
-bad 
-reparametersitaion
+bad\\ 
+reparametersitaion\\
 
 \begin{Schunk}
 \begin{Sinput}
@@ -526,8 +523,9 @@ reparametersitaion
 \end{Schunk}
 
 \section{Meta-analysis}
+\label{meta-sec}
 
-Random intercept-slope models implicitly assume that the variance changes as a quadratic function of the predictor. This can be used to our advantage because it allows us to fit meta-analytic models. In meta-analysis the data are usually some standardised statistic which has been estimated with different levels of measurement error. If we wanted to know the expected value of these statistics we would want to weight our answer to those measurements made with smallest amount of error.  If we assume that measurement error around the true value is normally distributed then we could assume the model:
+Random intercept-slope models implicitly assume that the variance changes as a quadratic function of the predictor. This can be used to our advantage because it allows us to fit meta-analytic models. In meta-analysis the data are usually some standardised statistic which has been estimated with different levels of measurement error. If we wanted to know the expected value of these statistics we would want to weight our answer to those measurements made with the smallest amount of error.  If we assume that measurement error around the true value is normally distributed then we could assume the model:
 
 
 \begin{equation}

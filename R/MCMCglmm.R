@@ -1086,7 +1086,7 @@
         }
         if(diagR==2){
           VCV<-VCV[,-((dim(VCV)[2]-nfl[nG+1]^2+2):dim(VCV)[2]),drop=FALSE]
-          colnames(VCV)[(dim(VCV)[2]-nfl[nG+1]^2+1)]<-"trait:units" 
+          colnames(VCV)[dim(VCV)[2]]<-"trait:units" 
           nrl[nG+1]<-nrl[nG+1]*nfl[nG+1]
           nfl[nG+1]<-1
           nR<-1

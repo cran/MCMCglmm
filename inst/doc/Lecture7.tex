@@ -11,6 +11,8 @@
 \usepackage{Sweave}
 \usepackage{lscape}
 \usepackage{makeidx}
+\usepackage{longtable}
+
 
 \title{Appendices}
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
@@ -40,46 +42,7 @@ f_{P}\left(y_{i} | \lambda = \textrm{exp}(l_{i})\right)
 \label{pyl2-Eq}
 \end{equation}
 
-where $\lambda$ is the canonical parameter of the Poisson denisty function $p_{F}$. Table \ref{Dist-tab} has a full list of supported distributions and link functions.\\
-
-\begin{landscape}
-\begin{table}
-\begin{center}
-\small
-\begin{tabular}{cccrl}
-\hline
-Distribution   &    No. Data       &         No. latent        &  Density & function \\
-   type        &      columns      &           columns            &          &           \\   
-\hline\\
-   \texttt{"gaussian"}        &  1  &   1  &         $Pr(y) =$&$f_{N}({\bf w}{\bm \theta},\sigma^{2}_{e})$\\   
-&&&&\\
-   \texttt{"poisson"}        &  1  &   1 &               $Pr(y) =$&$ f_{P}(\textrm{exp}(l))$\\   
-&&&&\\
-   \texttt{"categorical"}        &  1  &   $J$-1  &     $Pr(y=k | k\neq1) =$&$ \frac{\textrm{exp}(l_{k})}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}$ \\   
-           &   &     &                                  $Pr(y=1) =$&$ \frac{\textrm{exp}(1)}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}$ \\   
-&&&&\\
-   \texttt{"multinomial$J$"}  &  $J$    &  $J$-1  &     $Pr(y_{k}=n_{k}| k\neq J) =$&$ \left(\frac{\textrm{exp}(l_{k})}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}\right)^{n_{k}}$ \\   
-    &      &   &     $Pr(y_{k}=n_{k} | k=J) =$&$ \left(\frac{\textrm{exp}(1)}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}\right)^{n_{k}}$ \\   
-&&&&\\ 
-   \texttt{"ordinal"}  &  1    &  1     &              $Pr(y=k) =$&$ F_{N}(\gamma_{k} | l,1)-F_{N}(\gamma_{k-1} | l,1)$ \\   
-&&&&\\
-   \texttt{"exponential"}         &  1  &   1  &         $Pr(y)=$&$ f_{E}(\textrm{exp}(-l))$\\      
-&&&&\\
-   \texttt{"cengaussian"}        &  2 &   1  &        $Pr(y_{1}>y>y_{2}) =$&$ F_{N}(y_{2} | {\bf w}{\bm \theta},\sigma^{2}_{e})-F_{N}( y_{1} | {\bf w}{\bm \theta},\sigma^{2}_{e})$\\
-&&&&\\
-   \texttt{"cenpoisson"}        &  2  &   1  &        $Pr(y_{1}>y>y_{2}) =$&$ F_{P}(y_{2} | l)-F_{P}(y_{1} | l)$\\
-&&&&\\
-   \texttt{"cenexponential"}     &2    &  1  &          $Pr(y_{1}>y>y_{2}) =$&$ F_{E}(y_{2} | l)-F_{E}(y_{1} | l)$\\  
-&&&&\\  
-   \texttt{"zipoisson"}        &  1  &   2  &     $Pr(y=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}+\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{P}(y|\textrm{exp}(l_{1}))$\\     
-                                              &    &       & $Pr(y | y>0) =$&$ \left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{P}(y |\textrm{exp}(l_{1}))$\\      
-&&&&\\
-\hline\\
-\end{tabular}
-\caption{Distribution types that can fitted using \texttt{MCMCglmm}.  The prefix \texttt{"zi"} stands for zero-inflated, and the prefix \texttt{"cen"} standards for censored where $y_{1}$  and $y_{2}$ are the upper and lower bounds for the unobserved datum $y$. $J$ stands for the number of categories in the multinomial/categorical distributions and this must be specified in the family argument for the multinomial distribution. The density function is for a single datum in a univariate model with ${\bf w}$ being a row vector of ${\bf W}$.  $f$ and $F$ are the density and distribution functions for the subscripted distribution ($N$=Normal, $P$=Poisson, $E$=Exponential). The $J-1$ $\gamma$'s in the ordinal models are the cutpoints, with $\gamma_{1}$ set to zero.\label{dist-tab}}
-\end{center}
-\end{table}
-\end{landscape}
+where $\lambda$ is the canonical parameter of the Poisson denisty function $p_{F}$. Table \ref{dist-tab} has a full list of supported distributions and link functions.\\
 
 The vector of latent variables follow the linear model
 
@@ -301,6 +264,60 @@ The deviance is calculated at each iteration if \texttt{DIC=TRUE} and stored eac
 \begin{equation}
 \textrm{DIC} = 2\bar{D}-D(\bar{\bm \Omega})
 \end{equation}
+
+\begin{landscape}
+\LTcapwidth=6.2in
+\begin{longtable}{cccrl}
+%\begin{center}
+%\small
+%\begin{tabular}{cccrl}
+\hline
+Distribution   &    No. Data       &         No. latent        &  Density & function \\
+   type        &      columns      &           columns            &          &           \\   
+\hline\\
+   \texttt{"gaussian"}        &  1  &   1  &         $Pr(y) =$&$f_{N}({\bf w}{\bm \theta},\sigma^{2}_{e})$\\   
+&&&&\\
+   \texttt{"poisson"}        &  1  &   1 &               $Pr(y) =$&$ f_{P}(\textrm{exp}(l))$\\   
+&&&&\\
+   \texttt{"categorical"}        &  1  &   $J$-1  &     $Pr(y=k | k\neq1) =$&$ \frac{\textrm{exp}(l_{k})}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}$ \\   
+           &   &     &                                  $Pr(y=1) =$&$ \frac{1}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}$ \\   
+&&&&\\
+   \texttt{"multinomial$J$"}  &  $J$    &  $J$-1  &     $Pr(y_{k}=n_{k}| k\neq J) =$&$ \left(\frac{\textrm{exp}(l_{k})}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}\right)^{n_{k}}$ \\   
+    &      &   &     $Pr(y_{k}=n_{k} | k=J) =$&$ \left(\frac{1}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}\right)^{n_{k}}$ \\   
+&&&&\\ 
+   \texttt{"ordinal"}  &  1    &  1     &              $Pr(y=k) =$&$ F_{N}(\gamma_{k} | l,1)-F_{N}(\gamma_{k-1} | l,1)$ \\   
+&&&&\\
+   \texttt{"exponential"}         &  1  &   1  &         $Pr(y)=$&$ f_{E}(\textrm{exp}(-l))$\\      
+&&&&\\
+   \texttt{"geometric"}         &  1  &   1  &         $Pr(y)=$&$ f_{G}(\frac{\textrm{exp}(l)}{1+\textrm{exp}(l)})$\\      
+&&&&\\
+   \texttt{"cengaussian"}        &  2 &   1  &        $Pr(y_{1}>y>y_{2}) =$&$ F_{N}(y_{2} | {\bf w}{\bm \theta},\sigma^{2}_{e})-F_{N}( y_{1} | {\bf w}{\bm \theta},\sigma^{2}_{e})$\\
+&&&&\\
+   \texttt{"cenpoisson"}        &  2  &   1  &        $Pr(y_{1}>y>y_{2}) =$&$ F_{P}(y_{2} | l)-F_{P}(y_{1} | l)$\\
+&&&&\\
+   \texttt{"cenexponential"}     &2    &  1  &          $Pr(y_{1}>y>y_{2}) =$&$ F_{E}(y_{2} | l)-F_{E}(y_{1} | l)$\\  
+&&&&\\  
+   \texttt{"zipoisson"}        &  1  &   2  &     $Pr(y=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}+\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{P}(y|\textrm{exp}(l_{1}))$\\     
+                                              &    &       & $Pr(y | y>0) =$&$ \left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{P}(y |\textrm{exp}(l_{1}))$\\      
+&&&&\\
+   \texttt{"ztpoisson"}         &  1  &   1  &         $Pr(y)=$&$ \frac{f_{P}(y |\textrm{exp}(l))}{1-f_{P}(0 |\textrm{exp}(l))}$\\      
+&&&&\\
+   \texttt{"hupoisson"}        &  1  &   2  &     $Pr(y=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}$\\     
+                               &    &       & $Pr(y | y>0) =$&$\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
+&&&&\\
+   \texttt{"zapoisson"}        &  1  &   2  &     $Pr(y=0) =$&$\textrm{exp}(-\textrm{exp}(l_{2}))$\\     
+                               &    &       & $Pr(y | y>0) =$&$ \left(1-\textrm{exp}(-\textrm{exp}(l_{2}))\right)\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
+&&&&\\
+   \texttt{"zibinomial"}        &  2  &   2  &     $Pr(y_{1}=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}+\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{B}(0, n=y_{1}+y_{2}|\frac{\textrm{exp}(l_{1})}{1+\textrm{exp}(l_{1})})$\\     
+                               &    &       & $Pr(y_{1} | y_{1}>0) =$&$ \left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{B}(y_{1}, n=y_{1}+y_{2}|\frac{\textrm{exp}(l_{1})}{1+\textrm{exp}(l_{1})})$\\      
+&&&&\\
+\hline\\
+%\end{tabular}
+\caption{Distribution types that can fitted using \texttt{MCMCglmm}.  The prefixes \texttt{"zi"}, \texttt{"zt"}, \texttt{"hu"} and \texttt{"za"} stand for zero-inflated, zero-truncated, hurdle and zero-altered respectively. The prefix \texttt{"cen"} standards for censored where $y_{1}$  and $y_{2}$ are the upper and lower bounds for the unobserved datum $y$. $J$ stands for the number of categories in the multinomial/categorical distributions and this must be specified in the family argument for the multinomial distribution. The density function is for a single datum in a univariate model with ${\bf w}$ being a row vector of ${\bf W}$.  $f$ and $F$ are the density and distribution functions for the subscripted distribution ($N$=Normal, $P$=Poisson, $E$=Exponential, $G$=Geometric, $B$=Binomial). The $J-1$ $\gamma$'s in the ordinal models are the cutpoints, with $\gamma_{1}$ set to zero.\label{dist-tab}}
+%\end{center}
+\end{longtable}
+\end{landscape}
+
 
 \ifalone
 \end{document}

@@ -52,7 +52,7 @@ In practice does this matter? Lets imagine there was only one unmeasured variabl
 \end{Sinput}
 \end{Schunk}
 
-A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.01.
+A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.005.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -63,19 +63,19 @@ Call:
 lm(formula = y.car ~ y.hol, data = Spending)
 
 Residuals:
-      Min        1Q    Median        3Q       Max 
--0.812283 -0.185706  0.003196  0.199748  1.044004 
+     Min       1Q   Median       3Q      Max 
+-0.85867 -0.19772  0.00523  0.17656  1.24448 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)  1.09700    0.03755   29.21  < 2e-16 ***
-y.hol       -0.10109    0.03650   -2.77  0.00574 ** 
+(Intercept)  1.06242    0.03676  28.905   <2e-16 ***
+y.hol       -0.06757    0.03531  -1.913    0.056 .  
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 
-Residual standard error: 0.2893 on 798 degrees of freedom
-Multiple R-squared: 0.009521,	Adjusted R-squared: 0.00828 
-F-statistic: 7.671 on 1 and 798 DF,  p-value: 0.005743 
+Residual standard error: 0.3011 on 798 degrees of freedom
+Multiple R-squared: 0.004567,	Adjusted R-squared: 0.00332 
+F-statistic: 3.661 on 1 and 798 DF,  p-value: 0.05605 
 \end{Soutput}
 \end{Schunk}
 
@@ -101,12 +101,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-     -0.164937       0.037675       0.001191       0.001107 
+     -0.122973       0.035657       0.001128       0.001121 
 
 2. Quantiles for each variable:
 
-    2.5%      25%      50%      75%    97.5% 
--0.24070 -0.19029 -0.16448 -0.13987 -0.08853 
+   2.5%     25%     50%     75%   97.5% 
+-0.1944 -0.1467 -0.1226 -0.0980 -0.0513 
 \end{Soutput}
 \end{Schunk}
 
@@ -118,27 +118,27 @@ It is useful to think of a new data frame where the response variables have been
 \begin{array}{cc}
 \begin{array}{cccc}
 &{\color{blue} \texttt{y.hol}}&{\color{blue} \texttt{y.car}}&\texttt{id}\\
-{\color{red} \texttt{1}}&\texttt{1.341595}&\texttt{1.294920}&\texttt{1}\\
-{\color{red} \texttt{2}}&\texttt{1.168534}&\texttt{1.340285}&\texttt{1}\\
+{\color{red} \texttt{1}}&\texttt{0.667145}&\texttt{1.118782}&\texttt{1}\\
+{\color{red} \texttt{2}}&\texttt{0.707282}&\texttt{1.255704}&\texttt{1}\\
 \vdots&\vdots&\vdots\\
-{\color{red} \texttt{800}}&\texttt{0.892193}&\texttt{1.249724}&\texttt{200}\\
+{\color{red} \texttt{800}}&\texttt{1.170146}&\texttt{0.900244}&\texttt{200}\\
 \end{array}&
 \Longrightarrow
 \begin{array}{ccccc}
 &\texttt{y}&{\color{blue} \texttt{trait}}&\texttt{id}&{\color{red} \texttt{units}}\\
-1&\texttt{1.341595}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
-2&\texttt{1.168534}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
+1&\texttt{0.667145}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
+2&\texttt{0.707282}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-800&\texttt{0.892193}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
-801&\texttt{1.294920}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
-802&\texttt{1.340285}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
+800&\texttt{1.170146}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
+801&\texttt{1.118782}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
+802&\texttt{1.255704}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-1600&\texttt{1.249724}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
+1600&\texttt{0.900244}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
 \end{array}
 \end{array}
 \end{displaymath}
 
-From this we can see that fitting a multi-response model is a direct extension to how we fitted models with categorical random interactions \ref{chap3}:
+From this we can see that fitting a multi-response model is a direct extension to how we fitted models with categorical random interactions (Chapter \ref{chap3}):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -193,7 +193,7 @@ A univariate regression is defined as the covariance between the response and th
 \end{Sinput}
 \end{Schunk}
 
-The regression coefficients (see Figure \ref{asUV-fig})differ substantially at the within individual (green) and between individual (red) levels, and neither is entirely consistent with the regression coefficient from the univariate model (black). The process by which we generated the data gives rise to this phenomenon - large variation between individuals in their disposable income means that people who are able to spend a lot on their holiday can also afford to spend a lot on their holidays (hence a positive covariation between \texttt{id} effects). However, a person that spent a large proportion of their disposable income in a particular year on a holiday, must have less to spend that year on a car (hence a negative residual (within year) covariation). \\    
+The regression coefficients (see Figure \ref{asUV-fig}) differ substantially at the within individual (green) and between individual (red) levels, and neither is entirely consistent with the regression coefficient from the univariate model (black). The process by which we generated the data gives rise to this phenomenon - large variation between individuals in their disposable income means that people who are able to spend a lot on their holiday can also afford to spend a lot on their holidays (hence positive covariation between \texttt{id} effects). However, a person that spent a large proportion of their disposable income in a particular year on a holiday, must have less to spend that year on a car (hence negative residual (within year) covariation). \\    
 
 
 
@@ -334,7 +334,7 @@ l_{i,\textrm{scurred}} = \textrm{log}\left(\frac{Pr(\texttt{horn[i]}=\textrm{scu
 \end{equation}
 
 
-The two latent variables are indexed as \texttt{trait}, and the unit of observation ($i$) as \texttt{units}, as in multi-response models. As with binary models the residual variance is not identified, and can be set to any arbitrary value. For reasons that will become clearer later I like to work with the residual covariance matrix $\frac{1}{J}({\bf I}+{\bf J})$ where  ${\bf I}$ and ${\bf J}$ are $J-1$ dimensional identity and unit matrices, respectively.
+The two latent variables are indexed as \texttt{trait}, and the unit of observation ($i$) as \texttt{units}, as in multi-response models. As with binary models the residual variance is not identified, and can be set to any arbitrary value. For reasons that will become clearer later I like to work with the residual covariance matrix $\frac{1}{J}({\bf I}+{\bf J})$ where  ${\bf I}$ and ${\bf J}$ are $J-1$ dimensional identity and unit matrices, respectively.\\
 
 To start we will try a simple model with an intercept:\\
 
@@ -347,7 +347,7 @@ To start we will try a simple model with an intercept:\\
 \end{Sinput}
 \end{Schunk}
 
-The posterior distribution for the intercepts is shown in Figure \ref{MN1}, and the model clearly needs to be run for longer. However...\\
+The posterior distribution for the intercepts is shown in Figure \ref{MN1}, and the model clearly needs to be run for longer (Figure \ref{MN1}). However...\\
 
 
 \begin{figure}[!h]
@@ -400,17 +400,17 @@ Sample size per chain = 1000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-        Mean      SD  Naive SE Time-series SE
-[1,] 0.65610 0.01890 0.0005976       0.002112
-[2,] 0.09878 0.01089 0.0003444       0.001363
-[3,] 0.24512 0.01783 0.0005637       0.002091
+       Mean      SD  Naive SE Time-series SE
+[1,] 0.6524 0.01839 0.0005814       0.001819
+[2,] 0.1006 0.01065 0.0003369       0.001297
+[3,] 0.2470 0.01608 0.0005085       0.001641
 
 2. Quantiles for each variable:
 
         2.5%     25%     50%    75%  97.5%
-var1 0.62015 0.64287 0.65617 0.6687 0.6941
-var2 0.07981 0.09137 0.09816 0.1061 0.1216
-var3 0.21072 0.23324 0.24519 0.2573 0.2788
+var1 0.61503 0.64019 0.65284 0.6642 0.6880
+var2 0.08199 0.09291 0.09983 0.1074 0.1244
+var3 0.21764 0.23613 0.24665 0.2570 0.2795
 \end{Soutput}
 \end{Schunk}
 
@@ -446,7 +446,7 @@ In this case we have not interacted sex with trait, and so we are estimating the
 \label{MN2}
 \end{figure}
 
-A more general model would be to fit estimate separate probabilities for each cell, but the contingency table indicates that one cell (polled males) has zero counts which will cause extreme separation problems. We could choose to have a better prior for the fixed effects, that is close to being flat for the two-way (i.e. polled vs scurred, normal vs.scurred \& polled vs. normal) marginal probabilities within each sex:
+A more general model would be to estimate separate probabilities for each cell, but the contingency table indicates that one cell (polled males) has zero counts which will cause extreme separation problems. We could choose to have a better prior for the fixed effects, that is close to being flat for the two-way (i.e. polled vs scurred, normal vs.scurred \& polled vs. normal) marginal probabilities within each sex:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -477,16 +477,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-[1,] 0.3459 0.02698 0.0008530       0.002639
-[2,] 0.2645 0.02826 0.0008936       0.002818
-[3,] 0.3896 0.03032 0.0009589       0.003475
+[1,] 0.3462 0.02850 0.0009012       0.002568
+[2,] 0.2623 0.02751 0.0008701       0.002787
+[3,] 0.3915 0.03294 0.0010416       0.004095
 
 2. Quantiles for each variable:
 
        2.5%    25%    50%    75%  97.5%
-var1 0.2955 0.3277 0.3457 0.3645 0.3983
-var2 0.2117 0.2449 0.2638 0.2827 0.3193
-var3 0.3364 0.3682 0.3893 0.4106 0.4481
+var1 0.2948 0.3255 0.3465 0.3656 0.4022
+var2 0.2096 0.2449 0.2622 0.2782 0.3179
+var3 0.3287 0.3700 0.3900 0.4112 0.4607
 \end{Soutput}
 \end{Schunk}
 
@@ -521,16 +521,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
          Mean       SD  Naive SE Time-series SE
-[1,] 0.828606 0.016713 0.0005285      0.0020787
-[2,] 0.007254 0.002621 0.0000829      0.0003470
-[3,] 0.164140 0.016198 0.0005122      0.0020002
+[1,] 0.831078 0.015801 4.997e-04      0.0016451
+[2,] 0.005884 0.002206 6.975e-05      0.0002995
+[3,] 0.163039 0.015646 4.948e-04      0.0016513
 
 2. Quantiles for each variable:
 
          2.5%      25%      50%      75%   97.5%
-var1 0.794110 0.817853 0.829137 0.840546 0.85903
-var2 0.003942 0.005168 0.006488 0.008977 0.01372
-var3 0.134479 0.152669 0.163500 0.174600 0.19792
+var1 0.798368 0.820908 0.831848 0.842057 0.86046
+var2 0.001847 0.004441 0.005839 0.007136 0.01064
+var3 0.134104 0.152533 0.162735 0.172857 0.19485
 \end{Soutput}
 \end{Schunk}
 
@@ -553,7 +553,7 @@ Each datum in a zero-inflated model is associated with two latent variables. The
 
 \begin{equation} 
 \begin{array}{rl}
-Pr(y | y=0) =& \texttt{plogis}(l_{2})+\texttt{plogis}(-l_{2})\ast \texttt{dpois}(0, \texttt{exp}(l_{1}))\\
+Pr(y=0) =& \texttt{plogis}(l_{2})+\texttt{plogis}(-l_{2})\ast \texttt{dpois}(0, \texttt{exp}(l_{1}))\\
 Pr(y | y>0) =& \texttt{plogis}(-l_{2})\ast \texttt{dpois}(y, \texttt{exp}(l_{1}))\\
 \end{array}
 \end{equation}
@@ -626,8 +626,8 @@ The model would have to be run for (much) longer to say something concrete about
 > quantile(plogis(m5d.1$Sol[, 2]/sqrt(1 + c2)))
 \end{Sinput}
 \begin{Soutput}
-          0%          25%          50%          75%         100% 
-0.0005635939 0.0064080572 0.0146266288 0.0194580531 0.0432303842 
+         0%         25%         50%         75%        100% 
+0.003677681 0.010807289 0.020710180 0.037819842 0.075952622 
 \end{Soutput}
 \end{Schunk}
 
@@ -649,7 +649,7 @@ Another useful check is to fit the standard Poisson model and use posterior pred
 \end{Sinput}
 \end{Schunk}
 
-Figure \ref{PPZIP}  shows a histogram of the posterior predictive distribution of zero's from the model (\texttt{nz}) compared to the observed number of zeros (\texttt{oz}). The simpler model seems to be consistent with the data, suggesting that a ZIP model may not be required.
+Figure \ref{PPZIP}  shows a histogram of the posterior predictive distribution of zero's (\texttt{nz}) from the model compared to the observed number of zeros (\texttt{oz}). The simpler model seems to be consistent with the data, suggesting that a ZIP model may not be required.
 
 
 \begin{figure}[!h]
@@ -663,11 +663,11 @@ Figure \ref{PPZIP}  shows a histogram of the posterior predictive distribution o
 \section{Hurdle Models}
 \label{Hurdle}
 
-Hurdle models are very similar to zero-inflated models but they can be used to model zero-deflation as well as zero-inflation and seem to have much better mixing properties.  As in ZIP models each datum in the hurdle model is associated with two latent variables. However, whereas in a ZIP model the first latent variable is the mean parameter of a Poisson distribution the equivalent latent variable in the hurdle model is the mean parameter of a zero-truncated Possion distribution (i.e. a Poisson distribution without the zeros  observed). In addition the second latent variable in a ZIP model is the probability that an observed zero is due to zero-inflation rather than the Poisson process. In hurdle models the second latent variable is simply the probability (on the logit scale) that the response variable is zero or not. The likelihood is:
+Hurdle models are very similar to zero-inflated models but they can be used to model zero-deflation as well as zero-inflation and seem to have much better mixing properties in \texttt{MCMCglmm}.  As in ZIP models each datum in the hurdle model is associated with two latent variables. However, whereas in a ZIP model the first latent variable is the mean parameter of a Poisson distribution the equivalent latent variable in the hurdle model is the mean parameter of a zero-truncated Possion distribution (i.e. a Poisson distribution without the zeros  observed). In addition the second latent variable in a ZIP model is the probability that an observed zero is due to zero-inflation rather than the Poisson process. In hurdle models the second latent variable is simply the probability (on the logit scale) that the response variable is zero or not. The likelihood is:
 
 \begin{equation} 
 \begin{array}{rl}
-Pr(y | y=0) =& \texttt{plogis}(l_{2})\\
+Pr(y=0) =& \texttt{plogis}(l_{2})\\
 Pr(y | y>0) =& \texttt{plogis}(-l_{2})\ast \texttt{dpois}(y, \texttt{exp}(l_{1}))/(1-\texttt{ppois}(0, \texttt{exp}(l_{1})))\\
 \end{array}
 \end{equation}
@@ -684,7 +684,7 @@ Pr(y | y>0) =& \texttt{plogis}(-l_{2})\ast \texttt{dpois}(y, \texttt{exp}(l_{1})
 \end{Sinput}
 \end{Schunk}
 
-Plotting the Markov chain for the equivalent parameters that were plotted for the ZIP model shows that the mixing properties are much better (compare Figure \ref{ZIP} with Figure \ref{HU}).
+Plotting the Markov chain for the equivalent parameters that were plotted for the ZIP model shows that the mixing properties are much better (compare Figure \ref{ZIP} with Figure \ref{HU}).\\
 
 
 \begin{figure}[!h]
@@ -704,7 +704,7 @@ The interpretation of the model is slightly different. Fitting just an intercept
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.2667103 0.3240296
+var1 0.2618154 0.3205408
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -718,7 +718,7 @@ and we can compare this to the predicted number of zero's from the Poisson proce
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.1473020 0.3563966
+var1 0.1555277 0.3585201
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -733,7 +733,7 @@ The credible intervals largely overlap, strongly suggesting a standard Poisson m
 \end{Sinput}
 \begin{Soutput}
           lower     upper
-var1 0.09930964 0.2958267
+var1 0.08991519 0.2822875
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -761,7 +761,7 @@ which reveals that although this proportion is expected to be (slightly) smaller
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.2314585 0.3114890
+var1 0.2270894 0.3068575
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -777,14 +777,14 @@ the proportion of zeros expected for men is probably still less than what we exp
 \end{Sinput}
 \begin{Soutput}
           lower     upper
-var1 0.08079715 0.2484615
+var1 0.08540477 0.2471933
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
 \end{Schunk}
 
 
-This highlights one of the disadvantages of hurdle models. If explanatory variables have been fitted that affect the expectation of the Poisson process than this implies that the proportion of zero's observed will also vary across these same explanatory variables, even in the absence of zero-inflation. It may then be necessary to fit an equally complicated model for both processes even though a single parameter would suffice in a ZIP model. However, in the absence of zero-inflation the intercept of the zero-inflation process in a ZIP model is $-\infty$ on the logit scale causing numerical and inferential problems. An alternative model are zero-altered models. 
+This highlights one of the disadvantages of hurdle models. If explanatory variables have been fitted that affect the expectation of the Poisson process then this implies that the proportion of zero's observed will also vary across these same explanatory variables, even in the absence of zero-inflation. It may then be necessary to fit an equally complicated model for both processes even though a single parameter would suffice in a ZIP model. However, in the absence of zero-inflation the intercept of the zero-inflation process in a ZIP model is $-\infty$ on the logit scale causing numerical and inferential problems. An alternative type of model are zero-altered models. 
 
 \section{Zero-altered Models}
 \label{ZAP}
@@ -793,7 +793,7 @@ Zero-altered Poisson (ZAP) models are identical to Poisson-hurdle models except 
 
 \begin{equation} 
 \begin{array}{rl}
-Pr(y | y=0) =& 1-\texttt{pexp}(\texttt{exp}(l_{2}))\\
+Pr(y=0) =& 1-\texttt{pexp}(\texttt{exp}(l_{2}))\\
 Pr(y | y>0) =& \texttt{pexp}(\texttt{exp}(l_{2}))\ast \texttt{dpois}(y, \texttt{exp}(l_{1}))/(1-\texttt{ppois}(0, \texttt{exp}(l_{1})))\\
 \end{array}
 \end{equation}
@@ -804,7 +804,7 @@ It happens that $\texttt{ppois}(0,\texttt{exp}(l)) = \texttt{dpois}(0,\texttt{ex
 
 \begin{equation} 
 \begin{array}{rl}
-Pr(y | y=0) =& \texttt{dpois}(0,\texttt{exp}(l))\\
+Pr(y=0) =& \texttt{dpois}(0,\texttt{exp}(l))\\
 Pr(y | y>0) =& \texttt{dpois}(y, \texttt{exp}(l))\\
 \end{array}
 \end{equation}
@@ -815,44 +815,44 @@ We can then test for zero-flation by constraining the over-dispersion to be the 
   
 \begin{Schunk}
 \begin{Sinput}
-> m5d.5 <- MCMCglmm(art ~ trait + trait:(fem + mar + kid5 + phd + 
-+     ment), rcov = ~trait:units, data = bioChemists, family = "zapoisson", 
+> m5d.5 <- MCMCglmm(art ~ trait * (fem + mar + kid5 + phd + ment), 
++     rcov = ~trait:units, data = bioChemists, family = "zapoisson", 
 +     verbose = FALSE)
 > summary(m5d.5)
 \end{Sinput}
 \begin{Soutput}
- Iterations = 12991
- Thinning interval  = 3001
+ Iterations = 3001:12991
+ Thinning interval  = 10
  Sample size  = 1000 
 
- DIC: 3040.922 
+ DIC: 3040.536 
 
  R-structure:  ~trait:units
 
             post.mean l-95% CI u-95% CI eff.samp
-trait:units    0.3453   0.2482   0.4272    63.32
+trait:units    0.3601   0.2596   0.4767    54.65
 
- Location effects: art ~ trait + trait:(fem + mar + kid5 + phd + ment) 
+ Location effects: art ~ trait * (fem + mar + kid5 + phd + ment) 
 
-                        post.mean   l-95% CI   u-95% CI eff.samp  pMCMC    
-(Intercept)             0.3432721  0.0425365  0.6911919   221.17  0.044 *  
-traitza_art            -0.5677632 -1.1046026  0.0009134   162.49  0.040 *  
-traitart:femWomen      -0.1977312 -0.3599425 -0.0216841   203.85  0.024 *  
-traitza_art:femWomen   -0.1671825 -0.3654685  0.0318293   233.12  0.090 .  
-traitart:marMarried     0.0887755 -0.0960692  0.2790121   298.52  0.382    
-traitza_art:marMarried  0.2426821  0.0141466  0.4792556   160.43  0.040 *  
-traitart:kid5          -0.1286110 -0.2598257 -0.0066072   268.55  0.036 *  
-traitza_art:kid5       -0.2140562 -0.4022002 -0.0743557   159.10  0.002 ** 
-traitart:phd            0.0165779 -0.0731299  0.1028394   245.22  0.670    
-traitza_art:phd         0.0302054 -0.0776700  0.1482114   152.31  0.584    
-traitart:ment           0.0193229  0.0119351  0.0263783   382.92 <0.001 ***
-traitza_art:ment        0.0479411  0.0331379  0.0627703    67.58 <0.001 ***
+                       post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
+(Intercept)             0.355984  0.037824  0.698295    269.7  0.064 .  
+traitza_art            -0.570608 -1.143232 -0.108669    226.4  0.034 *  
+femWomen               -0.199981 -0.358832 -0.009722    327.9  0.026 *  
+marMarried              0.081747 -0.090542  0.296278    286.1  0.408    
+kid5                   -0.126854 -0.241225 -0.004572    325.9  0.022 *  
+phd                     0.011901 -0.069864  0.099072    291.1  0.788    
+ment                    0.019243  0.012305  0.026729    405.9 <0.001 ***
+traitza_art:femWomen    0.028714 -0.284556  0.280051    204.6  0.852    
+traitza_art:marMarried  0.152988 -0.134840  0.483592    216.9  0.324    
+traitza_art:kid5       -0.078497 -0.288220  0.106353    201.4  0.410    
+traitza_art:phd         0.015404 -0.122248  0.144541    232.5  0.784    
+traitza_art:ment        0.030160  0.013396  0.047633    114.2 <0.001 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 \end{Soutput}
 \end{Schunk}
 
-we can see from this that having kids causes `significant' zero-inflation and the more papers a mentor produces, the more zero-deflation (or conversely the less papers a mentor produces, the more zero-inflation).
+we can see from this that the more papers a mentor produces, the more zero-deflation (or conversely the less papers a mentor produces, the more zero-inflation).
 
 \ifalone
 \end{document}

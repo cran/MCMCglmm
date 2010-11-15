@@ -2,10 +2,10 @@
 %Å‚Å„ÅœÅ”\r
 1 0 obj
 <<
-/CreationDate (D:20101101161337)
-/ModDate (D:20101101161337)
+/CreationDate (D:20101115085923)
+/ModDate (D:20101115085923)
 /Title (R Graphics Output)
-/Producer (R 2.11.1)
+/Producer (R 2.12.0)
 /Creator (R)
 >>
 endobj
@@ -172,19 +172,19 @@ ET
 Q q 59.04 73.44 342.72 299.52 re W n
 0.000 0.000 1.000 rg
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 285.83 181.69 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 162.31 176.66 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 193.36 243.56 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 245.77 261.84 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 226.60 276.03 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 207.01 264.81 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 294.20 163.75 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 196.24 248.76 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 298.67 154.75 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 277.08 201.23 Tm (l) Tj 0 Tr
 ET
 1.000 0.000 0.000 RG
 1.50 w
@@ -255,19 +255,19 @@ ET
 389.07 84.57 l
 S
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 285.83 154.58 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 162.31 147.38 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 193.36 272.93 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 245.77 318.46 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 226.60 357.14 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 207.01 326.32 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 294.20 130.58 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 196.24 285.41 Tm (l) Tj 0 Tr
 ET
 BT
-/F1 1 Tf 0 Tr 13.09 0 0 13.09 298.67 120.29 Tm (l) Tj 0 Tr
+/F1 1 Tf 0 Tr 13.09 0 0 13.09 277.08 186.00 Tm (l) Tj 0 Tr
 ET
 Q q
 BT
@@ -294,7 +294,7 @@ endobj
 <<
 /ProcSet [/PDF /Text]
 /Font << /F1 9 0 R /F2 10 0 R >>
-/ExtGState << /GSais 11 0 R >>
+/ExtGState << >>
 >>
 endobj
 8 0 obj
@@ -321,14 +321,8 @@ endobj
 /BaseFont /Helvetica
 /Encoding 8 0 R
 >> endobj
-11 0 obj
-<<
-/Type /ExtGState
-/AIS false
->>
-endobj
 xref
-0 12
+0 11
 0000000000 65535 f 
 0000000021 00000 n 
 0000000164 00000 n 
@@ -337,16 +331,15 @@ xref
 0000000213 00000 n 
 0000000293 00000 n 
 0000004689 00000 n 
-0000004899 00000 n 
-0000005156 00000 n 
-0000005239 00000 n 
-0000005336 00000 n 
+0000004885 00000 n 
+0000005142 00000 n 
+0000005225 00000 n 
 trailer
 <<
-/Size 12
+/Size 11
 /Info 1 0 R
 /Root 2 0 R
 >>
 startxref
-5386
+5322
 %%EOF

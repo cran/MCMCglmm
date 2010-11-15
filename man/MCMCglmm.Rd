@@ -110,7 +110,7 @@ phenotype<-phylo.effect+rnorm(dim(phylo.effect)[1], 0, 1)
 
 test.data<-data.frame(phenotype=phenotype, animal=row.names(phenotype))
 
-prior<-list(R=list(V=1, nu=1), G=list(G1=list(V=1, nu=1)))
+prior<-list(R=list(V=1, nu=0.002), G=list(G1=list(V=1, nu=0.002)))
 
 model2<-MCMCglmm(phenotype~1, random=~animal, data=test.data, 
 pedigree=bird.families, prior=prior, verbose=FALSE)

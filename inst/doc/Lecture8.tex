@@ -23,7 +23,7 @@
 \fi
 
 
-As the covariance matrix approaches a singularity the mixing of the chain becomes notoriously slow. This problem is often encountered in single-response models when a variance component is small and the chain becomes stuck at values close to zero.  Similar problems occur for the EM algorithm and \citep{Liu.1998} introduced parameter expansion to speed up the rate of convergence. The idea was quickly applied to Gibbs sampling problems \citet{Liu.1999} and has now been extensively used to develop more efficient mixed-model samplers \citep[e.g.][]{vanDyk.2001, Gelman.2008b, Browne.2009}.\\
+As the covariance matrix approaches a singularity the mixing of the chain becomes notoriously slow. This problem is often encountered in single-response models when a variance component is small and the chain becomes stuck at values close to zero.  Similar problems occur for the EM algorithm and \citet{Liu.1998} introduced parameter expansion to speed up the rate of convergence. The idea was quickly applied to Gibbs sampling problems \citep{Liu.1999} and has now been extensively used to develop more efficient mixed-model samplers \citep[e.g.][]{vanDyk.2001, Gelman.2008b, Browne.2009}.\\
 
 The columns of the design matrix (${\bf W}$) can be multiplied by the non-identified working parameters ${\bm \alpha} = \left[1,\ \alpha_{1},\ \alpha_{2},\ \dots \alpha_{k}\right]^{'}$:
 
@@ -48,7 +48,7 @@ Likewise, the (co)variance matrices can be rescaled by the set of $\alpha$'s ass
 \end{equation} 
 
 
-The working parameters are not identifiable in the likelihood, but do have a proper conditional distribution. Defining the $n\times k+1$ design matrix ${\bf X}_{\alpha}$ with each column equal to the submatrices in Equation \ref{wstar} postmultiplied by the relevant subvectors of ${\bm \theta}_{\alpha}$, we can see that ${\bm \alpha}$ is a vector of regression coefficients: 
+The working parameters are not identifiable in the likelihood, but do have a proper conditional distribution. Defining the $n\times(k+1)$ design matrix ${\bf X}_{\alpha}$ with each column equal to the submatrices in Equation \ref{wstar} postmultiplied by the relevant subvectors of ${\bm \theta}_{\alpha}$, we can see that ${\bm \alpha}$ is a vector of regression coefficients: 
 
 \begin{equation}
 \begin{array}{rl}
@@ -84,7 +84,7 @@ and fit a model that does not use parameter expansion:
 \end{Sinput}
 \end{Schunk}
 
-The prior densities in the two models are very similar across the range of variances with reasonable posterior support, and running the models for long enough will verify that they are sampling from very similar posterior densities. However, the mixing properties of the two chains are very different, with the non-parameter expanded chain (in red) getting stuck at values close to zero (Figure \ref{sexratio-fig}).
+The prior densities in the two models are very similar across the range of variances with reasonable posterior support, and running the models for long enough will verify that they are sampling from very similar posterior densities. However, the mixing properties of the two chains are very different, with the non-parameter expanded chain (in red) getting stuck at values close to zero (Figure \ref{sexratio-fig}).\\
 
 
 
@@ -96,7 +96,7 @@ The prior densities in the two models are very similar across the range of varia
 \label{sexratio-fig}
 \end{figure}
 
-The parameter expanded model is 25\% slower per iteration but the effective sample size is 3.230 times greater:
+The parameter expanded model is 25\% slower per iteration but the effective sample size is 1.834 times greater:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -104,14 +104,14 @@ The parameter expanded model is 25\% slower per iteration but the effective samp
 \end{Sinput}
 \begin{Soutput}
     var1 
-284.1638 
+144.9197 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.2$VCV[, 1])
 \end{Sinput}
 \begin{Soutput}
-   var1 
-87.9871 
+    var1 
+79.01632 
 \end{Soutput}
 \end{Schunk}
 
@@ -166,7 +166,7 @@ The response variable \texttt{estimate} is the relative effect of Scholastic Apt
 \end{Sinput}
 \end{Schunk}
 
-In this example there is information on the between school variance although we only have a single estimate for each school. This is possible because the within school variance was available for each school and we were able to fix the residual variance for each school at this value. The posterior distribution of the between school standard deviation is shown in Figure \ref{school1} with the flat prior shown as a solid line. 
+In this example there is information on the between school variance although we only have a single estimate for each school. This is possible because the within school variance was available for each school and we were able to fix the residual variance for each school at this value (See Section \ref{meta-sec}). The posterior distribution of the between school standard deviation is shown in Figure \ref{school1-fig} with the flat prior shown as a solid line.\\ 
 
 
 \begin{figure}[!h]
@@ -188,7 +188,7 @@ We can also use the inverse-gamma prior with scale and shape equal to 0.001:
 \end{Sinput}
 \end{Schunk}
 
-but Figure \ref{school2} indicates that such a prior in this context may put too much density and values close to zero.
+but Figure \ref{school2-fig} indicates that such a prior in this context may put too much density and values close to zero.\\
 
 
 \begin{figure}[!h]
@@ -211,7 +211,7 @@ For the final prior we have \texttt{V=1}, \texttt{nu=1}, \texttt{alpha.mu=0} whi
 \end{Sinput}
 \end{Schunk}
 
-and Figure \ref{school3} shows that the prior may have better properties than the inverse-gamma, and that the posterior is less distorted.
+and Figure \ref{school3-fig} shows that the prior may have better properties than the inverse-gamma, and that the posterior is less distorted.
 
 
 \begin{figure}[!h]
@@ -278,14 +278,14 @@ The prior specification for the between mother variance is different in the two 
 \end{Sinput}
 \begin{Soutput}
     var1 
-284.1638 
+144.9197 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
 \end{Sinput}
 \begin{Soutput}
     var1 
-592.9368 
+635.7661 
 \end{Soutput}
 \end{Schunk}
 
@@ -299,7 +299,7 @@ Although the chain mixes faster as the residual variance is set to be larger, nu
 \end{Sinput}
 \begin{Soutput}
     var1 
-676.1779 
+875.8723 
 \end{Soutput}
 \end{Schunk}
 

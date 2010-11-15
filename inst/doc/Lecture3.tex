@@ -26,7 +26,7 @@
 
 
 
-Random effect specification is a common cause of confusion, especially when we want to form interactions in the random terms. To illustrate the possibilities we'll use data collected on blue tits.
+Random effect specification is a common cause of confusion, especially when we want to form interactions in the random terms. To illustrate the possibilities we'll use data collected on Blue tits.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -52,8 +52,8 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 > diag(autocorr(m3a.1$VCV)[2, , ])
 \end{Sinput}
 \begin{Soutput}
-       dam fosternest      units 
-0.07661102 0.41190374 0.02687499 
+         dam   fosternest        units 
+-0.005412770  0.347055040  0.008737537 
 \end{Soutput}
 \begin{Sinput}
 > plot(m3a.1$VCV)
@@ -64,8 +64,8 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 \begin{center}
 \begin{Schunk}
 \begin{Soutput}
-       dam fosternest      units 
-0.07661102 0.41190374 0.02687499 
+         dam   fosternest        units 
+-0.005412770  0.347055040  0.008737537 
 \end{Soutput}
 \end{Schunk}
 \includegraphics{Lecture3-005}
@@ -82,7 +82,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
-  856.8226   355.4184   839.7389 
+  840.8048   484.2351  1000.0000 
 \end{Soutput}
 \end{Schunk}
 
@@ -96,9 +96,9 @@ The posterior correlation between the parameters is low
 \end{Sinput}
 \begin{Soutput}
                    dam fosternest       units
-dam         1.00000000 -0.2012876 -0.07044663
-fosternest -0.20128760  1.0000000 -0.18966268
-units      -0.07044663 -0.1896627  1.00000000
+dam         1.00000000 -0.2196589 -0.02165193
+fosternest -0.21965893  1.0000000 -0.14094742
+units      -0.02165193 -0.1409474  1.00000000
 \end{Soutput}
 \end{Schunk}
 
@@ -112,9 +112,9 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 \end{Sinput}
 \begin{Soutput}
                  lower     upper
-dam        0.142332825 0.3192503
-fosternest 0.000812371 0.1165356
-units      0.513648170 0.6353021
+dam        0.133582613 0.3292076
+fosternest 0.008375365 0.1222961
+units      0.514814500 0.6370544
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -131,13 +131,13 @@ and perhaps a model without it would be better supported, although the DIC sugge
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.228
+[1] 2014.190
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1992.643
+[1] 1991.723
 \end{Soutput}
 \end{Schunk}
 
@@ -149,8 +149,8 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 > HPDinterval(m3a.1$VCV[, 1]/rowSums(m3a.1$VCV))
 \end{Sinput}
 \begin{Soutput}
-         lower    upper
-var1 0.1791214 0.345726
+         lower     upper
+var1 0.1788196 0.3565076
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -160,28 +160,38 @@ One nice thing though about standardised data is that effect sizes are immediate
 
 \begin{Schunk}
 \begin{Sinput}
-> summary(m3a.1$Sol)
+> summary(m3a.1)
 \end{Sinput}
 \begin{Soutput}
-Iterations = 3001:12991
-Thinning interval = 10 
-Number of chains = 1 
-Sample size per chain = 1000 
+ Iterations = 3001:12991
+ Thinning interval  = 10
+ Sample size  = 1000 
 
-1. Empirical mean and standard deviation for each variable,
-   plus standard error of the mean:
+ DIC: 1991.723 
 
-               Mean      SD Naive SE Time-series SE
-(Intercept) -0.4058 0.06667 0.002108       0.002034
-sexMale      0.7666 0.05408 0.001710       0.001734
-sexUNK       0.2070 0.12753 0.004033       0.003252
+ G-structure:  ~dam
 
-2. Quantiles for each variable:
+    post.mean l-95% CI u-95% CI eff.samp
+dam    0.2267   0.1336   0.3292    840.8
 
-                2.5%     25%     50%     75%   97.5%
-(Intercept) -0.53596 -0.4495 -0.4076 -0.3620 -0.2705
-sexMale      0.65779  0.7313  0.7666  0.7996  0.8746
-sexUNK      -0.04283  0.1196  0.2067  0.2952  0.4591
+               ~fosternest
+
+           post.mean l-95% CI u-95% CI eff.samp
+fosternest   0.06692 0.008375   0.1223    484.2
+
+ R-structure:  ~units
+
+      post.mean l-95% CI u-95% CI eff.samp
+units    0.5725   0.5148    0.637     1000
+
+ Location effects: tarsus ~ sex 
+
+            post.mean l-95% CI u-95% CI eff.samp  pMCMC    
+(Intercept)   -0.4044  -0.5363  -0.2770     1000 <0.001 ***
+sexMale        0.7702   0.6610   0.8805     1000 <0.001 ***
+sexUNK         0.2054  -0.0422   0.4389     1328  0.086 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 \end{Soutput}
 \end{Schunk}
 
@@ -215,13 +225,13 @@ and these would give exactly the same answer as the model specified as $^{\sim}$
 \begin{array}{c|rrrrrc}
 &{\color{red} \texttt{Fem2}}&{\color{red} \texttt{Fem20}}&{\color{red} \texttt{Fem3}}&{\color{red} \texttt{Fem5}}&{\color{red} \texttt{K983388}}&\dots\\
 \hline\\
-{\color{blue} \texttt{1}}&{\color{blue} \texttt{1}}.{\color{red} \texttt{Fem2}}&{\color{blue} \texttt{1}}.{\color{red} \texttt{Fem20}}&{\color{blue} \texttt{1}}.{\color{red} \texttt{Fem3}}&{\color{blue} \texttt{1}}.{\color{red} \texttt{Fem5}}&{\color{blue} \texttt{1}}.{\color{red} \texttt{K983388}}&\dots\\
+{\color{blue} \texttt{(1)}}&{\color{blue} \texttt{(1)}}.{\color{red} \texttt{Fem2}}&{\color{blue} \texttt{(1)}}.{\color{red} \texttt{Fem20}}&{\color{blue} \texttt{(1)}}.{\color{red} \texttt{Fem3}}&{\color{blue} \texttt{(1)}}.{\color{red} \texttt{Fem5}}&{\color{blue} \texttt{(1)}}.{\color{red} \texttt{K983388}}&\dots\\
 \end{array}
 \end{displaymath}
   
-Across the top, we have the original dam effects in red, and along the side we have the term defined by the variance structure formula (just the intercept in this case).  The interaction forms a new set of factors. Although they have different names from the original \texttt{dam} levels it is clear that there is a one to one mapping between the original and the new factor levels and the models are therefore equivalent.  For more complex interactions this is not the case.\\
+Across the top, we have the original dam effects in red, and along the side we have the term defined by the variance structure formula (just the intercept in this case).  The interaction forms a new set of factors. Although they have different names from the original \texttt{dam} levels, it is clear that there is a one to one mapping between the original and the new factor levels and the models are therefore equivalent.  For more complex interactions this is not the case.\\
 
-We could also fit \texttt{sex} in the variance structure model, (i.e. \texttt{us({\color{blue}sex}):{\color{red}dam}} or \texttt{idh({\color{blue}sex}):{\color{red}dam}})\footnote{Remember that a global intercept is not fitted by default for variance structure models, and the model formula is essentially $^{\sim}$\texttt{sex-1}. To add the global intercept, \texttt{us({\color{blue}1+sex}):{\color{red}dam}} could be fitted but this can be harder to interpret because the effects are then {\color{blue} \texttt{Fem}}, {\color{blue} \texttt{Male-Fem}} and {\color{blue} \texttt{UNK-Fem}}. If a \texttt{us} structure is fitted, the two models are equivalent reparameterisations of each other although the priors have to modified accordingly. This is not the case if the variance function is \texttt{idh}. In this case the sex-specific variances are allowed to vary as before, but a constant covariance equal to $\sigma^{2}_{\color{blue} \texttt{Fem}}$ is also assumed}:
+We could also fit \texttt{sex} in the variance structure model, (i.e. \texttt{us({\color{blue}sex}):{\color{red}dam}} or \texttt{idh({\color{blue}sex}):{\color{red}dam}})\footnote{Remember that a global intercept is not fitted by default for variance structure models, and the model formula is essentially $^{\sim}$\texttt{sex-1}. To add the global intercept, \texttt{us({\color{blue}1+sex}):{\color{red}dam}} could be fitted but this can be harder to interpret because the effects are then {\color{blue} \texttt{Fem}}, {\color{blue} \texttt{Male-Fem}} and {\color{blue} \texttt{UNK-Fem}}. If a \texttt{us} structure is fitted, the two models are equivalent reparameterisations of each other although the priors have to be modified accordingly. This is not the case if the variance function is \texttt{idh}. In this case the sex-specific variances are allowed to vary as before, but a constant covariance equal to $\sigma^{2}_{\color{blue} \texttt{Fem}}$ is also assumed}:
 
 \begin{displaymath}
 \begin{array}{c|rrrrrc}
@@ -255,7 +265,7 @@ In the simpler models we had fitted in Lectures \ref{chap1} and \ref{chap2} ${\b
 \begin{Schunk}
 \begin{Sinput}
 > priorb = list(R = list(V = diag(1), nu = 0.002), G = list(G1 = list(V = diag(3), 
-+     nu = 2.002), G2 = list(V = 1, nu = 0.002)))
++     nu = 0.002), G2 = list(V = 1, nu = 0.002)))
 > m3a.3 <- MCMCglmm(tarsus ~ sex, random = ~idh(sex):dam + fosternest, 
 +     data = BTdata, verbose = FALSE, prior = priorb)
 \end{Sinput}
@@ -281,14 +291,14 @@ We can extract the marginal means for each variance and place them into a matrix
 > Vdam.3
 \end{Sinput}
 \begin{Soutput}
-       Fem.dam Male.dam   UNK.dam
-[1,] 0.2476927 0.000000 0.0000000
-[2,] 0.0000000 0.238088 0.0000000
-[3,] 0.0000000 0.000000 0.3745496
+      Fem.dam  Male.dam    UNK.dam
+[1,] 0.173433 0.0000000 0.00000000
+[2,] 0.000000 0.1692554 0.00000000
+[3,] 0.000000 0.0000000 0.04257395
 \end{Soutput}
 \end{Schunk}
 
-Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.225)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
+Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.227)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -342,9 +352,9 @@ The posterior mean (co)variances for this model show that the covariances are al
 \end{Sinput}
 \begin{Soutput}
      Fem:Fem.dam Male:Fem.dam UNK:Fem.dam
-[1,]   0.2266719    0.1988407   0.2225924
-[2,]   0.1988407    0.2116471   0.2168407
-[3,]   0.2225924    0.2168407   0.2899686
+[1,]   0.2297563    0.2002515   0.2050976
+[2,]   0.2002515    0.2117400   0.1961479
+[3,]   0.2050976    0.1961479   0.2510483
 \end{Soutput}
 \end{Schunk}
 
@@ -388,13 +398,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1996.948
+[1] 1997.016
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1992.643
+[1] 1991.723
 \end{Soutput}
 \end{Schunk}
 
@@ -572,7 +582,7 @@ r_{1,3}&r_{2,3}&1\\
 
 \section{Heterogenous Residual Variance}
 \label{heter-sec}
-To be started... In short - if you've fitted a sex by dam interaction I would always allow the sexes to have different residual variances. Use \texttt{idh(sex):units}.
+To be started... In short - if you've fitted a sex by dam interaction I would always allow the sexes to have different residual variances. Use \texttt{rcov=$\sim$idh(sex):units}.
 
 \section{Contrasts and Covariances}
 
@@ -648,7 +658,7 @@ In Lecture \ref{chap2} we saw that a non-informative prior for a variance compon
 
 \subsection{Priors for \texttt{idh} structures}
 
-For \texttt{idh} the diagonal elements of the matrix are independent and each variance is distributed as\footnote{IMPORTANT: In versions $<$ 2.05 priors on each variance of an \texttt{idh} structure were distributed as $IW\left(\texttt{nu}^{\ast}\texttt{=nu-dim(V)+1},\ \texttt{V}^{\ast}=\texttt{V[1,1]}\right)$ but this was as ource of confusion and was changed}:
+For \texttt{idh} the diagonal elements of the matrix are independent and each variance is distributed as\footnote{IMPORTANT: In versions $<$ 2.05 priors on each variance of an \texttt{idh} structure were distributed as $IW\left(\texttt{nu}^{\ast}\texttt{=nu-dim(V)+1},\ \texttt{V}^{\ast}=\texttt{V[1,1]}\right)$ but this was a source of confusion and was changed.}:
 
 \begin{displaymath}
 \sigma^{2}_{1} \sim IW\left(\texttt{nu}^{\ast}\texttt{=nu},\ \texttt{V}^{\ast}=\texttt{V[1,1]}\right)
@@ -657,7 +667,7 @@ For \texttt{idh} the diagonal elements of the matrix are independent and each va
 
 \subsection{Priors for \texttt{cor} structures}
 
-For \texttt{cor} structures I use the prior specification in \citet{Barnard.2000}. Here the specification of \texttt{V} is redundant and \texttt{nu} controls how much the correlation matrix approaches an identity matrix.  The marginal distribution of individual correlations ($r$) is given by \citet{Barnard.2000}   \citep[and][]{Box.1973}):
+For \texttt{cor} structures I use the prior specification in \citet{Barnard.2000}. Here the specification of \texttt{V} is redundant and \texttt{nu} controls how much the correlation matrix approaches an identity matrix.  The marginal distribution of individual correlations ($r$) is given by \citet{Barnard.2000}   \citep[and][]{Box.1973}:
 
 \begin{equation}
 \begin{array}{lr}

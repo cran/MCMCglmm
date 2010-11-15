@@ -64,7 +64,7 @@ We can generate 5 observations from this distribution using \texttt{rnorm}:
 > Ndata$y
 \end{Sinput}
 \begin{Soutput}
-[1]  1.14595986 -0.60235655  0.02611474  1.30439016  1.38881299
+[1] -1.1894537  0.3885812 -0.3443333 -0.5478961  0.9806622
 \end{Soutput}
 \end{Schunk}
 
@@ -108,7 +108,7 @@ The likelihood of these data, conditioning on $\mu=0$ and $\sigma^2=1$, is propo
 > prod(dnorm(Ndata$y, mean = 0, sd = sqrt(1)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.0007114681
+[1] 0.002316223
 \end{Soutput}
 \end{Schunk}
 
@@ -123,11 +123,11 @@ Of course we don't know the true mean and variance and so we may want to ask how
 > prod(dnorm(Ndata$y, mean = 0, sd = sqrt(0.5)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.0002833580
+[1] 0.003003208
 \end{Soutput}
 \end{Schunk}
 
-It would seem that the data are more likely under this set of parameters than the true parameters, which we must expect some of the time just from random sampling. To get some idea as to why this might be the case we can overlay the two densities (Figure \ref{dnorm1-fig}), and we can see that although some data points (e.g. 1.146) are more likely with the true parameters, in aggregate the new parameters produce a higher likelihood.\\
+It would seem that the data are more likely under this set of parameters than the true parameters, which we must expect some of the time just from random sampling. To get some idea as to why this might be the case we can overlay the two densities (Figure \ref{dnorm1-fig}), and we can see that although some data points (e.g. -1.189) are more likely with the true parameters, in aggregate the new parameters produce a higher likelihood.\\
 
 
 \begin{figure}[!h]
@@ -180,8 +180,8 @@ The first call to \texttt{optim} are starting values for the optimisation algori
 > MLest
 \end{Sinput}
 \begin{Soutput}
-     mean       var 
-0.6525842 0.6355287 
+      mean        var 
+-0.1424880  0.5689471 
 \end{Soutput}
 \end{Schunk}
 
@@ -198,23 +198,23 @@ glm(formula = y ~ 1, data = Ndata)
 
 Deviance Residuals: 
       1        2        3        4        5  
- 0.4934  -1.2549  -0.6265   0.6518   0.7362  
+-1.0470   0.5311  -0.2019  -0.4054   1.1232  
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)
-(Intercept)   0.6526     0.3986   1.637    0.177
+(Intercept)  -0.1425     0.3771  -0.378    0.725
 
-(Dispersion parameter for gaussian family taken to be 0.7944109)
+(Dispersion parameter for gaussian family taken to be 0.7111839)
 
-    Null deviance: 3.1776  on 4  degrees of freedom
-Residual deviance: 3.1776  on 4  degrees of freedom
-AIC: 15.923
+    Null deviance: 2.8447  on 4  degrees of freedom
+Residual deviance: 2.8447  on 4  degrees of freedom
+AIC: 15.370
 
 Number of Fisher Scoring iterations: 2
 \end{Soutput}
 \end{Schunk}
  
-Here we see that although the estimate of the mean (intercept) is the same, the estimate of the variance (the dispersion parameter: 0.794) is higher when fitting the model using \texttt{glm}. In fact the ML estimate is a factor of $\frac{n}{n-1}$ smaller.
+Here we see that although the estimate of the mean (intercept) is the same, the estimate of the variance (the dispersion parameter: 0.711) is higher when fitting the model using \texttt{glm}. In fact the ML estimate is a factor of $\frac{n}{n-1}$ smaller.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -222,7 +222,7 @@ Here we see that although the estimate of the mean (intercept) is the same, the 
 \end{Sinput}
 \begin{Soutput}
       var 
-0.7944109 
+0.7111839 
 \end{Soutput}
 \end{Schunk}
 
@@ -245,7 +245,7 @@ To see why this happens, imagine if we had only observed the first two values of
 \newpage
 \section{Prior Distribution}
 
-\texttt{MCMCglmm} uses an inverse Wishart prior for the (co)variances and a normal prior for the fixed effects. In versions $>1.13$ parameter expanded models can be used which enable prior specifications from the the non-central folded t-distribution \citep{Gelman.2006}. Here, we will focus on specifying a prior for a single fixed effect ($\mu$) and a single variance component using the inverse-Wishart to highlight some of the issues. I strongly recommend reading the section \ref{secPX-p} on parameter expanded priors as these can be less informative than the inverse-Wishart under many situations.\\
+\texttt{MCMCglmm} uses an inverse Wishart prior for the (co)variances and a normal prior for the fixed effects. In versions $>1.13$ parameter expanded models can be used which enable prior specifications from the the scaled non-central F-distribution \citep{Gelman.2006}. Here, we will focus on specifying a prior for a single fixed effect ($\mu$) and a single variance component using the inverse-Wishart to highlight some of the issues. I strongly recommend reading the section \ref{secPX-p} on parameter expanded priors as these can be less informative than the inverse-Wishart under many situations.\\
 
 For a single variance component the inverse Wishart takes two scalar parameters, \texttt{V} and \texttt{nu}. The distribution tends to a point mass on \texttt{V} as the degree of belief parameter, \texttt{nu} goes to infinity. The distribution tends to be right skewed when \texttt{nu} is not very large, with a mode of $\frac{\texttt{V}^{\ast}\texttt{nu}}{\texttt{nu}+2}$ but a mean of $\frac{\texttt{V}^{\ast}\texttt{nu}}{\texttt{nu}-2}$ (which is not defined for $\texttt{nu}<2$).\footnote{The inverse gamma is a special case of the inverse Wishart, although it is parametrised using \texttt{shape} and \texttt{scale}, where $\texttt{nu}=2\ast\texttt{shape}$ and $\texttt{V} = \frac{\texttt{scale}}{\texttt{shape}}$ (or $\texttt{shape} = \frac{\texttt{nu}}{2}$ and $\texttt{scale} = \frac{\texttt{nu}*\texttt{V}}{2}$). \texttt{MCMCpack} provides a density function (\texttt{dinvgamma}) for the inverse gamma distribution.}\\
 
@@ -267,7 +267,7 @@ As before, we can evaluate and plot density functions in order to visualise what
 \label{dinvgamma-fig}
 \end{figure}
 
-A probability distribution must sum to one because a variable must have some value. It therefore seems reasonable that when specifying a prior, care must be taken that this condition is met. In the example here where \texttt{V} is a single variance this condition is met if \texttt{V>0} and \texttt{nu>0}.  If this condition is not met then the prior is said to be improper, and in WinBUGS (and possibly other software) improper priors cannot be specified.  Although great care has to be taken when using improper priors, \texttt{MCMCglmm} does allow them as they have some useful properties, and some common improper priors are discussed in section \ref{IP-sec}. However, for now we will use the prior specification \texttt{V=1} and \texttt{nu=0.002} which is frequently used for variance components. For the mean we will use a diffuse normal prior centred around zero but with very large variance ($10^{8}$). If the variance is finite then the prior is always proper.\\
+A probability distribution must integrate to one because a variable must have some value. It therefore seems reasonable that when specifying a prior, care must be taken that this condition is met. In the example here where \texttt{V} is a single variance this condition is met if \texttt{V>0} and \texttt{nu>0}.  If this condition is not met then the prior is said to be improper, and in WinBUGS (and possibly other software) improper priors cannot be specified.  Although great care has to be taken when using improper priors, \texttt{MCMCglmm} does allow them as they have some useful properties, and some common improper priors are discussed in section \ref{IP-sec}. However, for now we will use the prior specification \texttt{V=1} and \texttt{nu=0.002} which is frequently used for variance components. For the mean we will use a diffuse normal prior centred around zero but with very large variance ($10^{8}$). If the variance is finite then the prior is always proper.\\
 
 As before we can write a function for calculating the (log) prior probability:
 
@@ -275,8 +275,8 @@ As before we can write a function for calculating the (log) prior probability:
 \begin{Sinput}
 > logprior <- function(par, priorR, priorB) {
 +     dnorm(par[1], mean = priorB$mu, sd = sqrt(priorB$V), log = TRUE) + 
-+         log(dinvgamma(par[2], shape = priorR$nu/2, scale = priorR$nu/(2 * 
-+             priorR$V)))
++         log(dinvgamma(par[2], shape = priorR$nu/2, scale = (priorR$nu * 
++             priorR$V)/2))
 + }
 \end{Sinput}
 \end{Schunk}
@@ -328,8 +328,8 @@ The prior has some influence on the posterior mode of the variance, and we can u
 > Best
 \end{Sinput}
 \begin{Soutput}
-     mean       var 
-0.6525842 0.4541051 
+      mean        var 
+-0.1424880  0.4065603 
 \end{Soutput}
 \end{Schunk}
 
@@ -382,7 +382,7 @@ and we see that MCMCglmm is sampling the same distribution as the posterior dist
 \label{PsurfaceMCMC-fig}
 \end{figure}
 
-A very nice property of MCMC is that we can normalise the density so that it integrates to 1 (a true probability) rather than normalising it with respect to some other aspect of the distribution, such as the density at the ML estimator or the joint posterior mode as in Figures \ref{Lsurface-fig} and \ref{Psurface-fig}. To make this clearer, imagine we wanted to know how much more probable the unit normal was (with parameters $\mu=0$ and $\sigma^{2}=1$) than a normal distribution with the posterior modal parameters. We can calculate this by taking the ratio of the posterior densities at these two points:  \\ 
+A very nice property of MCMC is that we can normalise the density so that it integrates to 1 (a true probability) rather than normalising it with respect to some other aspect of the distribution, such as the density at the ML estimator or the joint posterior mode as in Figures \ref{Lsurface-fig} and \ref{Psurface-fig}. To make this clearer, imagine we wanted to know how much more probable the unit normal (i.e. with $\mu=0$ and $\sigma^{2}=1$) was than a normal distribution with the posterior modal parameters. We can calculate this by taking the ratio of the posterior densities at these two points:  \\ 
  
 
 \begin{Schunk}
@@ -391,7 +391,7 @@ A very nice property of MCMC is that we can normalise the density so that it int
 +     1), Ndata$y, prior$R, prior$B))
 \end{Sinput}
 \begin{Soutput}
-[1] 6.802364
+[1] 3.077461
 \end{Soutput}
 \end{Schunk}
 
@@ -405,11 +405,11 @@ Now, if we wanted to know the probability that the parameters lay in the region 
 \end{Sinput}
 \begin{Soutput}
  FALSE   TRUE 
-0.0451 0.9549 
+0.0366 0.9634 
 \end{Soutput}
 \end{Schunk}
 
-There is Monte Carlo error in the answer (0.955) but if we collect a large number of samples then this can be minimised.\\ 
+There is Monte Carlo error in the answer (0.963) but if we collect a large number of samples then this can be minimised.\\ 
 
 Using a similar logic we can obtain the marginal distribution of the variance by simply evaluating the draws in \texttt{VCV} ignoring (averaging over) the draws in \texttt{Sol}:
 
@@ -454,7 +454,7 @@ First we need to initialise the chain and specify a set of parameter values from
 
 \subsection{Metrpolis-Hastings updates}
 
-After initialising the chain we need to decide where to go next, and this decision is based on two rules.  First we have to generate a candidate destination, and then we need to decide whether to go there or stay where we are.  There are many ways in which we could generate candidate parameter values, and \texttt{MCMCglmm} uses a well tested and simple method. A random set of coordinates are picked from a multivariate normal distribution that is entered on the initial coordinates  $\mu_{t=0}$ and $\sigma^{2}_{t=0}$.  We will denote this new set of parameter values as  $\mu_{new}$ and $\sigma^{2}_{new}$. The question then remains whether to move to this new set of parameter values or remain at our current parameter values now designated as old $\mu_{old}=\mu_{t=0}$ and $\sigma^{2}_{old}=\sigma^{2}_{t=0}$.  If the posterior probability for the new set of parameter values is greater, then the chain moves to this new set of parameters and the chain has successfully completed an iteration: ($\mu_{t=1} = \mu_{new}$ and $\sigma^{2}_{t=1}=\sigma^{2}_{new}$).  If the new set of parameter values has a lower posterior probability then the chain may move there, but not all the time.  The probability that the chain moves to low lying areas, is determined by the relative difference between the old and new posterior probabilities.  If the posterior probability for $\mu_{new}$ and $\sigma^{2}_{new}$ is 5 times less than the posterior probability for $\mu_{old}$ and $\sigma^{2}_{old}$, then the chain would move to the new set of parameter values 1 in 5 times. If the move is successful then we set $\mu_{t=1} = \mu_{new}$ and $\sigma^{2}_{t=1}=\sigma^{2}_{new}$ as before, and if the move is unsuccessful then the chain stays where it is ($\mu^{t=1} = \mu_{old}$ and $\sigma^{2}_{t=1}=\sigma^{2}_{old}$).  Using these rules we can record where the chain has travelled and generate an approximation of the posterior distribution.  Basically, a histogram of Figure \ref{Psurface.persp-fig}.\\
+After initialising the chain we need to decide where to go next, and this decision is based on two rules.  First we have to generate a candidate destination, and then we need to decide whether to go there or stay where we are.  There are many ways in which we could generate candidate parameter values, and \texttt{MCMCglmm} uses a well tested and simple method. A random set of coordinates are picked from a multivariate normal distribution that is entered on the initial coordinates  $\mu_{t=0}$ and $\sigma^{2}_{t=0}$.  We will denote this new set of parameter values as  $\mu_{new}$ and $\sigma^{2}_{new}$. The question then remains whether to move to this new set of parameter values or remain at our current parameter values now designated as old $\mu_{old}=\mu_{t=0}$ and $\sigma^{2}_{old}=\sigma^{2}_{t=0}$.  If the posterior probability for the new set of parameter values is greater, then the chain moves to this new set of parameters and the chain has successfully completed an iteration: ($\mu_{t=1} = \mu_{new}$ and $\sigma^{2}_{t=1}=\sigma^{2}_{new}$).  If the new set of parameter values has a lower posterior probability then the chain may move there, but not all the time.  The probability that the chain moves to low lying areas, is determined by the relative difference between the old and new posterior probabilities.  If the posterior probability for $\mu_{new}$ and $\sigma^{2}_{new}$ is 5 times less than the posterior probability for $\mu_{old}$ and $\sigma^{2}_{old}$, then the chain would move to the new set of parameter values 1 in 5 times. If the move is successful then we set $\mu_{t=1} = \mu_{new}$ and $\sigma^{2}_{t=1}=\sigma^{2}_{new}$ as before, and if the move is unsuccessful then the chain stays where it is ($\mu_{t=1} = \mu_{old}$ and $\sigma^{2}_{t=1}=\sigma^{2}_{old}$).  Using these rules we can record where the chain has travelled and generate an approximation of the posterior distribution.  Basically, a histogram of Figure \ref{Psurface.persp-fig}.\\
  
 \subsection{Gibbs Sampling}
 
@@ -481,11 +481,11 @@ edge of the surface facing left is the conditional distribution of the mean when
 
 \subsection{Slice Sampling}
 
-If the distribution can be factored such that one factor is a distribution from which truncated random variables can be drawn, then the slice sampling methods of \citet{Damien.1997} can be used. The latent variables in univariate binary models are updated in this way. In these models, slice sampling is only marginally more efficient than adaptive Metropolis-Hastings updates when the residual variance is fixed. However, for parameter expanded binary models where the residual variance is not fixed, the slice sampler can be much more efficient.
+If the distribution can be factored such that one factor is a distribution from which truncated random variables can be drawn, then the slice sampling methods of \citet{Damien.1999} can be used. The latent variables in univariate binary models can be updated in this way if \texttt{slice=TRUE} is specified in the call to \texttt{MCMCglmm}. In these models, slice sampling is only marginally more efficient than adaptive Metropolis-Hastings updates when the residual variance is fixed. However, for parameter expanded binary models where the residual variance is not fixed, the slice sampler can be much more efficient.
 
 \subsection{MCMC Diagnostics}
 
-When fitting a model using \texttt{MCMCglmm} the parameter values through which the Markov chain has travelled are stored and returned.  The length of the chain (the number of iterations) can be specified using the \texttt{nitt} argument (the default is 13,000), and should be long enough so that the posterior approximation is valid.  If we had known the joint posterior distribution in Figure \ref{Psurface.persp-fig} we could have set up a Markov chain that sampled directly from the posterior.  If this had been the case, each successive value in the Markov chain would be independent of the previous value after conditioning on the data, ${\bf y}$, and a thousand iterations of the chain would have produced a histogram that resembled Figure \ref{Psurface.persp-fig} very closely.  However, generally we do not know the joint posterior distribution of the parameters, and for this reason the parameter values of the Markov chain at successive iterations are usually not independent and care needs to be taken regarding the validity of the approximation.  \texttt{MCMCglmm} returns the Markov chain as \texttt{mcmc} objects, which can be analysed using the \texttt{coda} package.  The function \texttt{autocorr} estimates the level of non-independence between successive samples in the chain:
+When fitting a model using \texttt{MCMCglmm} the parameter values through which the Markov chain has travelled are stored and returned.  The length of the chain (the number of iterations) can be specified using the \texttt{nitt} argument\footnote{The double \texttt{t} is because I cannot spell.} (the default is 13,000), and should be long enough so that the posterior approximation is valid.  If we had known the joint posterior distribution in Figure \ref{Psurface.persp-fig} we could have set up a Markov chain that sampled directly from the posterior.  If this had been the case, each successive value in the Markov chain would be independent of the previous value after conditioning on the data, ${\bf y}$, and a thousand iterations of the chain would have produced a histogram that resembled Figure \ref{Psurface.persp-fig} very closely.  However, generally we do not know the joint posterior distribution of the parameters, and for this reason the parameter values of the Markov chain at successive iterations are usually not independent and care needs to be taken regarding the validity of the approximation.  \texttt{MCMCglmm} returns the Markov chain as \texttt{mcmc} objects, which can be analysed using the \texttt{coda} package.  The function \texttt{autocorr} estimates the level of non-independence between successive samples in the chain:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -496,10 +496,10 @@ When fitting a model using \texttt{MCMCglmm} the parameter values through which 
 
         (Intercept)
 Lag 0   1.000000000
-Lag 1   0.028662756
-Lag 5   0.016607878
-Lag 10 -0.004552779
-Lag 50 -0.001257565
+Lag 1  -0.002371087
+Lag 5   0.008092250
+Lag 10  0.005080316
+Lag 50  0.009512001
 \end{Soutput}
 \begin{Sinput}
 > autocorr(m1a.2$VCV)
@@ -507,16 +507,16 @@ Lag 50 -0.001257565
 \begin{Soutput}
 , , units
 
-              units
-Lag 0   1.000000000
-Lag 1   0.211747524
-Lag 5   0.004959727
-Lag 10 -0.005926482
-Lag 50 -0.001080265
+             units
+Lag 0  1.000000000
+Lag 1  0.294234474
+Lag 5  0.063146595
+Lag 10 0.003194196
+Lag 50 0.016978578
 \end{Soutput}
 \end{Schunk}
 
- The correlation between successive samples is low for the mean (0.029) but a bit high for the variance (0.212).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
+ The correlation between successive samples is low for the mean (-0.002) but a bit high for the variance (0.294).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
 
 The approximation obtained from the Markov chain is conditional on the set of parameter values that were used to initialise the chain.  In many cases the first iterations show a strong dependence on the starting parametrisation, but as the chain progresses this dependence may be lost.  As the dependence on the starting parametrisation diminishes the chain is said to converge and the argument \texttt{burnin} can be passed to \texttt{MCMCped} specifying the number of iterations which must pass before samples are stored. The default burn-in period is 3,000 iterations. Assessing convergence of the chain is notoriously difficult, but visual inspection and diagnostic tools such as \texttt{gelman.diag} often suffice.
 
@@ -642,7 +642,7 @@ but the marginal distribution of the variance component is equivalent to the REM
 \begin{center}
 \includegraphics{Lecture1-075}
 \end{center}
-\caption{An MCMC approximation for the marginal posterior distribution of the variance $Pr(\sigma^{2} | {\bf y})$.  A non-informative prior specification was used ($Pr(\mu)\sim N(0, 10^8)$ and  $Pr(\sigma^{2})\sim IW(\texttt{V}=0, \texttt{nu}=-2)$) and the REML estimator of the variance coincides with the marginal posterior mode.}
+\caption{An MCMC approximation for the marginal posterior distribution of the variance $Pr(\sigma^{2} | {\bf y})$.  A non-informative prior specification was used ($Pr(\mu)\sim N(0, 10^8)$ and  $Pr(\sigma^{2})\sim IW(\texttt{V}=0, \texttt{nu}=-2)$) and the REML estimator of the variance (red line) coincides with the marginal posterior mode.}
 \label{Pmarg.NI-fig}
 \end{figure}
 

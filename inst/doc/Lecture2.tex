@@ -94,12 +94,12 @@ where ${\bf X}$ is called a design matrix and contains the predictor information
 \end{Soutput}
 \end{Schunk}
 
-The binary predictors \emph{do the data come from 1961, yes or no?} and \emph{there was no speed limit, yes or no?} do not appear. These are the first factor levels of \texttt{year} and \texttt{limit}, and are absorbed into the global intercept ($\beta_{1}$) which is fitted by default in R.  Hence the expected number of injuries for the four combinations (on day zero) are $\beta_{1}$ for 1961 with no speed limit, $\beta_{1}+\beta_{2}$ for 1961 with a speed limit, $\beta_{1}+\beta_{3}$ for 1962 with no speed limit and  $\beta_{1}+\beta_{2}+\beta_{3}$ for 1962 with a speed limit.\\
+The binary predictors \emph{do the data come from 1961, yes or no?} and \emph{there was no speed limit, yes or no?} do not appear. These are the first factor levels of \texttt{year} and \texttt{limit} respectively, and are absorbed into the global intercept ($\beta_{1}$) which is fitted by default in R.  Hence the expected number of injuries for the four combinations (on day zero) are $\beta_{1}$ for 1961 with no speed limit, $\beta_{1}+\beta_{2}$ for 1961 with a speed limit, $\beta_{1}+\beta_{3}$ for 1962 with no speed limit and  $\beta_{1}+\beta_{2}+\beta_{3}$ for 1962 with a speed limit.\\
 
 The simultaneous equations defined by Equation (\ref{SE-eq}) cannot be solved directly because we do not know the expected value of y. We only know the observed value, which we assume is distributed around the expected value with some error. In a normal linear model we assume that these errors are normally distributed so that the data are also normally distributed (after taking into account the predictor variables):
 
 \begin{equation}
-{\bf y} = N({\bf X}{\bm \beta}, \sigma^{2}_{e}{\bf I})
+{\bf y} \sim N({\bf X}{\bm \beta}, \sigma^{2}_{e}{\bf I})
 \end{equation}	
 
 ${\bf I}$ is an identity matrix. It has ones along the diagonal, and zeros in the off-diagonals. The zero off-diagonals imply that the residuals are uncorrelated, and the ones along the diagonal imply that they have the same variance  $\sigma^{2}_{e}$. We could use \texttt{glm} to estimate ${\bf \beta}$ and  $\sigma^{2}_{e}$ assuming that y is normally distributed: 
@@ -246,8 +246,7 @@ The proportional change is identical because the model is \emph{linear} on the l
 
 \section{Over-dispersion}  
 
-Most count data do not conform to a Poisson distribution because the variance in the response exceeds the expectation. This is known as over-dispersion and it is easy to see how it arises, and why it is so common. In the summary to \texttt{m2a.2} note that the ratio of the residual deviance  
-to the residual degrees of freedom is 3.162 which means, roughly speaking, there is 3.2 times as much variation in the residuals than what we expect.\\
+Most count data do not conform to a Poisson distribution because the variance in the response exceeds the expectation. This is known as over-dispersion and it is easy to see how it arises, and why it is so common. In the summary to \texttt{m2a.2} note that the ratio of the residual deviance to the residual degrees of freedom is 3.162 which means, roughly speaking, there is 3.2 times as much variation in the residuals than what we expect.\\
 
 If the predictor data had not been available to us then the only model we could have fitted was one with just an intercept: 
 
@@ -373,7 +372,7 @@ At this point it will be handy to represent the linear model in a new way:
 where ${\bf l}$ is a vector of latent variables ($\textrm{log}(E[{\bf y}])$ in this case) and eta (${\bm \eta}$) the usual symbol for the linear predictor (${\bf X}{\bm \beta}$). The data we observe are assumed to be Poisson variables with expectation equal to the exponentiated latent variables: 
 
 \begin{equation}
-Pois({\bf y} | \textrm{exp}({\bf l}))
+{\bf y} \sim Pois(\textrm{exp}({\bf l}))
 \end{equation}
 
 
@@ -387,18 +386,18 @@ Note that the latent variable does not exactly predict y, as it would if the dat
 > mean(resid92)
 \end{Sinput}
 \begin{Soutput}
-[1] -0.1350337
+[1] -0.1399224
 \end{Soutput}
 \end{Schunk}
 
-This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=22.027. In fact there would be a 22.466\% chance of having more injuries than if the residual had been zero:
+This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=21.934. In fact there would be a 21.860\% chance of having more injuries than if the residual had been zero:
 
 \begin{Schunk}
 \begin{Sinput}
 > 1 - ppois(exp(mean(eta92)), exp(mean(lat92)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2246641
+[1] 0.2186040
 \end{Soutput}
 \end{Schunk}
 
@@ -440,7 +439,7 @@ The forces that created this residual were only realised on day 92 in 1961, howe
 \includegraphics{Lecture2-030}
 \end{minipage}
 \label{prediction1-fig}
-\caption{The predicted number of injuries on the log scale (left) and data scale (right) as a function of the continuous covariate \texttt{day} for 1961 without a speed limit. In order to highlight a point, the slope of the plotted relationship is an order of magnitude steeper than the model \texttt{m2a.5} estimate.The black line is the value of the linear predictor, and the red dashed lines represent noise around the linear predictor. Each dashed line is a residual from the model, which is only observed for a particular data point. The vertical distance between the black dot and the solid black line is the observed residual on day 92. The black dashed line is the predicted value of a data point observed on other days but with the same residual value.  All lines are parallel and linear on the log scale, but this is not the case on the data scale.
+\caption{The predicted number of injuries on the log scale (left) and data scale (right) as a function of the continuous covariate \texttt{day} for 1961 without a speed limit. In order to highlight a point, the slope of the plotted relationship is an order of magnitude steeper than the model \texttt{m2a.5} estimate.  The solid black line is the value of the linear predictor, and the red dashed lines represent noise around the linear predictor. Each dashed line is a residual from the model, which is only observed for a particular data point. The vertical distance between the black dot and the solid black line is the observed residual on day 92. The black dashed line is the predicted value of a data point observed on other days but with the same residual value.  All lines are parallel and linear on the log scale, but this is not the case on the data scale.
 }
 \end{figure}
 
@@ -471,11 +470,6 @@ It is perhaps more interesting to know the expected number of injuries that woul
 }
 \end{figure}
 
-\begin{equation}
-E[{\bf y}] = \textrm{exp}({\bf X}{\bm \beta}+{\bf e})
-\end{equation}
-
-
 In the \texttt{Traffic} example the non linearities are small so the differences in parameter estimates are not large using either multiplicative or additive models. However, multiplying the intercept in model \texttt{m2a.5} by half the residual variance is in closer agreement with the quasipoisson model than the raw intercept:
 
 \begin{Schunk}
@@ -483,13 +477,13 @@ In the \texttt{Traffic} example the non linearities are small so the differences
 > exp(mean(m2a.5$Sol[, "(Intercept)"] + 0.5 * m2a.5$VCV[, 1]))
 \end{Sinput}
 \begin{Soutput}
-[1] 20.89213
+[1] 20.92291
 \end{Soutput}
 \begin{Sinput}
 > exp(mean(m2a.5$Sol[, "(Intercept)"]))
 \end{Sinput}
 \begin{Soutput}
-[1] 19.85906
+[1] 19.88867
 \end{Soutput}
 \begin{Sinput}
 > exp(m2a.3$coef["(Intercept)"])
@@ -500,7 +494,7 @@ In the \texttt{Traffic} example the non linearities are small so the differences
 \end{Soutput}
 \end{Schunk}
 
-Analytical results for these transformations can be obtained for the Poisson log-normal. This is not always the case and section \ref{pred-sec} gives prediction functions for other types of distribution. One could reasonably ask, why have this additional layer of complexity, why not just stick with the multiplicative model? This brings us to random effects. 
+Analytical results for these transformations can be obtained for the Poisson log-normal, but for other distributions this is not always the case. Section \ref{pred-sec} gives prediction functions for other types of distribution. One could reasonably ask, why have this additional layer of complexity, why not just stick with the multiplicative model? This brings us to random effects. 
 
 
 \section{Random effects}
@@ -520,7 +514,7 @@ Random effect models are often expressed as:
 E[{\bf y}] = \textrm{exp}({\bf X}{\bm \beta}+{\bf Z}{\bf u}+{\bf e})
 \end{equation}
 
-where ${\bf Z}$ is a design matrix like ${\bf X}$ and ${\bf u}$ is a vector of parameters like ${\bm \beta}$. We can specify simple random effect models in the same way that we specified the fixed effects:
+where ${\bf Z}$ is a design matrix like ${\bf X}$, and ${\bf u}$ is a vector of parameters like ${\bm \beta}$. We can specify simple random effect models in the same way that we specified the fixed effects:
 
 \begin{Schunk}
 \begin{Soutput}
@@ -603,7 +597,7 @@ You will notice that this new design matrix is  exactly equivalent to the origin
 \label{yrandom-fig}
 \end{figure}
 
-The estimates for the intercept, day and the effect of a speed limit now appear completely different.  However, in the original model (\texttt{m2a.5}) the prediction for each year is obtained by:
+The estimates for the intercept, day and the effect of a speed limit now appear completely different (Figure \ref{yrandom-fig}).  However, in the original model (\texttt{m2a.5}) the prediction for each year is obtained by:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -640,7 +634,7 @@ We can merge the two posterior distributions to see how they compare:
 \label{y.pred-fig}
 \end{figure}
 
-The posterior distributions are identical (see Section \ref{PriorContr-sec}), highlighting the fact that effects that are fixed are those associated with a variance component which has been set \emph{a priori} to something large ($10^8$ in this case), where effects that are random are associated with a variance component which is not set \emph{a priori} but is estimated from the data. As the variance component tends to zero then no matter how many random effects there are, we are effectively only estimating a single parameter (the variance). This makes sense, if there were no differences between years we only need to estimate a global intercept and not separate effects for each year. Alternatively if the variance is infinite then we need to estimate separate effects for each year. In this case the intercept is confounded with the average value of the random effect, resulting in a wide marginal distribution for the intercept, and strong posterior correlations between the intercept and the mean of the random effects:
+The posterior distributions are very similar (Figure \ref{y.pred-fig}; but see Section \ref{PriorContr-sec} why they are not identical), highlighting the fact that effects that are fixed are those associated with a variance component which has been set \emph{a priori} to something large ($10^8$ in this case), where effects that are random are associated with a variance component which is not set \emph{a priori} but is estimated from the data. As the variance component tends to zero then no matter how many random effects there are, we are effectively only estimating a single parameter (the variance). This makes sense, if there were no differences between years we only need to estimate a global intercept and not separate effects for each year. Alternatively if the variance is infinite then we need to estimate separate effects for each year. In this case the intercept is confounded with the average value of the random effect, resulting in a wide marginal distribution for the intercept, and strong posterior correlations between the intercept and the mean of the random effects:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -672,7 +666,7 @@ At the moment we have day as a continuous covariate, but we could also have rand
 \end{Sinput}
 \end{Schunk}
 
-\texttt{day} has also gone in the fixed formula, but as a numeric variable, in order to capture any time trends in the number of injuries. Most of the over-dispersion seems to be captured by fitting day as a random term:
+\texttt{day} has also gone in the fixed formula, but as a numeric variable, in order to capture any time trends in the number of injuries. Most of the over-dispersion seems to be captured by fitting day as a random term (Figure \ref{GLMM.VCV-fig}):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -693,7 +687,7 @@ In fact it explains so much that the residual variance is close to zero and mixi
 \section{Prediction with Random effects}
 \label{pred-sec}
 
-In section \ref{addod-sec} we showed that for non-Gaussian data the expectation of the response variable $y$ is different from the linear predictor if we wish to average over the residuals. Often it is important to get the expectation after marginalising other random effects. For example we may not be so interested in knowing the expected number of injuries on the average day, but knowing the expected number of injuries on any random day. \\  
+In section \ref{addod-sec} we showed that for non-Gaussian data the expectation of the response variable $y$ is different from the linear predictor if we wish to average over the residuals. Often it is important to get the expectation after marginalising residuals, and indeed after marginalising other random effects. For example we may not be so interested in knowing the expected number of injuries on the average day, but knowing the expected number of injuries on any random day. \\  
 
 For the Poisson mixed model:
 
@@ -707,19 +701,28 @@ we can marginalise with respect to the random effects, including the over-disper
 E_{{u,e}}[y] = \textrm{exp}({\bf X}{\bm \beta}+0.5\sigma^{2})
 \end{equation}
 
-where $\sigma^{2}$ is the sum of the variance components.
+where $\sigma^{2}$ is the sum of the variance components.\\
 
-For the Binomial mixed model
+For the Binomial mixed model with logit link
 
 \begin{equation}
 E[y] = \textrm{logit}^{-1}({\bf X}{\bm \beta}+{\bf Z}{\bf u}+{\bf e})
 \end{equation}
 
-it is not possible to marginilse with respect to the random effects analytically, but an approximation exists \citep[][p452]{McCulloch.2001}
+it is not possible to marginilse with respect to the random effects analytically, but two approximations exist. The first
 
 \begin{equation}
-E_{{u,e}}[y] = \textrm{logit}^{-1}({\bf X}{\bm \beta}-0.5\sigma^{2}\textrm{tanh}({\bf X}{\bm \beta}(1+2\textrm{exp}(-0.5\sigma^{2}))/6)))
+E_{{u,e}}[y] \approx \textrm{logit}^{-1}({\bf X}{\bm \beta}-0.5\sigma^{2}\textrm{tanh}({\bf X}{\bm \beta}(1+2\textrm{exp}(-0.5\sigma^{2}))/6)))
 \end{equation}
+
+can be found on p452 in \citet{McCulloch.2001} and the second (and possibly less accurate) approximation in \citet{Diggle.2004}:
+
+
+\begin{equation}
+E_{{u,e}}[y] \approx \textrm{logit}^{-1}\left(\frac{{\bf X}{\bm \beta}}{\sqrt{1+(\frac{16\sqrt{3}}{15\pi})^{2}\sigma^{2}}}\right)
+\end{equation}
+
+
 
 A predict function has been implemented for \texttt{MCMCglmm} although it is currently incomplete and needs further testing. However, for simpler distributions it should be OK - for example, we can predict the laibality on the latent scale after marginalising the random effects in model \texttt{m2a.7}:
 
@@ -728,7 +731,7 @@ A predict function has been implemented for \texttt{MCMCglmm} although it is cur
 > predict(m2a.7, marginal = ~day, type = "terms")[1:5]
 \end{Sinput}
 \begin{Soutput}
-[1] 3.006432 3.008972 3.011512 3.014052 3.016592
+[1] 3.015804 3.018282 3.020761 3.023239 3.025718
 \end{Soutput}
 \end{Schunk}
 
@@ -739,7 +742,7 @@ or we can predict on the data scale:
 > predict(m2a.7, marginal = ~day, type = "response")[1:5]
 \end{Sinput}
 \begin{Soutput}
-[1] 22.18010 22.23481 22.28969 22.34476 22.40000
+[1] 22.48301 22.53678 22.59073 22.64485 22.69914
 \end{Soutput}
 \end{Schunk}
 
@@ -752,11 +755,11 @@ In addition, credible intervals can be obtained
 \end{Sinput}
 \begin{Soutput}
        fit      lwr      upr
-1 22.18010 19.17429 25.31483
-2 22.23481 19.04716 25.11008
-3 22.28969 19.14483 25.12002
-4 22.34476 19.24300 25.14558
-5 22.40000 19.44682 25.28616
+1 22.48301 19.12975 26.06273
+2 22.53678 19.24535 26.09119
+3 22.59073 19.34511 26.12938
+4 22.64485 19.46344 26.17390
+5 22.69914 19.59634 26.20860
 \end{Soutput}
 \end{Schunk}
 
@@ -769,11 +772,11 @@ as can prediction intervals through posterior predictive simulation:
 \end{Sinput}
 \begin{Soutput}
        fit      lwr      upr
-1 22.09751 7.762836 42.19853
-2 22.77109 6.468017 42.59632
-3 21.94235 7.054751 39.60715
-4 22.51910 6.761624 43.10373
-5 22.38702 6.511929 41.56868
+1 22.29901 6.137380 43.15941
+2 22.22611 5.318330 42.57887
+3 22.70872 6.567779 44.59958
+4 22.62401 6.409848 43.33561
+5 22.75578 6.017660 43.06727
 \end{Soutput}
 \end{Schunk}
 
@@ -791,8 +794,8 @@ Response variables consisting of levels of some categorical factor are best anal
 \end{Sinput}
 \begin{Soutput}
         u.1 u.2
-success   1   2
-failure   4   3
+success   1   4
+failure   4   1
 \end{Soutput}
 \end{Schunk}
 
@@ -806,7 +809,7 @@ and then expand them into success or failure:
 \end{Sinput}
 \begin{Soutput}
      u.1 u.1 u.1 u.1 u.1 u.2 u.2 u.2 u.2 u.2
-[1,]   1   0   0   0   0   1   1   0   0   0
+[1,]   1   0   0   0   0   1   1   1   1   0
 \end{Soutput}
 \end{Schunk}
 
@@ -878,7 +881,7 @@ as do the variance components  (see Figure \ref{Bin2-fig}):
 \label{Bin2-fig}
 \end{figure}
 
-Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.766 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
+Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.649 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
 
 \begin{equation}
 \texttt{IC} =  \frac{\sigma^{2}_{\texttt{FSfamily}}}{\sigma^{2}_{\texttt{FSfamily}}+\sigma^{2}_{\texttt{units}}+\pi^{2}/3} 
@@ -890,7 +893,7 @@ for the logit link, which is used when \texttt{family=categorical}, or
 \texttt{IC} =  \frac{\sigma^{2}_{\texttt{FSfamily}}}{\sigma^{2}_{\texttt{FSfamily}}+\sigma^{2}_{\texttt{units}}+1} 
 \end{equation} 
 
-the probit link, which is used if \texttt{family=ordinal} was specified.\\
+for the probit link, which is used if \texttt{family=ordinal} was specified.\\
 
 Obtaing the posterior distribution of the intra-calss correlation for each model shows that they are sampling very similar posterior distributions (see Figure \ref{IC-fig}) 
 
@@ -910,7 +913,7 @@ Obtaing the posterior distribution of the intra-calss correlation for each model
 \label{IC-fig}
 \end{figure}
 
-Using an approximation due to \citet{Diggle.2004} we can also rescale the estimates by the estimated residual variance ($\sigma^{2}_{\texttt{units}}$) in order to obtain the posterior distributions of the parameters under the assumption that the actual residual variance ($\sigma^{2}_{e}$) is equal to some other value.  For location effects the posterior distribution needs to be multiplied by $\sqrt{\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}}$ and for the variance components the posterior distribution needs to be multiplied by $\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}$ where $c$ is some constant that depends on the link function. For the probit $c=1$ and for the logit $c=16\sqrt{3}/15\pi$. We can obtain estimates under the assumption that $\sigma^{2}_{e}=0$: 
+Using the approximation due to \citet{Diggle.2004} described earlier we can also rescale the estimates by the estimated residual variance ($\sigma^{2}_{\texttt{units}}$) in order to obtain the posterior distributions of the parameters under the assumption that the actual residual variance ($\sigma^{2}_{e}$) is equal to some other value.  For location effects the posterior distribution needs to be multiplied by $\sqrt{\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}}$ and for the variance components the posterior distribution needs to be multiplied by $\frac{1+c^{2}\sigma^{2}_{e}}{1+c^{2}\sigma^{2}_{\texttt{units}}}$ where $c$ is some constant that depends on the link function. For the probit $c=1$ and for the logit $c=16\sqrt{3}/15\pi$. We can obtain estimates under the assumption that $\sigma^{2}_{e}=0$: 
 
 \begin{Schunk}
 \begin{Sinput}
@@ -948,7 +951,7 @@ It should also be noted that a diffuse prior on the logit scale is not necessari
 \label{invlogit-fig}
 \end{figure}
 
-This diffuse prior can cause problems if there is complete (or near complete) separation. Generally this happens when the binary data associated with some categorical data are all success or all failures. For example, imagine we had 50 binary observations from an experiment with two treatments, for the first treatment the probability of success is 0.5 but in the second it is only one in a thousand:
+This diffuse prior can cause problems if there is complete (or near complete) separation. Generally this happens when the binary data associated with some level of a categorical predictor are all success or all failures. For example, imagine we had 50 binary observations from an experiment with two treatments, for the first treatment the probability of success is 0.5 but in the second it is only one in a thousand:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -960,8 +963,8 @@ This diffuse prior can cause problems if there is complete (or near complete) se
 \begin{Soutput}
          y
 treatment  0  1
-        1 11 14
-        2 25  0
+        1 10 15
+        2 24  1
 \end{Soutput}
 \end{Schunk}
  
@@ -977,21 +980,23 @@ Call:
 glm(formula = y ~ treatment, family = "binomial", data = data.bin)
 
 Deviance Residuals: 
-       Min          1Q      Median          3Q         Max  
--1.281e+00  -7.976e-05  -7.976e-05   1.077e+00   1.077e+00  
+    Min       1Q   Median       3Q      Max  
+-1.3537  -0.2857  -0.2857   1.0108   2.5373  
 
 Coefficients:
-             Estimate Std. Error z value Pr(>|z|)
-(Intercept)    0.2412     0.4029   0.599    0.549
-treatment2   -19.8072  2150.8026  -0.009    0.993
+            Estimate Std. Error z value Pr(>|z|)   
+(Intercept)   0.4055     0.4082   0.993  0.32062   
+treatment2   -3.5835     1.0990  -3.261  0.00111 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 59.295  on 49  degrees of freedom
-Residual deviance: 34.296  on 48  degrees of freedom
-AIC: 38.296
+    Null deviance: 62.687  on 49  degrees of freedom
+Residual deviance: 42.048  on 48  degrees of freedom
+AIC: 46.048
 
-Number of Fisher Scoring iterations: 18
+Number of Fisher Scoring iterations: 5
 \end{Soutput}
 \end{Schunk}
 
@@ -1006,17 +1011,17 @@ the effect of treatment does not appear significant despite the large effect siz
 	Exact binomial test
 
 data:  table(data.bin)[2, 2] and 25 
-number of successes = 0, number of trials = 25, p-value = 5.96e-08
+number of successes = 1, number of trials = 25, p-value = 1.550e-06
 alternative hypothesis: true probability of success is not equal to 0.5 
 95 percent confidence interval:
- 0.0000000 0.1371852 
+ 0.001012200 0.203516914 
 sample estimates:
 probability of success 
-                     0 
+                  0.04 
 \end{Soutput}
 \end{Schunk}
 
-where the  95\% confidence interval for the probability of success is  0.000 to 0.137.\\
+where the  95\% confidence interval for the probability of success is  0.001 to 0.204.\\
 
 The default \texttt{MCMCglmm} model also behaves oddly (see Figure \ref{separation1-fig}):
 
@@ -1054,7 +1059,7 @@ For these types of problems, I usually remove the global intercept (\texttt{-1})
 \end{Schunk}
 
 
-looks a little better (see Figure \ref{separation1-fig}), and the posterior distribution for the probability of success in treatment 2 is consistent with the exact binomial test for which the 95\% CI were (0.000 - 0.137). With such a simple model, the prediction for observation 26 is equal to the  treatment 2 effect and so we can get the the credible interval (on the data scale) for treatment 2 using the predict function:
+looks a little better (see Figure \ref{separation1-fig}), and the posterior distribution for the probability of success in treatment 2 is consistent with the exact binomial test for which the 95\% CI were (0.001 - 0.204). With such a simple model, the prediction for observation 26 is equal to the  treatment 2 effect and so we can get the the credible interval (on the data scale) for treatment 2 using the predict function:
 
 
 
@@ -1073,7 +1078,7 @@ looks a little better (see Figure \ref{separation1-fig}), and the posterior dist
 \end{Sinput}
 \begin{Soutput}
         fit         lwr         upr 
-0.043341536 0.002217133 0.104788821 
+0.068405746 0.008366239 0.149296666 
 \end{Soutput}
 \end{Schunk}
 
@@ -1083,7 +1088,7 @@ looks a little better (see Figure \ref{separation1-fig}), and the posterior dist
 
 Fixed and random effects are essentially the same thing. The only difference is that the variance component for the fixed effects is usually fixed at some large value, whereas the variance component for the random effects is estimated.  In section \ref{ranef-sec} I demonstrated this by claiming that a model where year effects were fixed (\texttt{m2a.5}) was identical to one where they were treated as random, but with the variance component set to a large value (\texttt{m2a.6}). This was a white lie as I did not want to distract attention from the main point. The reason why they were not identical is as follows:\\
 
-In the fixed effect model we had the prior:  
+In the fixed effect model (\texttt{m2a.5}) we had the prior:  
 
 \begin{equation}
 \begin{array}{rcl}
@@ -1106,7 +1111,7 @@ In the fixed effect model we had the prior:
 
 Where $\beta_{\texttt{(Intercept)}}$ and $\beta_{\texttt{year1962}}$ are the fixed effects to be estimated.\\
 
-Remembering the identity  $\sigma^{2}_{(a+b)} = \sigma^{2}_{a}+ \sigma^{2}_{b}+\sigma_{a,b}$, this implies:
+Remembering the identity  $\sigma^{2}_{(a+b)} = \sigma^{2}_{a}+ \sigma^{2}_{b}+2\sigma_{a,b}$, this implies:
 
 \begin{equation}
 \begin{array}{rccl}

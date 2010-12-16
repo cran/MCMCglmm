@@ -729,8 +729,6 @@ if(nL>0){
           } 
         }
   
-       
-
 
         for (k = 0 ; k < nGR ; k++){
            GinvS[k] = cs_schol(1, Ginv[k]);                    // Symbolic factorisation of G
@@ -867,6 +865,7 @@ if(nL>0){
 
           alphaS = cs_schol(1, alphaMME);                            // Symbolic factorisation - only has to be done once
         }
+
 	
   	GetRNGstate();                                   // get seed for random number generation
 
@@ -1217,6 +1216,7 @@ if(nL>0){
 		      }
 	            }	
 	          }
+
                   switch(updateP[i]){
 
 	            case 1: 

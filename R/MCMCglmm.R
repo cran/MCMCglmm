@@ -477,7 +477,7 @@
        if(NOpriorG==TRUE){
          GRprior[[nr]]<-list(V=diag(sum(Zlist$nfl)), nu=0, alpha.mu=rep(1, sum(Zlist$nfl)), alpha.V=diag(sum(Zlist$nfl))*0)
          if(length(grep("MCMC_meta", rmodel.terms[r]))>0){
-            GRprior[[nr]]<-list(V=as.matrix(1), fix=1, alpha.mu=1, alpha.V=as.matrix(0))
+            GRprior[[nr]]<-list(V=as.matrix(1), fix=1, alpha.mu=0, alpha.V=as.matrix(0), nu=0)
          }
        }else{
          if(r<=ngstructures){

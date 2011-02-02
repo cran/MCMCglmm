@@ -130,11 +130,14 @@ void inverseA(
     pAP[i] = A->p[i];
   }
   nzmaxAP[0] = A->nzmax;
+
   cs_spfree(Tinv);
   cs_spfree(tTinv);
   cs_spfree(D);
   cs_spfree(tTD);
   cs_spfree(A);
   cs_spfree(tA);
+  free(AN);
+  free(li);
 }
 }

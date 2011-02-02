@@ -1,0 +1,82 @@
+\relax 
+\@writefile{toc}{\contentsline {chapter}{\numberline {1}Bayesian Statistics \& MCMC}{5}{chapter.1}}
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap1}{{1}{5}{Bayesian Statistics \& MCMC\relax }{chapter.1}{}}
+\newlabel{post1-eq}{{1}{6}{Bayesian Statistics \& MCMC\relax }{chapter.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.1}Likelihood}{6}{section.1.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.1}{\ignorespaces Probability density function for the unit normal with the data points overlaid.}}{7}{figure.1.1}}
+\newlabel{dnorm-fig}{{1.1}{7}{Probability density function for the unit normal with the data points overlaid}{figure.1.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.2}{\ignorespaces Two probability density functions for normal distributions with means of zero, and a variance of one (black line) and a variance of 0.5 (red line). The data points are overlaid.}}{8}{figure.1.2}}
+\newlabel{dnorm1-fig}{{1.2}{8}{Two probability density functions for normal distributions with means of zero, and a variance of one (black line) and a variance of 0.5 (red line). The data points are overlaid}{figure.1.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1.1}Maximum Likelihood (ML)}{8}{subsection.1.1.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.3}{\ignorespaces Likelihood surface for the likelihood $Pr({\bf  y}|\mu , \sigma ^{2})$. The likelihood has been normalised so that the maximum likelihood has a value of one.}}{9}{figure.1.3}}
+\newlabel{Lsurface-fig}{{1.3}{9}{Likelihood surface for the likelihood $Pr({\bf y}|\mu , \sigma ^{2})$. The likelihood has been normalised so that the maximum likelihood has a value of one}{figure.1.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1.2}Restricted Maximum Likelihood (REML)}{10}{subsection.1.1.2}}
+\citation{Gelman.2006}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.4}{\ignorespaces Probability density function for the unit normal with 2 realisations overlaid. The solid vertical line is the true mean, whereas the vertical dashed line is the mean of the two realisations (the ML estimator of the mean). The variance is the expected squared distance between the true mean and the realisations. The ML estimator of the variance is the average squared distance between the ML mean and the realisations (horizontal dashed lines), which is always smaller than the average squared distance between the true mean and the realisations (horizontal solid lines)}}{11}{figure.1.4}}
+\newlabel{muvar-fig}{{1.4}{11}{Probability density function for the unit normal with 2 realisations overlaid. The solid vertical line is the true mean, whereas the vertical dashed line is the mean of the two realisations (the ML estimator of the mean). The variance is the expected squared distance between the true mean and the realisations. The ML estimator of the variance is the average squared distance between the ML mean and the realisations (horizontal dashed lines), which is always smaller than the average squared distance between the true mean and the realisations (horizontal solid lines)\relax }{figure.1.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.2}Prior Distribution}{11}{section.1.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.5}{\ignorespaces Probability density function for a univariate inverse Wishart with the variance at the limit set to 1 (\texttt  {V=1}) and varying degree of belief parameter (\texttt  {nu}). With \texttt  {V=1} these distributions are equivalent to inverse gamma distributions with shape and scale parameters set to \texttt  {nu}/2.}}{12}{figure.1.5}}
+\newlabel{dinvgamma-fig}{{1.5}{12}{Probability density function for a univariate inverse Wishart with the variance at the limit set to 1 (\texttt {V=1}) and varying degree of belief parameter (\texttt {nu}). With \texttt {V=1} these distributions are equivalent to inverse gamma distributions with shape and scale parameters set to \texttt {nu}/2}{figure.1.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.3}Posterior Distribution}{13}{section.1.3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.6}{\ignorespaces Likelihood surface for the likelihood $Pr({\bf  y}|\mu , \sigma ^{2})$ in black, and the posterior distribution $Pr(\mu , \sigma ^{2} | {\bf  y})$ in red. The likelihood has been normalised so that the maximum likelihood has a value of one, and the posterior distribution has been normalised so that the posterior mode has a value of one. The prior distributions $Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt  {V}=1, \texttt  {nu}=0.002)$ were used.}}{14}{figure.1.6}}
+\newlabel{Psurface-fig}{{1.6}{14}{Likelihood surface for the likelihood $Pr({\bf y}|\mu , \sigma ^{2})$ in black, and the posterior distribution $Pr(\mu , \sigma ^{2} | {\bf y})$ in red. The likelihood has been normalised so that the maximum likelihood has a value of one, and the posterior distribution has been normalised so that the posterior mode has a value of one. The prior distributions $Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt {V}=1, \texttt {nu}=0.002)$ were used}{figure.1.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.1}Marginal Posterior Distribution}{14}{subsection.1.3.1}}
+\newlabel{marg-eq}{{1.3.1}{14}{Marginal Posterior Distribution\relax }{subsection.1.3.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.7}{\ignorespaces The posterior distribution $Pr(\mu , \sigma ^{2} | {\bf  y})$. The black dots are samples from the posterior using MCMC, and the red contours are calculated by evaluating the posterior density on a grid of parameter values. The contours are normalised so that the posterior mode has a value of one.}}{16}{figure.1.7}}
+\newlabel{PsurfaceMCMC-fig}{{1.7}{16}{The posterior distribution $Pr(\mu , \sigma ^{2} | {\bf y})$. The black dots are samples from the posterior using MCMC, and the red contours are calculated by evaluating the posterior density on a grid of parameter values. The contours are normalised so that the posterior mode has a value of one}{figure.1.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.8}{\ignorespaces Histogram of samples from the marginal distribution of the variance $Pr(\sigma ^{2} | {\bf  y})$ using MCMC. The vertical line is the joint posterior mode, which differs slightly from the marginal posterior mode (the peak of the marginal distribution).}}{17}{figure.1.8}}
+\newlabel{PsurfaceMCMC-fig}{{1.8}{17}{Histogram of samples from the marginal distribution of the variance $Pr(\sigma ^{2} | {\bf y})$ using MCMC. The vertical line is the joint posterior mode, which differs slightly from the marginal posterior mode (the peak of the marginal distribution)}{figure.1.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.4}MCMC}{17}{section.1.4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.1}Starting values}{18}{subsection.1.4.1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.2}Metrpolis-Hastings updates}{18}{subsection.1.4.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.9}{\ignorespaces The posterior distribution $Pr(\mu , \sigma ^{2} | {\bf  y})$. This perspective plot is equivalent to the contour plot in Figure \ref  {Psurface-fig}}}{19}{figure.1.9}}
+\newlabel{Psurface.persp-fig}{{1.9}{19}{The posterior distribution $Pr(\mu , \sigma ^{2} | {\bf y})$. This perspective plot is equivalent to the contour plot in Figure \ref {Psurface-fig}\relax }{figure.1.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.3}Gibbs Sampling}{19}{subsection.1.4.3}}
+\citation{Damien.1999}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.10}{\ignorespaces The posterior distribution $Pr(\mu , \sigma ^{2} | {\bf  y})$, but only for values of $\sigma ^{2}$ between 1 and 5, rather than 0 to 5 (Figure \ref  {Psurface.persp-fig}). The edge of the surface facing left is the conditional distribution of the mean when $\sigma ^{2}=1$ ($Pr(\mu | {\bf  y}, \sigma ^{2}=1)$). This conditional distribution follows a normal distribution.}}{20}{figure.1.10}}
+\newlabel{Psurface.persp2-fig}{{1.10}{20}{The posterior distribution $Pr(\mu , \sigma ^{2} | {\bf y})$, but only for values of $\sigma ^{2}$ between 1 and 5, rather than 0 to 5 (Figure \ref {Psurface.persp-fig}). The edge of the surface facing left is the conditional distribution of the mean when $\sigma ^{2}=1$ ($Pr(\mu | {\bf y}, \sigma ^{2}=1)$). This conditional distribution follows a normal distribution}{figure.1.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.4}Slice Sampling}{21}{subsection.1.4.4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.5}MCMC Diagnostics}{21}{subsection.1.4.5}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.5}Improper Priors}{22}{section.1.5}}
+\newlabel{IP-sec}{{1.5}{22}{Improper Priors\relax }{section.1.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.11}{\ignorespaces Summary plot of the Markov Chain for the intercept. The left plot is a trace of the sampled posterior, and can be thought of as a time series. The right plot is a density estimate, and can be thought of a smoothed histogram approximating the posterior.}}{23}{figure.1.11}}
+\newlabel{time.series-fig}{{1.11}{23}{Summary plot of the Markov Chain for the intercept. The left plot is a trace of the sampled posterior, and can be thought of as a time series. The right plot is a density estimate, and can be thought of a smoothed histogram approximating the posterior}{figure.1.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5.1}Flat Improper Prior}{23}{subsection.1.5.1}}
+\newlabel{fprior-eq}{{1.5.1}{23}{Flat Improper Prior\relax }{subsection.1.5.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.12}{\ignorespaces Summary plot of the Markov Chain for the logged variance. The logged variance was plotted rather than the variance because it was easier to visualise. The left plot is a trace of the sampled posterior, and can be thought of as a time series. The right plot is a density estimate, and can be thought of a smoothed histogram approximating the posterior.}}{24}{figure.1.12}}
+\newlabel{time.series2-fig}{{1.12}{24}{Summary plot of the Markov Chain for the logged variance. The logged variance was plotted rather than the variance because it was easier to visualise. The left plot is a trace of the sampled posterior, and can be thought of as a time series. The right plot is a density estimate, and can be thought of a smoothed histogram approximating the posterior}{figure.1.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.13}{\ignorespaces Likelihood surface for the likelihood $Pr({\bf  y}|\mu , \sigma ^{2})$ in black, and an MCMC approximation for the posterior distribution $Pr(\mu , \sigma ^{2} | {\bf  y})$ in red. The likelihood has been normalised so that the maximum likelihood has a value of one, and the posterior distribution has been normalised so that the posterior mode has a value of one. Flat priors were used ($Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt  {V}=0, \texttt  {nu}=0)$) and so the posterior distribution is equivalent to the likelihood.}}{25}{figure.1.13}}
+\newlabel{Psurface.flat-fig}{{1.13}{25}{Likelihood surface for the likelihood $Pr({\bf y}|\mu , \sigma ^{2})$ in black, and an MCMC approximation for the posterior distribution $Pr(\mu , \sigma ^{2} | {\bf y})$ in red. The likelihood has been normalised so that the maximum likelihood has a value of one, and the posterior distribution has been normalised so that the posterior mode has a value of one. Flat priors were used ($Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt {V}=0, \texttt {nu}=0)$) and so the posterior distribution is equivalent to the likelihood}{figure.1.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5.2}Non-Informative Improper Prior}{25}{subsection.1.5.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.14}{\ignorespaces Likelihood surface for the likelihood $Pr({\bf  y}|\mu , \sigma ^{2})$ in black, and an MCMC approximation for the posterior distribution $Pr(\mu , \sigma ^{2} | {\bf  y})$ in red. The likelihood has been normalised so that the maximum likelihood has a value of one, and the posterior distribution has been normalised so that the posterior mode has a value of one. A non-informative prior was used ($Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt  {V}=0, \texttt  {nu}=-2)$)}}{26}{figure.1.14}}
+\newlabel{Psurfaceb-fig}{{1.14}{26}{Likelihood surface for the likelihood $Pr({\bf y}|\mu , \sigma ^{2})$ in black, and an MCMC approximation for the posterior distribution $Pr(\mu , \sigma ^{2} | {\bf y})$ in red. The likelihood has been normalised so that the maximum likelihood has a value of one, and the posterior distribution has been normalised so that the posterior mode has a value of one. A non-informative prior was used ($Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt {V}=0, \texttt {nu}=-2)$)\relax }{figure.1.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.15}{\ignorespaces An MCMC approximation for the marginal posterior distribution of the variance $Pr(\sigma ^{2} | {\bf  y})$. A non-informative prior specification was used ($Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt  {V}=0, \texttt  {nu}=-2)$) and the REML estimator of the variance (red line) coincides with the marginal posterior mode.}}{27}{figure.1.15}}
+\newlabel{Pmarg.NI-fig}{{1.15}{27}{An MCMC approximation for the marginal posterior distribution of the variance $Pr(\sigma ^{2} | {\bf y})$. A non-informative prior specification was used ($Pr(\mu )\sim N(0, 10^8)$ and $Pr(\sigma ^{2})\sim IW(\texttt {V}=0, \texttt {nu}=-2)$) and the REML estimator of the variance (red line) coincides with the marginal posterior mode}{figure.1.15}{}}
+\@setckpt{Lecture1}{
+\setcounter{page}{28}
+\setcounter{equation}{1}
+\setcounter{enumi}{0}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{2}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{1}
+\setcounter{section}{5}
+\setcounter{subsection}{2}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{15}
+\setcounter{table}{0}
+\setcounter{NAT@ctr}{0}
+\setcounter{FancyVerbLine}{3}
+\setcounter{Item}{0}
+\setcounter{Hfootnote}{2}
+\setcounter{LT@tables}{0}
+\setcounter{LT@chunks}{0}
+\setcounter{section@level}{2}
+}

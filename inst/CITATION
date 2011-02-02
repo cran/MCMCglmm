@@ -11,7 +11,7 @@ citEntry(entry = "Article",
   url          = "http://www.jstatsoft.org/v33/i02/",
 
   textVersion  =
-  paste("Jarrod Hadfield (2010).",
+  paste("Jarrod D Hadfield (2010).",
         "MCMC Methods for Multi-Response Generalized Linear Mixed Models: The MCMCglmm R Package.",
         "Journal of Statistical Software, 33(2), 1-22.",
         "URL http://www.jstatsoft.org/v33/i02/.")

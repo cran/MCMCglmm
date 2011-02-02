@@ -525,7 +525,7 @@
            CM<-GRprior[[nr]]$V[GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1],GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1]]
            if(sum(CM!=0)>dim(GRprior[[nr]]$V)[1] & GRprior[[nr]]$fix>1){stop("sorry - matrices to be conditioned on must be diagonal")}           
            if(GRprior[[nr]]$fix!=1){
-             if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
+           if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
            }else{
              GRprior[[nr]]$nu=1
            }

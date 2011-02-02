@@ -1,14 +1,21 @@
-#source("~/Work/AManal/MCMCglmm_2.09/inst/doc/Figures/buildCN.R")
-set.seed(19)
+#source("~/Work/AManal/MCMCglmm_2.11/inst/doc/Figures/buildCN.R")
+set.seed(32)
 alone=FALSE
-lectures<-NULL
+lectures<-1:9
 forCRAN=TRUE
-JSS<-TRUE
+JSS<-FALSE
 LINUX=TRUE
 options(width=80)
 
+# Things to check add up
+
+# Need to make sure the data are more likely under N(0,0.5) than N(0,1) in Chapter 1 
+# Need to make sure the binary data are completely separated in Chapter 2 
+
+#
+
 UPpath="~/Work/AManal/UP_course/Tex/"
-MCpath="~/Work/AManal/MCMCglmm_2.09/inst/doc/"
+MCpath="~/Work/AManal/MCMCglmm_2.11/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)

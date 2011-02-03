@@ -2217,6 +2217,43 @@ if(nL>0){
 	    cs_spfree(muC[i]);
  	    cs_spfree(muC[i+nGR]);
         }
+
+        free(cond);
+        free(keep);
+        free(diagLambdaL);
+        free(diagLambdaU);
+        free(t);
+        free(sd);
+        free(wn); 
+        free(zn);
+        free(ldet);
+        free(cumsum_ncutpoints);
+        free(oldcutpoints);
+        free(newcutpoints);
+        free(sdcp);
+        free(wncp);
+        free(zncp);
+        free(accp);
+        free(cutpointMHR);
+        free(Ginv);
+        free(muG);	
+        free(propC);
+        free(propCinv);
+        free(muC);
+        free(G);
+        free(pG);
+        free(CM);
+        free(Gtmp);
+        free(Grv); 
+        free(GinvS);
+        free(GinvL);
+        free(propCinvS);
+        free(propCinvL);
+        free(KGinv);
+        free(lambda);
+        free(lambdaI);
+        free(Lambda);
+        free(Lambda_tmp);
 }
 }
 

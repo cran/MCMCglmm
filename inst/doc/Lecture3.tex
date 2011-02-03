@@ -52,8 +52,8 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 > diag(autocorr(m3a.1$VCV)[2, , ])
 \end{Sinput}
 \begin{Soutput}
-         dam   fosternest        units 
--0.005412770  0.347055040  0.008737537 
+       dam fosternest      units 
+0.03015650 0.43293184 0.04920423 
 \end{Soutput}
 \begin{Sinput}
 > plot(m3a.1$VCV)
@@ -64,8 +64,8 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 \begin{center}
 \begin{Schunk}
 \begin{Soutput}
-         dam   fosternest        units 
--0.005412770  0.347055040  0.008737537 
+       dam fosternest      units 
+0.03015650 0.43293184 0.04920423 
 \end{Soutput}
 \end{Schunk}
 \includegraphics{Lecture3-005}
@@ -82,7 +82,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
-  840.8048   484.2351  1000.0000 
+ 1000.0000   333.7115   822.8681 
 \end{Soutput}
 \end{Schunk}
 
@@ -96,9 +96,9 @@ The posterior correlation between the parameters is low
 \end{Sinput}
 \begin{Soutput}
                    dam fosternest       units
-dam         1.00000000 -0.2196589 -0.02165193
-fosternest -0.21965893  1.0000000 -0.14094742
-units      -0.02165193 -0.1409474  1.00000000
+dam         1.00000000 -0.2617804 -0.03572453
+fosternest -0.26178044  1.0000000 -0.19821243
+units      -0.03572453 -0.1982124  1.00000000
 \end{Soutput}
 \end{Schunk}
 
@@ -112,9 +112,9 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 \end{Sinput}
 \begin{Soutput}
                  lower     upper
-dam        0.133582613 0.3292076
-fosternest 0.008375365 0.1222961
-units      0.514814500 0.6370544
+dam        0.137995486 0.3244924
+fosternest 0.001049190 0.1226651
+units      0.513211216 0.6366857
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -131,13 +131,13 @@ and perhaps a model without it would be better supported, although the DIC sugge
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.190
+[1] 2014.195
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.723
+[1] 1992.541
 \end{Soutput}
 \end{Schunk}
 
@@ -150,7 +150,7 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.1788196 0.3565076
+var1 0.1772904 0.3516524
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -167,29 +167,29 @@ One nice thing though about standardised data is that effect sizes are immediate
  Thinning interval  = 10
  Sample size  = 1000 
 
- DIC: 1991.723 
+ DIC: 1992.541 
 
  G-structure:  ~dam
 
     post.mean l-95% CI u-95% CI eff.samp
-dam    0.2267   0.1336   0.3292    840.8
+dam    0.2293    0.138   0.3245     1000
 
                ~fosternest
 
            post.mean l-95% CI u-95% CI eff.samp
-fosternest   0.06692 0.008375   0.1223    484.2
+fosternest   0.06465 0.001049   0.1227    333.7
 
  R-structure:  ~units
 
       post.mean l-95% CI u-95% CI eff.samp
-units    0.5725   0.5148    0.637     1000
+units    0.5731   0.5132   0.6367    822.9
 
  Location effects: tarsus ~ sex 
 
             post.mean l-95% CI u-95% CI eff.samp  pMCMC    
-(Intercept)   -0.4044  -0.5363  -0.2770     1000 <0.001 ***
-sexMale        0.7702   0.6610   0.8805     1000 <0.001 ***
-sexUNK         0.2054  -0.0422   0.4389     1328  0.086 .  
+(Intercept)  -0.40612 -0.52516 -0.27356     1000 <0.001 ***
+sexMale       0.76894  0.65010  0.87477     1000 <0.001 ***
+sexUNK        0.20476 -0.02971  0.46530     1000  0.116    
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 \end{Soutput}
@@ -260,7 +260,7 @@ The different variance functions make different assumptions about how the effect
 \right]
 \end{displaymath}
 
-In the simpler models we had fitted in Lectures \ref{chap1} and \ref{chap2} ${\bf V}$ was a scalar (${\bf V} = \sigma^{2}$) rather than a matrix, and the prior specification was relatively simple.  We will come back to prior specifications for covariance matrices in Section \ref{VCVprior-sec}, but for now note that the prior for the dam component has \texttt{V} as a $3\times3$ identity matrix:  
+In the simpler models we had fitted in Chapters \ref{chap1} and \ref{chap2} ${\bf V}$ was a scalar (${\bf V} = \sigma^{2}$) rather than a matrix, and the prior specification was relatively simple.  We will come back to prior specifications for covariance matrices in Section \ref{VCVprior-sec}, but for now note that the prior for the dam component has \texttt{V} as a $3\times3$ identity matrix:  
 
 \begin{Schunk}
 \begin{Sinput}
@@ -291,14 +291,14 @@ We can extract the marginal means for each variance and place them into a matrix
 > Vdam.3
 \end{Sinput}
 \begin{Soutput}
-      Fem.dam  Male.dam    UNK.dam
-[1,] 0.173433 0.0000000 0.00000000
-[2,] 0.000000 0.1692554 0.00000000
-[3,] 0.000000 0.0000000 0.04257395
+       Fem.dam  Male.dam    UNK.dam
+[1,] 0.1782858 0.0000000 0.00000000
+[2,] 0.0000000 0.1712243 0.00000000
+[3,] 0.0000000 0.0000000 0.05514687
 \end{Soutput}
 \end{Schunk}
 
-Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.227)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
+Note, that they are in general less than the marginal mean of the dam variance in model \texttt{m3a.1} (0.229)  where a sex interaction was not fitted.  Because the dam effects are assumed to be multivariate normal we can plot an ellipsoid that completely represents their distribution (you can rotate the figure in R):
 
 \begin{Schunk}
 \begin{Sinput}
@@ -352,9 +352,9 @@ The posterior mean (co)variances for this model show that the covariances are al
 \end{Sinput}
 \begin{Soutput}
      Fem:Fem.dam Male:Fem.dam UNK:Fem.dam
-[1,]   0.2297563    0.2002515   0.2050976
-[2,]   0.2002515    0.2117400   0.1961479
-[3,]   0.2050976    0.1961479   0.2510483
+[1,]   0.2310396    0.2028935   0.2044394
+[2,]   0.2028935    0.2170135   0.1978614
+[3,]   0.2044394    0.1978614   0.2434057
 \end{Soutput}
 \end{Schunk}
 
@@ -398,13 +398,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1997.016
+[1] 1996.747
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1991.723
+[1] 1992.541
 \end{Soutput}
 \end{Schunk}
 
@@ -623,7 +623,7 @@ A useful result is that the marginal distribution of a variance is also inverse 
 
 using the first variance as an example, and indicating the new parameters with an asterisk.\\
 
-An uninformative prior for the correlations is an improper prior with \texttt{V=diag(dim(V))$\ast$0} and \texttt{nu=dim(V)+1}. For the $3\times3$ sex by dam covariance matrix in model \texttt{m3a.4} we used a proper prior with \texttt{V=diag(3)$\ast$0.02} and \texttt{nu=4} in the hope that this would be relatively uninformative for the correlations. We can plot the marginal density of the variances for this distribution as we did in Lecture \ref{chap1}:
+An uninformative prior for the correlations is an improper prior with \texttt{V=diag(dim(V))$\ast$0} and \texttt{nu=dim(V)+1}. For the $3\times3$ sex by dam covariance matrix in model \texttt{m3a.4} we used a proper prior with \texttt{V=diag(3)$\ast$0.02} and \texttt{nu=4} in the hope that this would be relatively uninformative for the correlations. We can plot the marginal density of the variances for this distribution as we did in Chapter \ref{chap1}:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -646,7 +646,7 @@ An uninformative prior for the correlations is an improper prior with \texttt{V=
 \end{figure}
 
 
-In Lecture \ref{chap2} we saw that a non-informative prior for a variance component was \texttt{V=0} and \texttt{nu=-2}. This result generalises to covariance matrices where the improper prior \texttt{V=diag(dim(V))$\ast$0} and \texttt{nu=dim(V)-3} is non-informative for the variances and covariances. This can be verified for the variances using the results derived above for the marginal distribution:
+In Chapter \ref{chap2} we saw that a non-informative prior for a variance component was \texttt{V=0} and \texttt{nu=-2}. This result generalises to covariance matrices where the improper prior \texttt{V=diag(dim(V))$\ast$0} and \texttt{nu=dim(V)-3} is non-informative for the variances and covariances. This can be verified for the variances using the results derived above for the marginal distribution:
 
 \begin{displaymath}
 \begin{array}{rl}

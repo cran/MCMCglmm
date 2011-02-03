@@ -34,7 +34,7 @@ A linear model is one in which unknown parameters are multiplied by observed var
 
 \begin{Schunk}
 \begin{Sinput}
-> data(Traffic)
+> data(Traffic, package = "MASS")
 > Traffic$year <- as.factor(Traffic$year)
 > Traffic[c(1, 2, 184), ]
 \end{Sinput}
@@ -57,6 +57,7 @@ y ~ limit + year + day
 but what does this mean?\\
 
 \subsection{Linear Predictors}
+\label{lm-sec}
 
 The model formula defines a set of simultaneous (linear) equations 
 
@@ -96,7 +97,7 @@ where ${\bf X}$ is called a design matrix and contains the predictor information
 
 The binary predictors \emph{do the data come from 1961, yes or no?} and \emph{there was no speed limit, yes or no?} do not appear. These are the first factor levels of \texttt{year} and \texttt{limit} respectively, and are absorbed into the global intercept ($\beta_{1}$) which is fitted by default in R.  Hence the expected number of injuries for the four combinations (on day zero) are $\beta_{1}$ for 1961 with no speed limit, $\beta_{1}+\beta_{2}$ for 1961 with a speed limit, $\beta_{1}+\beta_{3}$ for 1962 with no speed limit and  $\beta_{1}+\beta_{2}+\beta_{3}$ for 1962 with a speed limit.\\
 
-The simultaneous equations defined by Equation (\ref{SE-eq}) cannot be solved directly because we do not know the expected value of y. We only know the observed value, which we assume is distributed around the expected value with some error. In a normal linear model we assume that these errors are normally distributed so that the data are also normally distributed (after taking into account the predictor variables):
+The simultaneous equations defined by Equation (\ref{lm-eq}) cannot be solved directly because we do not know the expected value of y. We only know the observed value, which we assume is distributed around the expected value with some error. In a normal linear model we assume that these errors are normally distributed so that the data are also normally distributed (after taking into account the predictor variables):
 
 \begin{equation}
 {\bf y} \sim N({\bf X}{\bm \beta}, \sigma^{2}_{e}{\bf I})
@@ -376,7 +377,7 @@ where ${\bf l}$ is a vector of latent variables ($\textrm{log}(E[{\bf y}])$ in t
 \end{equation}
 
 
-Note that the latent variable does not exactly predict y, as it would if the data were Gaussian, because there is additional variability in the Poisson process. In the call to \texttt{MCMCglmm} I specified \texttt{pl=TRUE} to indicate that I wanted to store the posterior distributions of latent variables. This is not usually necessary and can require a lot of memory (we have 1000 realisations for each of the 182 data points). However as an example we can obtain the residual for data point 92 which is the data from day 92 in 1961 when there was no speed limit:
+Note that the latent variable does not exactly predict $y$, as it would if the data were Gaussian, because there is additional variability in the Poisson process. In the call to \texttt{MCMCglmm} I specified \texttt{pl=TRUE} to indicate that I wanted to store the posterior distributions of latent variables. This is not usually necessary and can require a lot of memory (we have 1000 realisations for each of the 182 data points). However as an example we can obtain the posterior mean residual for data point 92 which is the data from day 92 in 1961 when there was no speed limit:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -386,18 +387,18 @@ Note that the latent variable does not exactly predict y, as it would if the dat
 > mean(resid92)
 \end{Sinput}
 \begin{Soutput}
-[1] -0.1399224
+[1] -0.1410748
 \end{Soutput}
 \end{Schunk}
 
-This particular day has a negative residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=21.934. In fact there would be a 21.860\% chance of having more injuries than if the residual had been zero:
+This particular day has a negative expected residual indicating that the probability of getting injured was less than expected for this \emph{particular} realisation of that day in that year. If that \emph{particular} day could be repeated it does not necessarily mean that the actual number of injuries would always be less than expected, because it would follow a Poisson distribution with rate parameter $\lambda=$exp(\texttt{lat92})=21.872. In fact there would be a 21.461\% chance of having more injuries than if the residual had been zero:
 
 \begin{Schunk}
 \begin{Sinput}
 > 1 - ppois(exp(mean(eta92)), exp(mean(lat92)))
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2186040
+[1] 0.2146055
 \end{Soutput}
 \end{Schunk}
 
@@ -438,9 +439,9 @@ The forces that created this residual were only realised on day 92 in 1961, howe
 %\centering
 \includegraphics{Lecture2-030}
 \end{minipage}
-\label{prediction1-fig}
 \caption{The predicted number of injuries on the log scale (left) and data scale (right) as a function of the continuous covariate \texttt{day} for 1961 without a speed limit. In order to highlight a point, the slope of the plotted relationship is an order of magnitude steeper than the model \texttt{m2a.5} estimate.  The solid black line is the value of the linear predictor, and the red dashed lines represent noise around the linear predictor. Each dashed line is a residual from the model, which is only observed for a particular data point. The vertical distance between the black dot and the solid black line is the observed residual on day 92. The black dashed line is the predicted value of a data point observed on other days but with the same residual value.  All lines are parallel and linear on the log scale, but this is not the case on the data scale.
 }
+\label{prediction1-fig}
 \end{figure}
 
 
@@ -465,9 +466,9 @@ It is perhaps more interesting to know the expected number of injuries that woul
 \centering
 \includegraphics{Lecture2-038}
 \end{minipage}
-\label{prediction3-fig}
 \caption{The hypothetical distribution for the number of injuries on the log scale (left) and data scale (right) for day 92 in 1961 without a speed limit. These can viewed as vertical slices from Figure \ref{prediction1-fig} on day 92. On the log scale the distribution is assumed to be normal and so the residuals are symmetrically distributed around the linear predictor. As a consequence the linear predictor ($\eta$) is equal to the mean, median and mode of the distribution on the log scale. Because the exponential function is non-linear this symmetry is lost on the data scale, and the different measures of central tendency do not coincide. Since the residuals are normal on the log scale, the distribution on the data scale is log-normal and so analytical solutions exist for the mean, mode and median.  $\sigma^{2}$ is the residual variance.
 }
+\label{prediction3-fig}
 \end{figure}
 
 In the \texttt{Traffic} example the non linearities are small so the differences in parameter estimates are not large using either multiplicative or additive models. However, multiplying the intercept in model \texttt{m2a.5} by half the residual variance is in closer agreement with the quasipoisson model than the raw intercept:
@@ -477,13 +478,13 @@ In the \texttt{Traffic} example the non linearities are small so the differences
 > exp(mean(m2a.5$Sol[, "(Intercept)"] + 0.5 * m2a.5$VCV[, 1]))
 \end{Sinput}
 \begin{Soutput}
-[1] 20.92291
+[1] 20.91752
 \end{Soutput}
 \begin{Sinput}
 > exp(mean(m2a.5$Sol[, "(Intercept)"]))
 \end{Sinput}
 \begin{Soutput}
-[1] 19.88867
+[1] 19.88554
 \end{Soutput}
 \begin{Sinput}
 > exp(m2a.3$coef["(Intercept)"])
@@ -630,7 +631,7 @@ We can merge the two posterior distributions to see how they compare:
 \begin{center}
 \includegraphics{Lecture2-050}
 \end{center}
-\caption{MCMC summary plots for the year effects from a model where year effects were treated as fixed (black) and where they were treated as random (black) but with the variance component set at a large value rather than being estimated. The posterior distributions are virtually identical.}
+\caption{MCMC summary plots for the year effects from a model where year effects were treated as fixed (black) and where they were treated as random (red) but with the variance component set at a large value rather than being estimated. The posterior distributions are virtually identical.}
 \label{y.pred-fig}
 \end{figure}
 
@@ -731,7 +732,7 @@ A predict function has been implemented for \texttt{MCMCglmm} although it is cur
 > predict(m2a.7, marginal = ~day, type = "terms")[1:5]
 \end{Sinput}
 \begin{Soutput}
-[1] 3.015804 3.018282 3.020761 3.023239 3.025718
+[1] 3.013906 3.016406 3.018907 3.021407 3.023907
 \end{Soutput}
 \end{Schunk}
 
@@ -742,7 +743,7 @@ or we can predict on the data scale:
 > predict(m2a.7, marginal = ~day, type = "response")[1:5]
 \end{Sinput}
 \begin{Soutput}
-[1] 22.48301 22.53678 22.59073 22.64485 22.69914
+[1] 22.41390 22.46803 22.52232 22.57679 22.63144
 \end{Soutput}
 \end{Schunk}
 
@@ -755,11 +756,11 @@ In addition, credible intervals can be obtained
 \end{Sinput}
 \begin{Soutput}
        fit      lwr      upr
-1 22.48301 19.12975 26.06273
-2 22.53678 19.24535 26.09119
-3 22.59073 19.34511 26.12938
-4 22.64485 19.46344 26.17390
-5 22.69914 19.59634 26.20860
+1 22.41390 19.19317 25.93465
+2 22.46803 19.28033 25.94429
+3 22.52232 19.36215 25.95811
+4 22.57679 19.39551 25.93856
+5 22.63144 19.47556 25.93655
 \end{Soutput}
 \end{Schunk}
 
@@ -772,11 +773,11 @@ as can prediction intervals through posterior predictive simulation:
 \end{Sinput}
 \begin{Soutput}
        fit      lwr      upr
-1 22.29901 6.137380 43.15941
-2 22.22611 5.318330 42.57887
-3 22.70872 6.567779 44.59958
-4 22.62401 6.409848 43.33561
-5 22.75578 6.017660 43.06727
+1 22.14200 7.307660 44.72613
+2 22.13422 5.424454 41.50115
+3 22.36608 6.893520 41.15897
+4 22.14274 6.968208 42.67847
+5 22.27424 6.286758 40.72599
 \end{Soutput}
 \end{Schunk}
 
@@ -794,8 +795,8 @@ Response variables consisting of levels of some categorical factor are best anal
 \end{Sinput}
 \begin{Soutput}
         u.1 u.2
-success   1   4
-failure   4   1
+success   3   3
+failure   2   2
 \end{Soutput}
 \end{Schunk}
 
@@ -809,7 +810,7 @@ and then expand them into success or failure:
 \end{Sinput}
 \begin{Soutput}
      u.1 u.1 u.1 u.1 u.1 u.2 u.2 u.2 u.2 u.2
-[1,]   1   0   0   0   0   1   1   1   1   0
+[1,]   1   1   1   0   0   1   1   1   0   0
 \end{Soutput}
 \end{Schunk}
 
@@ -881,7 +882,7 @@ as do the variance components  (see Figure \ref{Bin2-fig}):
 \label{Bin2-fig}
 \end{figure}
 
-Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.649 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
+Should we worry? Not really. We just have to be careful about how we express the results. Stating that the family variance is 0.655 is meaningless without putting it in the context of the assumed residual variance. It is therefore more appropriate to report the intraclass correlation which in this context is the expected correlation between the state Pupated/Not Pupated, for members of the same family. It can be calculated as:
 
 \begin{equation}
 \texttt{IC} =  \frac{\sigma^{2}_{\texttt{FSfamily}}}{\sigma^{2}_{\texttt{FSfamily}}+\sigma^{2}_{\texttt{units}}+\pi^{2}/3} 
@@ -932,7 +933,7 @@ Using the approximation due to \citet{Diggle.2004} described earlier we can also
 \label{ICI-fig}
 \end{figure}
 
-The posteriors should be virtually identical under a flat prior (See Figure \ref{ICI-fig}) although with different priors this is not always the case. Remarkably, \citep{vanDyk.2001} show that leaving a diffuse prior on $\sigma^{2}_{\texttt{units}}$ and rescaling the estimates each iteration, a Markov chain with superior mixing and convergence properties can be obtained (See section \ref{secPX}).\\  
+The posteriors should be virtually identical under a flat prior (See Figure \ref{ICI-fig}) although with different priors this is not always the case. Remarkably, \citet{vanDyk.2001} show that leaving a diffuse prior on $\sigma^{2}_{\texttt{units}}$ and rescaling the estimates each iteration, a Markov chain with superior mixing and convergence properties can be obtained (See section \ref{secPX}).\\  
 
 It should also be noted that a diffuse prior on the logit scale is not necessarily weakly informative on the probability scale. For example, the default setting for the prior on the intercept is $N(0, 10^{8})$ on the logit scale, which although relatively flat across most of the probability scale, has a lot of density close to zero and one:
 
@@ -963,8 +964,8 @@ This diffuse prior can cause problems if there is complete (or near complete) se
 \begin{Soutput}
          y
 treatment  0  1
-        1 10 15
-        2 24  1
+        1 13 12
+        2 25  0
 \end{Soutput}
 \end{Schunk}
  
@@ -980,23 +981,21 @@ Call:
 glm(formula = y ~ treatment, family = "binomial", data = data.bin)
 
 Deviance Residuals: 
-    Min       1Q   Median       3Q      Max  
--1.3537  -0.2857  -0.2857   1.0108   2.5373  
+     Min        1Q    Median        3Q       Max  
+-1.14361  -0.85773  -0.00008  -0.00008   1.21159  
 
 Coefficients:
-            Estimate Std. Error z value Pr(>|z|)   
-(Intercept)   0.4055     0.4082   0.993  0.32062   
-treatment2   -3.5835     1.0990  -3.261  0.00111 **
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+              Estimate Std. Error z value Pr(>|z|)
+(Intercept)   -0.08004    0.40032  -0.200    0.842
+treatment2   -19.48603 2150.80263  -0.009    0.993
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 62.687  on 49  degrees of freedom
-Residual deviance: 42.048  on 48  degrees of freedom
-AIC: 46.048
+    Null deviance: 55.108  on 49  degrees of freedom
+Residual deviance: 34.617  on 48  degrees of freedom
+AIC: 38.617
 
-Number of Fisher Scoring iterations: 5
+Number of Fisher Scoring iterations: 18
 \end{Soutput}
 \end{Schunk}
 
@@ -1011,17 +1010,17 @@ the effect of treatment does not appear significant despite the large effect siz
 	Exact binomial test
 
 data:  table(data.bin)[2, 2] and 25 
-number of successes = 1, number of trials = 25, p-value = 1.550e-06
+number of successes = 0, number of trials = 25, p-value = 5.96e-08
 alternative hypothesis: true probability of success is not equal to 0.5 
 95 percent confidence interval:
- 0.001012200 0.203516914 
+ 0.0000000 0.1371852 
 sample estimates:
 probability of success 
-                  0.04 
+                     0 
 \end{Soutput}
 \end{Schunk}
 
-where the  95\% confidence interval for the probability of success is  0.001 to 0.204.\\
+where the  95\% confidence interval for the probability of success is  0.000 to 0.137.\\
 
 The default \texttt{MCMCglmm} model also behaves oddly (see Figure \ref{separation1-fig}):
 
@@ -1059,7 +1058,7 @@ For these types of problems, I usually remove the global intercept (\texttt{-1})
 \end{Schunk}
 
 
-looks a little better (see Figure \ref{separation1-fig}), and the posterior distribution for the probability of success in treatment 2 is consistent with the exact binomial test for which the 95\% CI were (0.001 - 0.204). With such a simple model, the prediction for observation 26 is equal to the  treatment 2 effect and so we can get the the credible interval (on the data scale) for treatment 2 using the predict function:
+looks a little better (see Figure \ref{separation1-fig}), and the posterior distribution for the probability of success in treatment 2 is consistent with the exact binomial test for which the 95\% CI were (0.000 - 0.137). With such a simple model, the prediction for observation 26 is equal to the  treatment 2 effect and so we can get the the credible interval (on the data scale) for treatment 2 using the predict function:
 
 
 
@@ -1077,8 +1076,8 @@ looks a little better (see Figure \ref{separation1-fig}), and the posterior dist
 > predict(m2c.4, interval = "confidence")[26, ]
 \end{Sinput}
 \begin{Soutput}
-        fit         lwr         upr 
-0.068405746 0.008366239 0.149296666 
+         fit          lwr          upr 
+0.0447653495 0.0002971701 0.1296584843 
 \end{Soutput}
 \end{Schunk}
 

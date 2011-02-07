@@ -1,9 +1,9 @@
-#source("~/Work/AManal/MCMCglmm_2.11/inst/doc/Figures/buildCN.R")
+#source("~/Work/AManal/MCMCglmm_2.12/inst/doc/Figures/buildCN.R")
 set.seed(32)
 alone=FALSE
 lectures<-1:9
 forCRAN=TRUE
-JSS<-FALSE
+JSS<-TRUE
 LINUX=TRUE
 options(width=80)
 
@@ -15,7 +15,7 @@ options(width=80)
 #
 
 UPpath="~/Work/AManal/UP_course/Tex/"
-MCpath="~/Work/AManal/MCMCglmm_2.11/inst/doc/"
+MCpath="~/Work/AManal/MCMCglmm_2.12/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)
@@ -149,6 +149,14 @@ if(forCRAN){
 	system(paste("cp ", MCpath, "/Overview.Rnw ", MCpath, "/Figures", sep=""))
 	system(paste("cp ", MCpath, "/Overview.tex ", MCpath, "/Overview.Rnw", sep=""))	
 	system(paste("rm ", MCpath, "/Overview.tex", sep=""))
+	system(paste("rm ", MCpath, "*\\.aux", sep=""))
+	system(paste("rm ", MCpath, "*\\.bbl", sep=""))
+	system(paste("rm ", MCpath, "*\\.blg", sep=""))
+	system(paste("rm ", MCpath, "*\\.idx", sep=""))
+	system(paste("rm ", MCpath, "*\\.toc", sep=""))
+	system(paste("rm ", MCpath, "*\\.out", sep=""))
+	system(paste("rm ", MCpath, "*\\.log", sep=""))
+        system(paste("rm ", MCpath, "Lecture*-[A-Z]*\\.pdf", sep=""))
 }
 
 

@@ -83,6 +83,9 @@
     }
 
   }else{
+    if(any(duplicated(c(pedigree$tip.label, pedigree$node.label)))){
+       stop("phylogeny tip/node labels are not unique")
+    }
     if(is.rooted(pedigree)==FALSE){
 	   stop("phyloegny needs to be rooted")
 	}	
@@ -145,6 +148,8 @@
 
     dii<-inbreeding  # diagonal elements of D equal branch lengths in the case of phylogenies
   }
+
+  rownames(Ainv)<-node.names
 
   return(list(Ainv=Ainv, inbreeding=inbreeding, dii=dii, node.names=node.names, pedigree=pedigree, phylogeny=ped!=TRUE))
 }

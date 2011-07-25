@@ -9,23 +9,23 @@ and phylogenies (Hadfield 2010). Please read the course notes: \code{vignette("C
 }
 \usage{
 MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, 
-    data,start=NULL, prior=NULL, tune=NULL, pedigree=NULL,
-    nodes="ALL", scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
+    data,start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",
+    scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
     pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE,
-    saveZ=TRUE, slice=FALSE)
+    saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
 are passed as a matrix using cbind}
   \item{random}{\code{\link{formula}} for the random effects. Multiple random terms
 can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):random.term}.
-Currently, the only \code{variance.functions} available are \code{idv}, \code{idh}, \code{us} and \code{cor}. \code{idv} fits a constant variance across all components in \code{formula}, and \code{cor} fixes the variances to 1. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.term} effects. For simple random effects the \code{variance.function(formula)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are three reserved variables: \code{units} which index rows of the response variable, \code{trait} which index columns of the response variable and \code{animal} which is associated with a pedigree or phylogeny.} 
+Currently, the only \code{variance.functions} available are \code{idv}, \code{idh}, \code{us} and \code{cor}. \code{idv} fits a constant variance across all components in \code{formula}, and \code{cor} fixes the variances to 1. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.term} effects. For simple random effects the \code{variance.function(formula)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are two reserved variables: \code{units} which index rows of the response variable and \code{trait} which index columns of the response variable} 
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
 \code{"multinomial"},  \code{"ordinal"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
 \code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"}, \code{"hupoisson"} and \code{"zibinomial"} are 
-supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, he prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL} \code{data} needs to contain a 
+supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, the prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL}, \code{data} needs to contain a 
 \code{family} column.}
   \item{mev}{optional vector of measurement error variances for each data point 
 for random effect meta-analysis.}
@@ -34,12 +34,12 @@ for random effect meta-analysis.}
 \code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random effect components. The fourth element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
   \item{prior}{optional list of prior specifications having 3 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). \code{B} is a list containing the expected value (\code{mu}) and a 
-(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=0 and \code{B$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The deafults are \code{nu=0}, \code{V=1}, \code{alpha.mu}=1, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
+(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=0 and \code{B$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The deafults are \code{nu}=0, \code{V}=1, \code{alpha.mu}=0, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
   \item{tune}{optional (co)variance matrix defining the proposal distribution 
 for the latent variables. If NULL an adaptive algorithm is used which ceases to 
 adapt once the burn-in phase has finished.}
   \item{pedigree}{ordered pedigree with 3 columns id, dam and sire or a 
-\code{phylo} object.}
+\code{phylo} object. This argument is retained for back compatability - see ginverse argument for a more general formulation.}
   \item{nodes}{pedigree/phylogeny nodes to be estimated. The default, 
 \code{"ALL"} estimates effects for all individuals in a pedigree or nodes in a 
 phylogeny (including ancestral nodes). For phylogenies \code{"TIPS"} estimates 
@@ -63,12 +63,14 @@ saved?}
   \item{singular.ok}{logical: if \code{FALSE} linear dependencies in the fixed effects are removed. if \code{TRUE} they are left in an estimated, although all information comes form the prior}
   \item{saveX}{logical: save fixed effect design matrix}
   \item{saveZ}{logical: save random effect design matrix}
+  \item{saveXL}{logical: save structural parameter design matrix}
   \item{slice}{logical: should slice sampling be used? Only applicable for binary triats with indpendent residuals}
+  \item{ginverse}{a list of sparse inverse matrices (\eqn{{\bf A^{-1}}}{solve(A)}) that are proportional to the covariance structure of the random effects. The names of the matrices should correspond to columns in \code{data} that are associated with the random term. All levels of the random term should appear as rownames for the matrices.}
 }
 \value{
   \item{Sol}{Posterior Distribution of MME solutions, including fixed effects}
   \item{VCV}{Posterior Distribution of (co)variance matrices}
-  \item{CP}{Posterior Distribution of cut-points from an ordinla model}
+  \item{CP}{Posterior Distribution of cut-points from an ordinal model}
   \item{Liab}{Posterior Distribution of latent variables}
   \item{Fixed}{list: fixed formula and number of fixed effects}
   \item{Random}{list: random fromula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in random formula to which each covariance belongs}
@@ -77,6 +79,7 @@ saved?}
   \item{DIC}{deviance information criterion}
   \item{X}{sparse fixed effect design matrix}
   \item{Z}{sparse random effect design matrix}
+  \item{XL}{sparse structural parameter design matrix}
   \item{error.term}{residual term for each datum}
   \item{family}{distribution of each datum}
 
@@ -84,9 +87,9 @@ saved?}
 \references{
 	General analyses: Hadfield, J.D. (2010) Journal of Statistical Software 33 2 1-22
 	
-	Phylogenetic analyses: Hadfield, J.D.  and Nakagawa, S. (2010) Journal of Evolutionary Biology 23 494-508
+	Phylogenetic analyses: Hadfield, J.D. & Nakagawa, S. (2010) Journal of Evolutionary Biology 23 494-508
 	
-	Background Sorensen, D. \& Gianola, D. (2002) Springer
+	Background Sorensen, D. & Gianola, D. (2002) Springer
 }
 \author{Jarrod Hadfield j.hadfield@ed.ac.uk}
 \seealso{\code{\link[coda]{mcmc}}}
@@ -96,7 +99,7 @@ saved?}
  
 data(PlodiaPO)  
 model1<-MCMCglmm(PO~1, random=~FSfamily, data=PlodiaPO, verbose=FALSE)
-plot(model1$VCV)
+summary(model1)
 
 # Example 2: univariate Gaussian model with phylogenetically correlated
 # random effect
@@ -108,12 +111,16 @@ phenotype<-phylo.effect+rnorm(dim(phylo.effect)[1], 0, 1)
 
 # simulate phylogenetic and residual effects with unit variance
 
-test.data<-data.frame(phenotype=phenotype, animal=row.names(phenotype))
+test.data<-data.frame(phenotype=phenotype, taxon=row.names(phenotype))
+
+Ainv<-inverseA(bird.families)$Ainv
+
+# inverse matrix of shared phyloegnetic history
 
 prior<-list(R=list(V=1, nu=0.002), G=list(G1=list(V=1, nu=0.002)))
 
-model2<-MCMCglmm(phenotype~1, random=~animal, data=test.data, 
-pedigree=bird.families, prior=prior, verbose=FALSE)
+model2<-MCMCglmm(phenotype~1, random=~taxon, ginverse=list(taxon=Ainv),
+data=test.data, prior=prior, verbose=FALSE)
 
 plot(model2$VCV)
 

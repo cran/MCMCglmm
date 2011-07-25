@@ -1,4 +1,4 @@
-buildZ<-function(x, data, formZ=TRUE){
+buildZ<-function(x, data, formZ=TRUE, nginverse=NULL){
 
   vtype="idh"
   if(length(grep("^us\\(", x))>0){
@@ -30,8 +30,11 @@ buildZ<-function(x, data, formZ=TRUE){
   rterms<-substr(fformula,closeB[1]+2,nchar(fformula))
   rterms<-strsplit(rterms, ":")[[1]]
 
-  if(any(rterms=="animal")){
-    Aterm<-1
+  if(is.null(nginverse)==FALSE){
+    Aterm<-match(rterms, nginverse)
+    if(is.na(Aterm)){
+      Aterm<-0
+    }
   }else{
     Aterm<-0
   }
@@ -94,7 +97,7 @@ buildZ<-function(x, data, formZ=TRUE){
 
     if(nfl==0){
 
-      missing<-which(colSums(Ztmp)==0)  # non-represented random effects (or zero covariates for RR)
+      missing<-which(diff(Ztmp@p)==0)  # non-represented random effects (or zero covariates for RR)
 
       #################################################################################################
       # It woule be more efficient to allow complete sparse columns in Z - but need to change C code! #
@@ -137,7 +140,7 @@ buildZ<-function(x, data, formZ=TRUE){
 
         if(any(X[,i]!=0 & data$MCMC_dummy==0 & is.na(rfactor))){stop("missing values in random predictors")}
 
-        missing<-which(colSums(Z)==0)
+        missing<-which(diff(Z@p)==0)
 
         #################################################################################################
         # It woule be more efficient to allow complete sparse columns in Z - but need to change C code! #

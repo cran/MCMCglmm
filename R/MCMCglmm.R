@@ -1,4 +1,4 @@
-"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE,  nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE, saveZ=TRUE, slice=FALSE){
+"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE, saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL){
    
     orig.na.action<-options("na.action")[[1]]
     options("na.action"="na.pass")	
@@ -34,20 +34,29 @@
     response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
     data[,response.names]<-model.frame(as.formula(paste(as.character(fixed)[2], "~1")), data)[[1]]
 
-######################################################################################
-# for phyloegnetic/pedigree analyses form A and augment with missing nodes if needed #
-###################################################################################### 	
-	
-	if(is.null(pedigree)==FALSE){
-	  if(is.null(data$animal) |length(grep("animal", random))==0){stop("pedigree/phylogeny has been passed, but no 'animal' variable")}
-	  Ai<-inverseA(pedigree, nodes=nodes, scale=scale)
-          if(any(data$animal%in%Ai$node.names==FALSE)){stop("individuals in data not appearing in pedigree/phylogeny")}
-	  data$animal<-factor(data$animal, levels=Ai$node.names)                           # add factor levels to animal in data for additional nodes
-	}else{
-          if(any(colnames(data)=="animal") & length(grep("animal", as.character(random))>0)){
-            stop("animal is a reserved variable for pedigrees/phylogenies only, please rename")
-          }
+#########################################################################
+# for ginverse analyses form A and augment with missing nodes if needed #
+#########################################################################
+
+	if(is.null(pedigree)==FALSE){  # back compatibility if pedigree is directly passed
+           if(is.null(ginverse)){
+             ginverse<-list(animal=inverseA(pedigree=pedigree, scale=scale, nodes=nodes)$Ainv)
+           }else{
+             if("animal"%in%names(ginverse)){stop("animal ginverse appears but pedigree has been passed")}
+             ginverse$animal<-inverseA(pedigree=pedigree, scale=scale, nodes=nodes)$Ainv
+           }
         }
+
+	if(is.null(ginverse)==FALSE){
+	  for(i in 1:length(ginverse)){           
+            if(is.null(rownames(ginverse[[i]]))){stop(paste(names(ginverse)[i], "ginverse must have non-null rownames"))}
+            if(names(ginverse)[i]%in%names(data)==FALSE){stop(paste(names(ginverse)[i], "does not appear in data"))}
+            if(any(unique(data[,names(ginverse)[i]])%in%rownames(ginverse[[i]])==FALSE)){stop(paste("some levels of", names(ginverse)[i], "do not have a row entry in ginverse"))}
+            if(any(duplicated(rownames(ginverse[[i]])))){stop(paste("rownames of ", names(ginverse)[i], "ginverse must be unique"))}
+            if(determinant(ginverse[[i]])$sign<0){stop(paste(names(ginverse)[i], "ginverse is not positive definite"))}
+	    data[,names(ginverse)[i]]<-factor(data[,names(ginverse)[i]], levels=rownames(ginverse[[i]]))                        
+          }
+	}
 
 ##############################################################################################
 # if R-structure is of form idh(!=trait) assign new records with arbitrary levels of !-trait #
@@ -60,7 +69,7 @@
 
       for(i in 1:length(rterms)){
  
-	components<-find.components(rterms[i], data)
+	components<-find.components(rterms[i], data, names(ginverse))
 
 	if(is.null(components[[1]])==FALSE | length(components[[2]])>0){
 
@@ -114,10 +123,11 @@
                 MCMC_components1[missing.comb12][1:n.rm]<-missing.combinations[,1][1:n.rm]
                 MCMC_components2[missing.comb12][1:n.rm]<-missing.combinations[,2][1:n.rm]
 	      }	
-	      if(length(missing.combinations)>0){      
+	      if(dim(missing.combinations)[1]>0){      
                 nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
-		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA                  
+		data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA      
 		data[,c(components[[1]], components[[2]][[j]])][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-t(apply(missing.combinations, 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))  
+
                 if(is.null(mev)==FALSE){
                   mev<-c(mev,rep(1, dim(missing.combinations)[1]))
                 }
@@ -434,19 +444,16 @@
     update<-c()                                                    # variance structure type
     ordering<-c()
     trait.ordering<-c()
-#    missing<-c()
 
     if(is.null(start$R)){
       NOstartG=TRUE
     }else{
       NOstartG=FALSE
-#      start$G[[length(start$G)+1]]<-start$R
     }
     if(is.null(prior$R)){
       NOpriorG=TRUE
     }else{
       NOpriorG=FALSE
-#      prior$G[[length(prior$G)+1]]<-prior$R
     }
 
 ##########################
@@ -455,11 +462,13 @@
 
     nr<-1
 
+    if(NOpriorG==FALSE & length(prior$G)!=ngstructures){stop("priorG has the wrong number of structures")}
+
     for(r in 1:length(rmodel.terms)){
 
        if(r==(ngstructures+1)){nG<-nr-1}  # number of (new) G structures
        if(r<length(rmodel.terms)){
-         Zlist<-buildZ(rmodel.terms[r], data=data)
+         Zlist<-buildZ(rmodel.terms[r], data=data, formZ=TRUE, nginverse=names(ginverse))
        }else{
          Zlist<-buildZ(rmodel.terms[r], data=data, formZ=FALSE)
        }
@@ -481,7 +490,6 @@
          }
        }else{
          if(r<=ngstructures){
-           if(length(prior$G)<r){stop("priorG/priorR have the wrong number of structures")}
            if(is.null(prior$G[[r]]$alpha.mu)){
               prior$G[[r]]$alpha.mu<-rep(1, sqrt(length(prior$G[[r]]$V)))
            }
@@ -540,13 +548,14 @@
            GR[[nr]]<-GRprior[[nr]]$V
          }
        }else{
-         GR[[nr]]<-start$G[[r]]
+
          if(r<=ngstructures){
            if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
            GR[[nr]]<-start$G[[r]]
          }else{
            GR[[nr]]<-start$R
          }
+
 	 if(is.matrix(GR[[r]])==FALSE){GR[[r]]<-as.matrix(GR[[r]])}	
          if(dim(GR[[r]])[1]!=sum(Zlist$nfl)  | dim(GR[[r]])[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some startG/startR elements")}
          if(is.positive.definite(GR[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
@@ -960,23 +969,9 @@
     }
     Var<-1:(length(GRinv)*nkeep)
 
-    if(sum(Aterm)!=0){
-      id<-match(Ai$node.names,Ai$pedigree[,1])         
-      dam<-match(Ai$pedigree[,2], Ai$pedigree[,1])
-      dam[which(is.na(dam))]<--998
-      sire<-match(Ai$pedigree[,3], Ai$pedigree[,1])
-      sire[which(is.na(sire))]<--998
-      MSsd<-sqrt(Ai$dii)
-      PedDim<-c(length(dam), 2-Ai$phylogeny)
-      A<-Ai$Ainv
-    }else{
-      A<- as(diag(1), "sparseMatrix")
-      MSsd<-sqrt(0.5)
-      id<--998
-      dam<--998
-      sire<--998
-      PedDim<-c(1,1)
-    }
+    if(all(Aterm==0)){
+      ginverse<-list(A=as(diag(1), "sparseMatrix"))
+     }
 
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
@@ -984,23 +979,18 @@
         as.double(data$MCMC_liab), 
         as.integer(mvtype),   
         as.integer(length(data$MCMC_y)),
-        as.integer(c(X@Dim,Z@Dim,A@Dim, L@Dim)),  
-        as.integer(c(length(X@x),length(Z@x),length(A@x),length(L@x))),       
+        as.integer(c(X@Dim,Z@Dim, L@Dim)),  
+        as.integer(c(length(X@x),length(Z@x),length(L@x),unlist(lapply(ginverse, function(x){length(x@x)})))),       
         as.integer(X@i),         
         as.integer(X@p),        
         as.double(X@x),         	  
         as.integer(Z@i),         
         as.integer(Z@p),          
         as.double(Z@x),               
-        as.integer(A@i),         
-        as.integer(A@p),       
-        as.double(A@x),                 
-    	as.double(MSsd),
-      	as.integer(id-1),
-    	as.integer(dam-1),
-    	as.integer(sire-1),
-        as.integer(PedDim),
-    	as.integer(Aterm),	  	  	  	  
+        as.integer(unlist(lapply(ginverse, function(x){x@i}))),         
+        as.integer(unlist(lapply(ginverse, function(x){x@p}))),       
+        as.double(unlist(lapply(ginverse, function(x){x@x}))),                 
+    	as.integer(Aterm-1),	  	  	  	  
         as.integer(nfl),
         as.integer(nrl),
         as.integer(update),
@@ -1048,7 +1038,7 @@
 
        
 
-        Sol<-t(matrix(output[[35]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
+        Sol<-t(matrix(output[[30]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
         if(pr){     
           colnames(Sol)<-c(colnames(X), colnames(Z))
         }else{
@@ -1057,7 +1047,7 @@
         colnames(Sol)<-gsub("MCMC_", "", colnames(Sol))
 
         if(nL>0){       
-           lambda<-t(matrix(output[[63]], nL, nkeep))  
+           lambda<-t(matrix(output[[58]], nL, nkeep))  
            colnames(lambda)<-Lnames     
            lambda<-mcmc(lambda, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
         }else{
@@ -1065,14 +1055,14 @@
         }
 
        if(ncutpoints_store!=0){
-         CP<-mcmc(t(matrix(output[[53]],ncutpoints_store, nkeep)), start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
+         CP<-mcmc(t(matrix(output[[48]],ncutpoints_store, nkeep)), start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
          colnames(CP)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){1:x})), sep=""))
          colnames(CP)<-gsub("MCMC_", "", colnames(CP))
        }else{
          CP<-NULL
        }
 
-        VCV<-t(matrix(output[[36]], length(GRinv), nkeep))
+        VCV<-t(matrix(output[[31]], length(GRinv), nkeep))
         colnames(VCV)<-variance.names
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
 	
@@ -1093,8 +1083,8 @@
         }
 
         if(DIC==TRUE & nL==0){
-         deviance<-mcmc(-2*output[[48]][1:nkeep], start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
-         DIC<--4*output[[48]][nkeep+1]+2*output[[48]][nkeep+2]
+         deviance<-mcmc(-2*output[[43]][1:nkeep], start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
+         DIC<--4*output[[43]][nkeep+1]+2*output[[43]][nkeep+2]
         }else{
          deviance<-NULL
          DIC<-NULL
@@ -1103,7 +1093,7 @@
         dummy.data<-which(data$MCMC_dummy[order(ordering)]==1)
 
         if(pl==TRUE){
-          Liab<-t(matrix(output[[37]], length(data$MCMC_y), nkeep))
+          Liab<-t(matrix(output[[32]], length(data$MCMC_y), nkeep))
           Liab<-Liab[,order(ordering),drop=FALSE]
           if(length(dummy.data)>0){
             Liab<-Liab[,-dummy.data,drop=FALSE]
@@ -1117,19 +1107,13 @@
 
         if(saveX==FALSE){
           X<-NULL
-          L<-NULL
         }else{
           X<-X[order(ordering),,drop=FALSE]
           if(length(dummy.data)>0){
             X<-X[-dummy.data,,drop=FALSE]
           }
-          if(nL>0){
-            L<-L[order(ordering),,drop=FALSE]
-            if(length(dummy.data)>0){
-              L<-L[-dummy.data,,drop=FALSE]
-            }
-          }
         }
+
         if(saveZ==FALSE | nG==0){
           Z<-NULL
         }else{
@@ -1138,7 +1122,16 @@
             Z<-Z[-dummy.data,,drop=FALSE]
           }
         }
-        
+
+        if(saveXL==FALSE | nL==0){
+          L<-NULL
+        }else{
+           L<-L[order(ordering),,drop=FALSE]
+           if(length(dummy.data)>0){
+             L<-L[-dummy.data,,drop=FALSE]
+           }
+        }
+
         error.term<-rep(1:sum(nfl[nG+1:nR]), nrl[nG+1:nR])[order(ordering)]
         family<-family.types[data$MCMC_family.names[order(ordering)]]
 
@@ -1175,8 +1168,8 @@
             Deviance=deviance,
             DIC=DIC,
             X=X,
-            XL=L,
             Z=Z,
+            XL=L,
             error.term=error.term,
             family=family
         )

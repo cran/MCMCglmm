@@ -1,4 +1,4 @@
-find.components<-function(x, data){
+find.components<-function(x, data, nginverse=NULL){
 
   notrait=is.null(data$trait)
 
@@ -64,7 +64,7 @@ find.components<-function(x, data){
       }
     }
   }
-  if(any(rterms=="animal")){
+  if(any(rterms%in%nginverse)){
      if(is.null(fformula)){
        fformula<-"MCMC_dummy"
      }

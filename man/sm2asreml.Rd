@@ -6,7 +6,7 @@
 sparse matrix. 
 }
 \usage{
-sm2asreml(A, rownames)
+sm2asreml(A=NULL, rownames=NULL)
 }
 \arguments{
   \item{A}{sparseMatrix}

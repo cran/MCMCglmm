@@ -20,8 +20,8 @@ void MCMCglmm(
         double *liabP,   // starting liabilities (= y if gaussian, and no missing data)
         int *mvtype,     // missing data types 
         int *nyP,        // number of records
-	int *dimP,	 // dimensions of X,Z,A and L 
-        int *nzmaxP,     // number of non-zero's in X,Z,A and L 
+	int *dimP,	 // dimensions of X,Z and L 
+        int *nzmaxP,     // number of non-zero's in X,Z,L and the A's 
         int *iXP,        // X       
 	int *pXP,	         
 	double *xXP,	               
@@ -31,12 +31,7 @@ void MCMCglmm(
         int *iAP,        // A       
 	int *pAP,	         
 	double *xAP,	               
-        double *MSsdP,       // Mendelian sampling standard deviation for each individual (*1.5 if an individual doesn't have both parents)
-        int *idP,            // idenitifier note this is the position in the pedigree of analysed indiviuals
-        int *damP,           // dam idenitifier     
-        int *sireP,          // sire identifier
-        int *PedDimP,        // dimensions of pedigree (#individuals/#columns #columns=2 for normal pedigree or 1 for phylogeny/clones)
-        int *AtermP,         // boolean: 1 if kth G is associated with A
+        int *AtermP,         // integer: each G is associated with kth A (-1 means A=I)
         int *GRdimP,         // GR structure dimensions
         int *levelsRP,       // number of GR levels 
         int *updateP,
@@ -83,7 +78,7 @@ void MCMCglmm(
   
 ){         
 
-int     i, j, k,l,p,cnt,cnt2,rterm,itt,record,dimG,nthordinal,
+int     i, j, k,l,p,cnt,cnt2,cnt3, rterm,itt,record,dimG,nthordinal,
 
         nG = nGP[0],          // number of G structures
         nR = nGP[1],          // number of R structures 
@@ -114,8 +109,7 @@ double   mndenom1 = 1.0,  // sum(exp(l_{j}) for all j) and l_old
 
 int     nrowX =  dimP[0], ncolX =  dimP[1],  nzmaxX = nzmaxP[0]; 
 int     nrowZ =  dimP[2], ncolZ =  dimP[3],  nzmaxZ = nzmaxP[1];
-int     nrowA =  dimP[4], ncolA =  dimP[5],  nzmaxA = nzmaxP[2];
-int     nrowLX =  dimP[6], ncolLX =  dimP[7],  nzmaxLX = nzmaxP[3];
+int     nrowLX =  dimP[4], ncolLX =  dimP[5],  nzmaxLX = nzmaxP[2];
 int     nL = ncolLX/nrowLX;  // number of structural parameters
 
 int 	dimAS =  ncolX+ncolZ;
@@ -125,7 +119,6 @@ int     nalpha = 0;
 bool    pr = prP[0];
 bool    pl = prP[1];
 bool    cp = nordinal>0;
-bool    Aexists = FALSE;
 bool    missing = FALSE;
 
 double detLambda[2];   // holds old and proposed fabs(det(Lambda))
@@ -137,10 +130,6 @@ int *diagLambdaU = new int[ny];
 
 
 double log_alphaL;     // MH ratio for lambda
-
-
-
-        for(i=0; i<nG; i++){if(AtermP[i]==1){Aexists=TRUE;}}
 
         cnt2=0;
         for(k=nG; k<nGR; k++){
@@ -173,9 +162,8 @@ double  densityl1,
         *zn = new double[nGR*2],
         *ldet = new double[nR+nG],
         interval,
-        remainder,
-        dm = 1.0/PedDimP[1];  // 0.5 for pedigrees 1 for phylogenies for taking averaging of potential bv.
-
+        remainder;
+ 
 	
 //double inf = std::numeric_limits<double>::max();
 
@@ -224,7 +212,7 @@ double  densityl1,
           zn[k]=0.0;
         }
 
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *linki, *linki_tmp, *predi, *A, *bv, *bv_tmp, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *linki, *linki_tmp, *predi, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl;
 
 csn	*L, *pvBL, *alphaL, *AlphainvL, *pvLL, *LambdaLU, *tYKrinvYL;
 css     *S, *pvBS, *alphaS, *AlphainvS, *pvLS, *LambdaS, *tYKrinvYS;
@@ -244,10 +232,15 @@ csn*    *GinvL = new csn*[nGR];
 css*    *propCinvS = new css*[nGR*2];
 csn*    *propCinvL = new csn*[nGR*2];
 cs*     *KGinv = new cs*[nGR];
+csn*    *KGinvL = new csn*[nGR];
+css*    *KGinvS = new css*[nGR];
 cs*     *lambda = new cs*[2];
 cs*     *lambdaI = new cs*[2];
 cs*     *Lambda = new cs*[2];
 cs*     *Lambda_tmp = new cs*[2];
+cs*     *A = new cs*[nGR];
+cs*     *bv = new cs*[nGR];
+cs*     *bv_tmp = new cs*[nGR];
 
 // read in fixed-effects design matrix X 
 
@@ -384,50 +377,57 @@ if(nL>0){
 /* read in inverse numerator matrix A and pedigree/phylogeny */
 /*************************************************************/
 
-        for(k=0; k<nG; k++){
-          if(AtermP[k]==1){
-            dimG = GRdim[k];
-            A = cs_spalloc(nrowA, ncolA, nzmaxA, true, false);  
-            bv = cs_spalloc(nrowA, dimG, nrowA*dimG, true, false);
-            bv_tmp = cs_spalloc(PedDimP[0], dimG, PedDimP[0]*dimG, true, false);
+        cnt2=0;
+        cnt3=0;
 
-            for (i = 0 ; i < nzmaxA ; i++){
-              A->i[i] = iAP[i];
-              A->x[i] = xAP[i];
+        for(k=0; k<nG; k++){
+
+          if(AtermP[k]>=0){
+            dimG = GRdim[k];
+            A[k] = cs_spalloc(nlGR[k], nlGR[k], nzmaxP[3+AtermP[k]], true, false);  
+            bv[k] = cs_spalloc(nlGR[k], dimG, nlGR[k]*dimG, true, false);
+            bv_tmp[k] = cs_spalloc(nlGR[k], dimG, nlGR[k]*dimG, true, false);
+
+            for (i = 0; i < nzmaxP[3+AtermP[k]]; i++){
+              A[k]->i[i] = iAP[i+cnt2];
+              A[k]->x[i] = xAP[i+cnt2];
             }
-            for (i = 0 ; i <= ncolA ; i++){
-              A->p[i] = pAP[i];
+            for (i = 0; i <= nlGR[k] ; i++){
+              A[k]->p[i] = pAP[i+cnt3];
             }
+
+            cnt2 += nzmaxP[3+AtermP[k]];
+            cnt3 += nlGR[k]+1;
 
 // create matrix for breeding values when sampling kronecker(G,A) of dimesion ntXpedigree
         
             cnt=0;
 
             for (i = 0 ; i < dimG; i++){
-              bv_tmp->p[i] = cnt;
-              for (j = 0 ; j < PedDimP[0] ; j++){
-                bv_tmp->i[cnt] = j;
-                bv_tmp->x[cnt] = 0.0;
+              bv_tmp[k]->p[i] = cnt;
+              for (j = 0 ; j < nlGR[k] ; j++){
+                bv_tmp[k]->i[cnt] = j;
+                bv_tmp[k]->x[cnt] = 0.0;
                 cnt++;
               }
             }
 
-            bv_tmp->p[dimG] = dimG*PedDimP[0];
+            bv_tmp[k]->p[dimG] = dimG*nlGR[k];
 
 // create matrix for breeding values when sampling G (bv'Abv) of dimesion ntXindividuals anlaysed
 
             cnt=0;
 
             for (i = 0 ; i < dimG; i++){
-              bv->p[i] = cnt;
-              for (j = 0 ; j < ncolA ; j++){
-                bv->i[cnt] = j;
-                bv->x[cnt] = 0.0;
+              bv[k]->p[i] = cnt;
+              for (j = 0 ; j < nlGR[k] ; j++){
+                bv[k]->i[cnt] = j;
+                bv[k]->x[cnt] = 0.0;
                 cnt++;
               }
             }
 
-            bv->p[dimG] = dimG*ncolA;
+            bv[k]->p[dimG] = dimG*nlGR[k];
           }
         }
 
@@ -738,8 +738,9 @@ if(nL>0){
 // form KGinv = G^{-1} \otimes I    
 
         for (k = 0 ; k < nGR ; k++){
-           if(AtermP[k]==1){
-             KGinv[k] = cs_kroneckerA(Ginv[k],A);            //  form kronecker(G^{-1}, A^{-1}) structure
+           if(AtermP[k]>=0){
+             KGinv[k] = cs_kroneckerA(Ginv[k],A[k]);            //  form kronecker(G^{-1}, A^{-1}) structure
+             KGinvS[k] = cs_schol(1, KGinv[k]);              // Symbolic factorisation of kronecker(G^{-1}, A^{-1})
            }else{
              KGinv[k] = cs_kroneckerI(Ginv[k],nlGR[k]);      //  form G^{-1} structure
            }
@@ -865,7 +866,6 @@ if(nL>0){
 
           alphaS = cs_schol(1, alphaMME);                            // Symbolic factorisation - only has to be done once
         }
-
 	
   	GetRNGstate();                                   // get seed for random number generation
 
@@ -879,6 +879,9 @@ if(nL>0){
             for (i = 0 ; i < nGR; i++){
               if(updateP[i]>0){
                 cs_spfree(G[i]); 
+              }
+              if(AtermP[i]>=0){
+  	        cs_nfree(KGinvL[i]);
               }
             }
             cs_spfree(astar_tmp);
@@ -926,8 +929,8 @@ if(nL>0){
 						
 			for (k = 0 ; k < nGR; k++){                             
 				if(updateP[k]>0){
-					if(AtermP[k]==1){
-						cs_kroneckerAupdate(Ginv[k],A,KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
+					if(AtermP[k]>=0){
+						cs_kroneckerAupdate(Ginv[k],A[k],KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
 					}else{
 						cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
 					}
@@ -963,84 +966,28 @@ if(nL>0){
           cnt = ncolX;
 			
 	  for(k=0; k<nG; k++){
+
             dimG = GRdim[k];
-            if(AtermP[k]==1){          
 
-/* pedigree and phylogeny effects - to become non iid effects generally  */
+            if(AtermP[k]>=0){        
 
-		
-             if(PedDimP[0]==nlGR[k]){            // All individuals are present - write directly to astar				  
-                for(i=0; i<nlGR[k]; i++){
-                  for(j=0; j<dimG; j++){
-                    Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
-                  }
-                  cs_ltsolve(GinvL[k]->L, Grv[k]->x);
-                  for(j=0; j<dimG; j++){
-                    astar->x[j*nlGR[k]+i+cnt] = Grv[k]->x[j];     
-                  }
-                  if(sireP[i]!=-999){  
-                    for(j=0; j<dimG; j++){
-                      astar->x[j*nlGR[k]+i+cnt] += 0.5*(astar->x[j*nlGR[k]+sireP[i]+cnt]);
-                    }  
-                  }
-                  if(damP[i]!=-999){  
-                    for(j=0; j<dimG; j++){
-                      astar->x[j*nlGR[k]+i+cnt] += dm*(astar->x[j*nlGR[k]+damP[i]+cnt]);
-                    }  
-                  }
-                }
-		for(i=0; i<nlGR[k]; i++){
-		  for(j=0; j<dimG; j++){
-		    Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
-		  }
-		  cs_ltsolve(GinvL[k]->L, Grv[k]->x);
-		  for(j=0; j<dimG; j++){
-		    astar->x[j*nlGR[k]+i+cnt] = Grv[k]->x[j];     
-		  }
-		  if(sireP[i]!=-999){  
-		    for(j=0; j<dimG; j++){
-		      astar->x[j*nlGR[k]+i+cnt] += 0.5*(astar->x[j*nlGR[k]+sireP[i]+cnt]);
-		    }  
-		  }
-		  if(damP[i]!=-999){  
-		    for(j=0; j<dimG; j++){
-		      astar->x[j*nlGR[k]+i+cnt] += dm*(astar->x[j*nlGR[k]+damP[i]+cnt]);
-		    }  
-		  }
-		}
-			  				  
-              }else{    // For situations where the number of individuals < the dimension of the pedigree/phylogeny
+/* complex random effects */
 
-                for(i=0; i<PedDimP[0]; i++){
-                  for(j=0; j<dimG; j++){
-                    Grv[k]->x[j] = rnorm(0.0,MSsdP[i]);
-                  }
-                  
-                  cs_ltsolve(GinvL[k]->L, Grv[k]->x);
+              KGinvL[k] = cs_chol(KGinv[k] , KGinvS[k]);
 
-                  for(j=0; j<dimG; j++){
-                    bv_tmp->x[j*PedDimP[0]+i] = Grv[k]->x[j];     
-                  }
-                  if(sireP[i]!=-999){  
-                    for(j=0; j<dimG; j++){
-                      bv_tmp->x[j*PedDimP[0]+i] += 0.5*(bv_tmp->x[j*PedDimP[0]+sireP[i]]);
-                    }  
-                  }
-                  if(damP[i]!=-999){  
-                    for(j=0; j<dimG; j++){
-                      bv_tmp->x[j*PedDimP[0]+i] += dm*(bv_tmp->x[j*PedDimP[0]+damP[i]]);
-                    }  
-                  }
-                }
-                for(i=0; i<nlGR[k]; i++){  // need to read into astar
-                  for(j=0; j<dimG; j++){
-                    astar->x[j*nlGR[k]+i+cnt] = bv_tmp->x[j*PedDimP[0]+idP[i]];
-                  }
-                }
-              }
+              for(i=0; i<(nlGR[k]*dimG); i++){
+                bv_tmp[k]->x[i] = rnorm(0.0,1.0);
+              }      
+
+              cs_ltsolve(KGinvL[k]->L,  bv_tmp[k]->x);
+
+              for(i=0; i<(nlGR[k]*dimG); i++){
+                astar->x[cnt+i]  = bv_tmp[k]->x[KGinvS[k]->pinv[i]];
+              }    
+                 
             }else{
 
-/* blocked random effects */
+// blocked random effects 
 				
               for(i=0; i<nlGR[k]; i++){
                 for(j=0; j<dimG; j++){
@@ -1058,7 +1005,9 @@ if(nL>0){
 /* residuals */
 			
           cnt=0;
+
           for(k=nG; k<nGR; k++){
+
             dimG = GRdim[k];
             for(i=0; i<nlGR[k]; i++){
               for(j=0; j<dimG; j++){
@@ -1125,13 +1074,13 @@ if(nL>0){
 	 for(i=0; i< nG; i++){        
            if(updateP[i]>0){            
              dimG = GRdim[i];
-             if(AtermP[i]==1){        
-               for(j=0; j<(dimG*ncolA); j++){
-                 bv->x[j]=location->x[cnt2+j];
+             if(AtermP[i]>=0){        
+               for(j=0; j<(dimG*nlGR[i]); j++){
+                 bv[i]->x[j]=location->x[cnt2+j];
                }
-               tbv = cs_transpose(bv, true);
-               bvA = cs_multiply(tbv, A);
-               bvAbv = cs_multiply(bvA, bv);
+               tbv = cs_transpose(bv[i], true);
+               bvA = cs_multiply(tbv, A[i]);
+               bvAbv = cs_multiply(bvA, bv[i]);
                for(k=0; k<(dimG*dimG); k++){
                  Gtmp[i]->x[k] = bvAbv->x[k] + pG[i]->x[k];
                }
@@ -2158,14 +2107,7 @@ if(nL>0){
           cs_sfree(tYKrinvYS);
           cs_nfree(tYKrinvYL);
         }
-                                               
-        if(Aexists){
-          cs_spfree(A);               
-          cs_spfree(bv);                                                              
-          cs_spfree(bv_tmp);                                                            
-        }
-
-
+                                                  
         cs_nfree(L);
         cs_sfree(S);
         cs_nfree(pvBL);
@@ -2182,6 +2124,13 @@ if(nL>0){
 	    cs_sfree(GinvS[i]);
 	    cs_nfree(GinvL[i]);
             cs_spfree(KGinv[i]);
+            if(AtermP[i]>=0){  
+	      cs_sfree(KGinvS[i]);
+	      cs_nfree(KGinvL[i]);
+              cs_spfree(A[i]);               
+              cs_spfree(bv[i]);                                                              
+              cs_spfree(bv_tmp[i]);  
+            }
         }
         
         if(nalpha>0){

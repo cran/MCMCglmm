@@ -376,17 +376,22 @@ if(nL>0){
 /*************************************************************/
 /* read in inverse numerator matrix A and pedigree/phylogeny */
 /*************************************************************/
-
-        cnt2=0;
-        cnt3=0;
-
         for(k=0; k<nG; k++){
 
           if(AtermP[k]>=0){
+
             dimG = GRdim[k];
             A[k] = cs_spalloc(nlGR[k], nlGR[k], nzmaxP[3+AtermP[k]], true, false);  
             bv[k] = cs_spalloc(nlGR[k], dimG, nlGR[k]*dimG, true, false);
             bv_tmp[k] = cs_spalloc(nlGR[k], dimG, nlGR[k]*dimG, true, false);
+
+            cnt2=0;
+            cnt3=0;
+
+            for (i = 0; i < AtermP[k]; i++){
+             cnt2 += nzmaxP[3+i];
+             cnt3 += dimP[6+i]+1;
+            }            
 
             for (i = 0; i < nzmaxP[3+AtermP[k]]; i++){
               A[k]->i[i] = iAP[i+cnt2];
@@ -395,9 +400,6 @@ if(nL>0){
             for (i = 0; i <= nlGR[k] ; i++){
               A[k]->p[i] = pAP[i+cnt3];
             }
-
-            cnt2 += nzmaxP[3+AtermP[k]];
-            cnt3 += nlGR[k]+1;
 
 // create matrix for breeding values when sampling kronecker(G,A) of dimesion ntXpedigree
         

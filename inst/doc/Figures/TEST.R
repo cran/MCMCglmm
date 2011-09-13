@@ -972,16 +972,7 @@ res32[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 
 }
 
-library(VGAM)
-library(MASS)
-library(MCMCglmm)
-verbose=FALSE
-plotit=TRUE
-leg=TRUE
-nsim<-30
-nitt<-13000
-thin<-10
-burnin<-3000
+
 
 print("res33")
 res33<-matrix(0, nsim, 4)

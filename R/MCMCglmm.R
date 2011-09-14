@@ -14,7 +14,7 @@
       stop(paste(names(data)[which(names(data)%in%c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names"))], " is a reserved variable please rename it"))
     }
     family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial")
-
+    if(is.null(prior)==FALSE & any(names(prior)%in%c("R", "G", "B")==FALSE)){stop("prior list should contain elements R, G, and/or B only")}
     if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
     if(((is.null(prior$G) & is.null(random)==FALSE) & is.null(prior$R)==FALSE) | (is.null(prior$R) & is.null(prior$G)==FALSE)){stop("either both or neither R and G structures need a prior")}
     if(is.null(prior$R)==FALSE){
@@ -462,7 +462,7 @@
 
     nr<-1
 
-    if(NOpriorG==FALSE & length(prior$G)!=ngstructures){stop("priorG has the wrong number of structures")}
+    if(NOpriorG==FALSE & length(prior$G)!=ngstructures){stop("prior$G has the wrong number of structures")}
 
     for(r in 1:length(rmodel.terms)){
 
@@ -507,38 +507,38 @@
            GRprior[[nr]]<-prior$R
          }
          if(any(names(GRprior[[nr]])%in%c("V", "n", "nu", "alpha.mu", "alpha.V")==FALSE)){paste(paste(names(GRprior[[nr]])[which(names(GRprior[[nr]])%in%c("V", "n", "nu", "alpha.mu", "alpha.V")==FALSE)], sep=" "), " are not valid prior specifications for G/R-structures")}
-         if(is.null(GRprior[[nr]]$V)){stop("V not specified for some priorG/priorR elements")}
+         if(is.null(GRprior[[nr]]$V)){stop("V not specified for some prior$G/prior$R elements")}
          if(is.matrix(GRprior[[nr]]$V)==FALSE){GRprior[[nr]]$V<-as.matrix(GRprior[[nr]]$V)}
          if(diagR==2 & r>ngstructures){     # need to expand trait:units prior to us(trait):units prior      
-         if(dim(GRprior[[nr]]$V)[1]!=1){stop("V is the wrong dimension for some priorG/priorR elements")}
+         if(dim(GRprior[[nr]]$V)[1]!=1){stop("V is the wrong dimension for some prior$G/prior$R elements")}
           GRprior[[nr]]$V<-diag(sum(Zlist$nfl))*as.numeric(GRprior[[nr]]$V)
          }else{
-           if(dim(GRprior[[nr]]$V)[1]!=sum(Zlist$nfl)  | dim(GRprior[[nr]]$V)[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some priorG/priorR elements")}
+           if(dim(GRprior[[nr]]$V)[1]!=sum(Zlist$nfl)  | dim(GRprior[[nr]]$V)[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some prior$G/prior$R elements")}
          }
-         if(is.positive.definite(GRprior[[nr]]$V)==FALSE){stop("V is not positive definite for some priorG/priorR elements")}
+         if(is.positive.definite(GRprior[[nr]]$V)==FALSE){stop("V is not positive definite for some prior$G/prior$R elements")}
          if(is.null(GRprior[[nr]]$alpha.V)){
             GRprior[[nr]]$alpha.V<-GRprior[[nr]]$V*0
          }else{
            if(is.matrix(GRprior[[nr]]$alpha.V)==FALSE){GRprior[[nr]]$alpha.V<-as.matrix(GRprior[[nr]]$alpha.V)}
-           if(any(dim(GRprior[[nr]]$alpha.V)!=dim(GRprior[[nr]]$V))){stop("alpha.V is the wrong dimension for some priorG/priorR elements")}
-           if(is.positive.definite(GRprior[[nr]]$alpha.V)==FALSE & all(GRprior[[nr]]$alpha.V==0)==FALSE){stop("alpha.V is not positive definite for some priorG/priorR elements")}
+           if(any(dim(GRprior[[nr]]$alpha.V)!=dim(GRprior[[nr]]$V))){stop("alpha.V is the wrong dimension for some prior$G/prior$R elements")}
+           if(is.positive.definite(GRprior[[nr]]$alpha.V)==FALSE & all(GRprior[[nr]]$alpha.V==0)==FALSE){stop("alpha.V is not positive definite for some prior$G/prior$R elements")}
          } 
          if(is.null(GRprior[[nr]]$alpha.mu)){
             GRprior[[nr]]$alpha.mu<-matrix(1, dim(GRprior[[nr]]$V)[1], 1)
          }else{
            if(is.matrix(GRprior[[nr]]$alpha.mu)==FALSE){GRprior[[nr]]$alpha.mu<-matrix(GRprior[[nr]]$alpha.mu, length(GRprior[[nr]]$alpha.mu), 1)}
-           if(length(GRprior[[nr]]$alpha.mu)!=dim(GRprior[[nr]]$alpha.V)[1]){stop("alpha.mu is the wrong length for some priorG/priorR elements")}
+           if(length(GRprior[[nr]]$alpha.mu)!=dim(GRprior[[nr]]$alpha.V)[1]){stop("alpha.mu is the wrong length for some prior$G/prior$R elements")}
          } 
          if(is.null(GRprior[[nr]]$fix)==FALSE){
            CM<-GRprior[[nr]]$V[GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1],GRprior[[nr]]$fix:dim(GRprior[[nr]]$V)[1]]
            if(sum(CM!=0)>dim(GRprior[[nr]]$V)[1] & GRprior[[nr]]$fix>1){stop("sorry - matrices to be conditioned on must be diagonal")}           
            if(GRprior[[nr]]$fix!=1){
-           if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
+           if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some prior$G/prior$R elements")}
            }else{
              GRprior[[nr]]$nu=1
            }
          }else{
-           if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some priorG/priorR elements")}
+           if(is.null(GRprior[[nr]]$n)){stop("nu not specified for some prior$G/prior$R elements")}
          }
        }
        if(NOstartG==TRUE){
@@ -550,15 +550,15 @@
        }else{
 
          if(r<=ngstructures){
-           if(length(start$G)<r){stop("starting G/R has the wrong number of structures")}
+           if(length(start$G)<r){stop("start$G/start$R has the wrong number of structures")}
            GR[[nr]]<-start$G[[r]]
          }else{
            GR[[nr]]<-start$R
          }
 
 	 if(is.matrix(GR[[r]])==FALSE){GR[[r]]<-as.matrix(GR[[r]])}	
-         if(dim(GR[[r]])[1]!=sum(Zlist$nfl)  | dim(GR[[r]])[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some startG/startR elements")}
-         if(is.positive.definite(GR[[r]])==FALSE){stop(paste("starting G/R structure", r, " is not positive definite"))}
+         if(dim(GR[[r]])[1]!=sum(Zlist$nfl)  | dim(GR[[r]])[2]!=sum(Zlist$nfl)){stop("V is the wrong dimension for some start$G/start$R elements")}
+         if(is.positive.definite(GR[[r]])==FALSE){stop(paste("start$G/start$R structure", r, " is not positive definite"))}
        }
        if(Zlist$vtype[1]=="idh"){
 
@@ -568,7 +568,7 @@
              GRprior[[nr]]<-list(V=matrix(1), nu=0, alpha.mu=matrix(1), alpha.V=matrix(0))
            }else{
              if(r<=ngstructures){
-               if(length(prior$G)<r){stop("priorG has the wrong number of structures")}
+               if(length(prior$G)<r){stop("prior$G has the wrong number of structures")}
                GRprior[[nr]]<-list(V=as.matrix(prior$G[[r]]$V)[l,l,drop=FALSE], nu=prior$G[[r]]$n, fix=prior$G[[r]]$fix, alpha.V=as.matrix(prior$G[[r]]$alpha.V)[l,l,drop=FALSE], alpha.mu=as.matrix(prior$G[[r]]$alpha.mu[l]))
              }else{
                GRprior[[nr]]<-list(V=as.matrix(prior$R$V)[l,l,drop=FALSE], nu=prior$R$n, fix=prior$R$fix, alpha.V=as.matrix(prior$R$alpha.V)[l,l,drop=FALSE], alpha.mu=as.matrix(prior$R$alpha.mu[l]))
@@ -979,7 +979,7 @@
         as.double(data$MCMC_liab), 
         as.integer(mvtype),   
         as.integer(length(data$MCMC_y)),
-        as.integer(c(X@Dim,Z@Dim, L@Dim)),  
+        as.integer(c(X@Dim,Z@Dim, L@Dim, unlist(lapply(ginverse, function(x){x@Dim[1]})))),  
         as.integer(c(length(X@x),length(Z@x),length(L@x),unlist(lapply(ginverse, function(x){length(x@x)})))),       
         as.integer(X@i),         
         as.integer(X@p),        

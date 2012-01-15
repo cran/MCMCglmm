@@ -5,7 +5,7 @@ cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, 
     
 	cs *Rnew, *Rnewinv, *Ainv;
 	double Rnewldet, MH;
-    int dimG = A->n;
+        int dimG = A->n;
 	int cnt = 0;
 	int i, j;
 	
@@ -35,7 +35,6 @@ cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, 
 		MH += log(Roldinv->x[i*dimG+i]);	
 		MH -= log(Rnewinv->x[i*dimG+i]);
 	}
-	
 	MH *= 0.5*nuR;
 
 	if(MH<log(runif(0.0,1.0)) || Rnewldet<log(Dtol)){

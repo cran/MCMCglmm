@@ -6,8 +6,8 @@
    formula1<-update.formula(formula1, ~.-1)
    formula2<-update.formula(formula2, ~.-1)
 
-   X1<-model.matrix(formula1)
-   X2<-model.matrix(formula2)
+   X1<-sparse.model.matrix(formula1)
+   X2<-sparse.model.matrix(formula2)
 
    if(dim(X1)[2]!=dim(X2)[2]){
      stop("sir formulae invalid: factor levels of intersecting variables have to be the same")

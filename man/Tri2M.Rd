@@ -21,7 +21,7 @@ elements.}
 \value{
   \item{}{numeric or matrix}
 }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 M<-rIW(diag(3), 10)
 x<-Tri2M(M)

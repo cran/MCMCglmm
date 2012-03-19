@@ -12,12 +12,13 @@ sir(formula1=NULL, formula2=NULL)
 \value{
     design matrix 
 }
-\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 fac1<-factor(sample(letters[1:3], 5, TRUE), levels=letters[1:3])
 fac2<-factor(sample(letters[1:3], 5, TRUE), levels=letters[1:3])
 cbind(fac1, fac2)
-sir(~fac1, ~fac2)
+sir(~fac1, ~fac2)
+
 }
 \keyword{manip}
 

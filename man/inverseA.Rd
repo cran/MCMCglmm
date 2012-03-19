@@ -30,7 +30,7 @@ to unit length (distance from root to tip)?}}
 	
 	Hadfield, J.D.  and Nakagawa, S. (2010)  Journal of Evolutionary Biology 23 494-508
 }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 data(bird.families)
 Ainv<-inverseA(bird.families)

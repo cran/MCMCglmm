@@ -15,7 +15,7 @@ KPPM(m, k)
   \item{}{Matrix}
 }
 \references{Schott, J.R.(2003) Journal of Multivariate Analysis 87 (1) 177-190}
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 KPPM(2,3)
 }

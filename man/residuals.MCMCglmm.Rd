@@ -15,7 +15,7 @@
 \value{
   vector of residuals
  }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \seealso{\code{\link{residuals}}, \code{\link{MCMCglmm}}}
 \keyword{models}
 

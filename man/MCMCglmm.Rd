@@ -91,7 +91,7 @@ saved?}
 	
 	Background Sorensen, D. & Gianola, D. (2002) Springer
 }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \seealso{\code{\link[coda]{mcmc}}}
 \examples{
 

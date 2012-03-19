@@ -13,7 +13,7 @@ posterior.mode(x, adjust=0.1, ...)
 \value{
   modes of the kernel density estimates
  }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \seealso{\code{\link{density}}}
 \examples{
 v<-rIW(as.matrix(1),10, n=1000)

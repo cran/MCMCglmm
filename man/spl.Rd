@@ -14,7 +14,7 @@ spl(x,  k=10, knots=NULL, type="LRTP")
 \value{
 	Design matrix post-multiplied by the inverse square root of the penalty matrix 
 }
-\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 \dontrun{
 x<-rnorm(100)

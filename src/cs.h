@@ -1,5 +1,6 @@
 #ifndef _CS_H
 #define _CS_H
+#include <R.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>

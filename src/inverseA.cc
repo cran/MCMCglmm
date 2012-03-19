@@ -27,7 +27,9 @@ void inverseA(
 
   int     i, j, k, cnt, sj, dj;
   double  ai;
-  double  *AN = new double[nAP[0]];
+  double  *AN = new double[2*nAP[0]];
+ // needs to hold all ancestors of an individual (btu ancestors can be counted multiple times if inbreeding occurs) 
+ // 2* the total number of individuals is probably safe (that observed under a pedigree formed of one full-sib mating lineage).
   double  *li = new double[nAP[0]];
   cs *Tinv, *D, *tTinv, *tTD, *A, *tA;
 

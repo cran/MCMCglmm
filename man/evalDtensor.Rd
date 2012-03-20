@@ -15,7 +15,7 @@ terms in x}
 \value{
    tensor 
 }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \seealso{\code{\link{Dtensor}}, \code{\link{D}}}
 \examples{
 f<-expression(beta_1 + time*beta_2+u)

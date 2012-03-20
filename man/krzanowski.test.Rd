@@ -22,7 +22,7 @@ a value of \code{length(vecsA)} for identical subspaces}
   \item{bisector}{vector that lies between each best matched pair of vectors}
 }
 \references{Krzanowski, W.J. (2000) Principles of Multivariate Analysis. OUP}
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 CA<-rIW(diag(5),10, n=1)
 CB<-rIW(diag(5),10, n=1)

@@ -1,2 +1,8 @@
-doc/JarLib.bib
-doc/Overview-
+doc/Lecture.*[.]pdf$
+doc/.*[.]tex$
+doc/.*[.]bib$
+doc/.*~$
+doc/Overview-.*[.]pdf$
+doc/rgl.*[.]pdf$
+doc/axes.*[.]pdf$
+doc/Figures

@@ -21,7 +21,7 @@ retained}
 \note{
    If the individuals in \code{keep} are the only phenotyped individuals for some analysis then some non-phenotyped individuals can often be discarded if they are not responsible for pedigree links between phenotyped individuals.  In the simplest case (\code{make.base=FALSE}) all ancestors of phenotyped individuals will be retained, although further pruning may be possible using \code{make.base=TRUE}. In this case all pedigree links that do not connect phenotyped individuals are discarded resulting in some individuals becoming part of the base population. In terms of variance component and fixed effect estimation pruning the pedigree should have no impact on the target posterior distribution, although convergence and mixing may be better because there is less missing data. 
 }
-\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk} + Michael Morrissey}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk} + Michael Morrissey}
 \keyword{manip}
 
 

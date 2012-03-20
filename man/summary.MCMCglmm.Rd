@@ -25,7 +25,7 @@
   \item{csats}{chain length, burn-in and thinning interval}
   \item{Gterms}{indexes random effect (co)variances by the component terms defined in the random formula}
  }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \seealso{\code{\link{MCMCglmm}}}
 \keyword{models}
 

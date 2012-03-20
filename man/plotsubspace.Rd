@@ -28,7 +28,7 @@ subspace is defined by the first three eigenvectors of CA, and the percentage of
 variance for each matrix along these three dimensions is given in the plot 
 title. 
 }
-\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk} with code taken from the \code{rgl} package}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk} with code taken from the \code{rgl} package}
 \seealso{\code{\link[rgl]{rgl}}}
 \examples{
  if(require(rgl)!=FALSE){

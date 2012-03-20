@@ -12,7 +12,7 @@ Ptensor(x, k)
 \value{
    \item{}{tensor}
  }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \examples{
 n<-1000
 y<-matrix(rnorm(n), n/2, 2)

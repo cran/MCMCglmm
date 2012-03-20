@@ -14,7 +14,7 @@ kunif(min, max, k)
 \value{
   kth central moment
 }
-\author{Jarrod Hadfield j.hadfield@ed.ac.uk}
+\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
 \seealso{\code{\link{dunif}}}
 \examples{
 kunif(-1,1,4)

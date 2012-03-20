@@ -70,11 +70,10 @@
       for(i in 1:length(rterms)){
  
 	components<-find.components(rterms[i], data, names(ginverse))
-
 	if(is.null(components[[1]])==FALSE | length(components[[2]])>0){
 
           for(j in 1:length(components[[2]])){      
-            MCMC_components1<-interaction(data[,components[[1]]], sep=".MCMC.", drop=TRUE*(length(components[[1]])>1))  	# random effect factors 
+            MCMC_components1<-interaction(data[,components[[1]]], sep=".MCMC.", drop=("MCMC_dummy"%in%components[[2]]==FALSE)) # random effect factors
             MCMC_components2<-interaction(data[,components[[2]][[j]]], sep=".MCMC.", drop=FALSE)  	                        # fixed effect factors
             allc<-expand.grid(levels(MCMC_components1),levels(MCMC_components2))  						# all pairwise combinations
             missing.combinations<-allc[which(paste(allc[,1], allc[,2])%in%paste(MCMC_components1, MCMC_components2)==FALSE),]   # missing pairwise combinations

@@ -1,5 +1,10 @@
 \newif\ifalone
 \alonefalse
+\newif\iftalk
+\talktrue
+
+
+
 \ifalone
 \documentclass{article}
 \usepackage{graphicx}
@@ -13,7 +18,6 @@
 \usepackage{makeidx}
 \usepackage{color}
 
-
 \title{Categorical Random Interactions}
 
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
@@ -23,6 +27,7 @@
 \chapter{Categorical Random Interactions}
 \label{chap3}
 \fi
+
 
 
 
@@ -40,8 +45,9 @@ The data are morphological measurements (\texttt{tarsus} length and \texttt{back
 \begin{Sinput}
 > prior = list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1, 
 +     nu = 0.002), G2 = list(V = 1, nu = 0.002)))
-> m3a.1 <- MCMCglmm(tarsus ~ sex, random = ~dam + fosternest, data = BTdata, 
-+     verbose = FALSE, prior = prior)
+> m3a.1 <- MCMCglmm(tarsus ~ sex, random = ~dam + 
++     fosternest, data = BTdata, verbose = FALSE, 
++     prior = prior)
 \end{Sinput}
 \end{Schunk}
 
@@ -53,7 +59,7 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
-0.03015650 0.43293184 0.04920423 
+0.02867493 0.50038963 0.02354137 
 \end{Soutput}
 \begin{Sinput}
 > plot(m3a.1$VCV)
@@ -65,7 +71,7 @@ fits \texttt{sex} as a fixed effect, and \texttt{dam} and \texttt{fosternest} as
 \begin{Schunk}
 \begin{Soutput}
        dam fosternest      units 
-0.03015650 0.43293184 0.04920423 
+0.02867493 0.50038963 0.02354137 
 \end{Soutput}
 \end{Schunk}
 \includegraphics{Lecture3-005}
@@ -82,7 +88,7 @@ Perhaps the autocorrelation for the \texttt{fosternest} variance is a little hig
 \end{Sinput}
 \begin{Soutput}
        dam fosternest      units 
- 1000.0000   333.7115   822.8681 
+ 1000.0000   281.1323   468.1909 
 \end{Soutput}
 \end{Schunk}
 
@@ -95,10 +101,10 @@ The posterior correlation between the parameters is low
 > cor(m3a.1$VCV)
 \end{Sinput}
 \begin{Soutput}
-                   dam fosternest       units
-dam         1.00000000 -0.2617804 -0.03572453
-fosternest -0.26178044  1.0000000 -0.19821243
-units      -0.03572453 -0.1982124  1.00000000
+                    dam fosternest        units
+dam         1.000000000 -0.1965509  0.006995516
+fosternest -0.196550868  1.0000000 -0.243214364
+units       0.006995516 -0.2432144  1.000000000
 \end{Soutput}
 \end{Schunk}
 
@@ -112,9 +118,9 @@ The lower 95\% credible interval for the \texttt{fosternest} variance is low
 \end{Sinput}
 \begin{Soutput}
                  lower     upper
-dam        0.137995486 0.3244924
-fosternest 0.001049190 0.1226651
-units      0.513211216 0.6366857
+dam        0.141912474 0.3179030
+fosternest 0.002017905 0.1184594
+units      0.517021701 0.6305763
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -126,18 +132,18 @@ and perhaps a model without it would be better supported, although the DIC sugge
 \begin{Sinput}
 > priorb <- prior
 > priorb[[2]] <- priorb[[2]][-2]
-> m3a.2 <- MCMCglmm(tarsus ~ sex, random = ~dam, data = BTdata, 
-+     verbose = FALSE, prior = priorb)
+> m3a.2 <- MCMCglmm(tarsus ~ sex, random = ~dam, 
++     data = BTdata, verbose = FALSE, prior = priorb)
 > m3a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 2014.195
+[1] 2014.607
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1992.541
+[1] 1993.371
 \end{Soutput}
 \end{Schunk}
 
@@ -149,8 +155,8 @@ The tarsus lengths were standardised prior to analysis - this is not recommended
 > HPDinterval(m3a.1$VCV[, 1]/rowSums(m3a.1$VCV))
 \end{Sinput}
 \begin{Soutput}
-         lower     upper
-var1 0.1772904 0.3516524
+         lower    upper
+var1 0.1817537 0.345952
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -167,29 +173,29 @@ One nice thing though about standardised data is that effect sizes are immediate
  Thinning interval  = 10
  Sample size  = 1000 
 
- DIC: 1992.541 
+ DIC: 1993.371 
 
  G-structure:  ~dam
 
     post.mean l-95% CI u-95% CI eff.samp
-dam    0.2293    0.138   0.3245     1000
+dam     0.229   0.1419   0.3179     1000
 
                ~fosternest
 
            post.mean l-95% CI u-95% CI eff.samp
-fosternest   0.06465 0.001049   0.1227    333.7
+fosternest   0.06113 0.002018   0.1185    281.1
 
  R-structure:  ~units
 
       post.mean l-95% CI u-95% CI eff.samp
-units    0.5731   0.5132   0.6367    822.9
+units    0.5731    0.517   0.6306    468.2
 
  Location effects: tarsus ~ sex 
 
             post.mean l-95% CI u-95% CI eff.samp  pMCMC    
-(Intercept)  -0.40612 -0.52516 -0.27356     1000 <0.001 ***
-sexMale       0.76894  0.65010  0.87477     1000 <0.001 ***
-sexUNK        0.20476 -0.02971  0.46530     1000  0.116    
+(Intercept)  -0.40546 -0.52873 -0.29338     1000 <0.001 ***
+sexMale       0.76911  0.65901  0.87137     1000 <0.001 ***
+sexUNK        0.20272 -0.03531  0.44202     1091  0.108    
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
 \end{Soutput}
@@ -264,10 +270,12 @@ In the simpler models we had fitted in Chapters \ref{chap1} and \ref{chap2} ${\b
 
 \begin{Schunk}
 \begin{Sinput}
-> priorb = list(R = list(V = diag(1), nu = 0.002), G = list(G1 = list(V = diag(3), 
-+     nu = 0.002), G2 = list(V = 1, nu = 0.002)))
-> m3a.3 <- MCMCglmm(tarsus ~ sex, random = ~idh(sex):dam + fosternest, 
-+     data = BTdata, verbose = FALSE, prior = priorb)
+> priorb = list(R = list(V = diag(1), nu = 0.002), 
++     G = list(G1 = list(V = diag(3), nu = 0.002), 
++         G2 = list(V = 1, nu = 0.002)))
+> m3a.3 <- MCMCglmm(tarsus ~ sex, random = ~idh(sex):dam + 
++     fosternest, data = BTdata, verbose = FALSE, 
++     prior = priorb)
 \end{Sinput}
 \end{Schunk}
 
@@ -292,9 +300,9 @@ We can extract the marginal means for each variance and place them into a matrix
 \end{Sinput}
 \begin{Soutput}
        Fem.dam  Male.dam    UNK.dam
-[1,] 0.1782858 0.0000000 0.00000000
-[2,] 0.0000000 0.1712243 0.00000000
-[3,] 0.0000000 0.0000000 0.05514687
+[1,] 0.1760389 0.0000000 0.00000000
+[2,] 0.0000000 0.1725119 0.00000000
+[3,] 0.0000000 0.0000000 0.04755127
 \end{Soutput}
 \end{Schunk}
 
@@ -335,10 +343,12 @@ We will now use a prior for the covariance matrix where nu=4 (1 more than the di
 
 \begin{Schunk}
 \begin{Sinput}
-> prior.m3a.4 = list(R = list(V = diag(1), nu = 0.002), G = list(G1 = list(V = diag(3) * 
-+     0.02, nu = 4), G2 = list(V = 1, nu = 0.002)))
-> m3a.4 <- MCMCglmm(tarsus ~ sex, random = ~us(sex):dam + fosternest, 
-+     data = BTdata, verbose = FALSE, prior = prior.m3a.4)
+> prior.m3a.4 = list(R = list(V = diag(1), nu = 0.002), 
++     G = list(G1 = list(V = diag(3) * 0.02, nu = 4), 
++         G2 = list(V = 1, nu = 0.002)))
+> m3a.4 <- MCMCglmm(tarsus ~ sex, random = ~us(sex):dam + 
++     fosternest, data = BTdata, verbose = FALSE, 
++     prior = prior.m3a.4)
 \end{Sinput}
 \end{Schunk}
 
@@ -346,15 +356,16 @@ The posterior mean (co)variances for this model show that the covariances are al
 
 \begin{Schunk}
 \begin{Sinput}
-> Vdam.4 <- matrix(colMeans(m3a.4$VCV)[1:9], 3, 3)
+> Vdam.4 <- matrix(colMeans(m3a.4$VCV)[1:9], 3, 
++     3)
 > colnames(Vdam.4) <- colnames(m3a.4$VCV)[1:3]
 > Vdam.4
 \end{Sinput}
 \begin{Soutput}
      Fem:Fem.dam Male:Fem.dam UNK:Fem.dam
-[1,]   0.2310396    0.2028935   0.2044394
-[2,]   0.2028935    0.2170135   0.1978614
-[3,]   0.2044394    0.1978614   0.2434057
+[1,]   0.2322395    0.2010712   0.2164202
+[2,]   0.2010712    0.2145261   0.2085617
+[3,]   0.2164202    0.2085617   0.2697783
 \end{Soutput}
 \end{Schunk}
 
@@ -379,7 +390,8 @@ Covariances can be hard to interpret, and I usually find correlations easier to 
 
 \begin{Schunk}
 \begin{Sinput}
-> plot(posterior.cor(m3a.4$VCV[, 1:9])[, c(2, 3, 7)])
+> plot(posterior.cor(m3a.4$VCV[, 1:9])[, c(2, 3, 
++     7)])
 \end{Sinput}
 \end{Schunk}
 
@@ -398,13 +410,13 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1996.747
+[1] 1997.773
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1992.541
+[1] 1993.371
 \end{Soutput}
 \end{Schunk}
 
@@ -631,8 +643,8 @@ An uninformative prior for the correlations is an improper prior with \texttt{V=
 +     1
 > V.ast <- prior.m3a.4$G$G1$V[1, 1] * (prior.m3a.4$G$G1$nu/nu.ast)
 > xv <- seq(1e-16, 1, length = 100)
-> dv <- MCMCpack::dinvgamma(xv, shape = nu.ast/2, scale = (nu.ast * 
-+     V.ast)/2)
+> dv <- MCMCpack::dinvgamma(xv, shape = nu.ast/2, 
++     scale = (nu.ast * V.ast)/2)
 > plot(dv ~ xv, type = "l")
 \end{Sinput}
 \end{Schunk}

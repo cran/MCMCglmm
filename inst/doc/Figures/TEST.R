@@ -1,8 +1,8 @@
 #source("~/Desktop/MCMCglmmTEST.R")
 #source("~/Desktop/recovery//MCMCglmm_2.05/inst/doc/Figures/TEST.R")
-library(VGAM)
 library(MASS)
 library(MCMCglmm)
+vgam=FALSE
 verbose=FALSE
 plotit=TRUE
 leg=TRUE
@@ -329,6 +329,7 @@ y1<-rbinom(300,10,plogis(y[,1]))
 y2<-rbinom(300,10,plogis(y[,2]))
 data=data.frame(y1s=y1,y1f=10-y1,y2s=y2,y2f=10-y2, fac=fac)
 m1<-MCMCglmm(cbind(y1s,y1f,y2s,y2f)~trait-1, random=~us(trait):fac, family=c("multinomial2","multinomial2"), rcov=~idh(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -507,15 +508,18 @@ res18[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
-print("res19")
+
 res19<-matrix(0, nsim, 4)
+res19b<-matrix(0, nsim, 6)
+if(vgam){
+print("res19")
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
 tune=list(diag(2))
 tpar<-c(1,-1,1,0,0,1)
 for(i in 1:nsim){
 l<-mvrnorm(300,c(0,-1), R)
-y<-rzipois(300, exp(1+l[,1]), plogis(l[,2]))
+y<-VGAM::rzipois(300, exp(1+l[,1]), plogis(l[,2]))
 data=data.frame(y1=y)
 m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -529,7 +533,6 @@ print(i)
 }
 
 print("res19b")
-res19b<-matrix(0, nsim, 6)
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2),G=list(G1=list(V=1, n=1)))
 tune=list(diag(2))
@@ -539,7 +542,7 @@ for(i in 1:nsim){
 	l<-mvrnorm(300,c(0,-0.5), R)
         fac<-gl(50,6)
         r<-rnorm(50)
-	y<-rzipois(300, exp(1+l[,1]+r[fac]+0.2*x), plogis(l[,2]))
+	y<-VGAM::rzipois(300, exp(1+l[,1]+r[fac]+0.2*x), plogis(l[,2]))
 	data=data.frame(y1=y, x=x, fac=fac)
 	m1<-MCMCglmm(y1~trait+at.level(trait, 1):x-1, random=~us(at.level(trait,1)):fac, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -552,7 +555,7 @@ print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(
 	res19b[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 	print(i)
 }
-
+}
 # bivariate gauss + categorical  residual 1.7 seconds
 
 res20<-matrix(NA, nsim,6)
@@ -918,25 +921,29 @@ for(i in 1:nsim){
 
 # hurdle Poisson
 print("res30")
-res30<-matrix(NA, nsim,12)
-data("bioChemists", package = "pscl")
-prior = list(R = list(V = diag(2), nu = 1.002, fix = 2)) 
-c2<-(16*sqrt(3)/(15*pi))^2
+res30<-matrix(NA, nsim,3)
 
 for(i in 1:nsim){
-m5d.1 <- MCMCglmm(art ~ trait-1+trait:(fem+mar+kid5 +phd+ment), rcov = ~idh(trait):units,  data = bioChemists, prior = prior, family = "hupoisson", nitt=13000, thin=10, burnin=3000) 
-res30[i,][seq(2,12,2)]<-colMeans(m5d.1$Sol[,seq(2,12,2)]/sqrt(1+c2))
-res30[i,][seq(1,11,2)]<-colMeans(m5d.1$Sol[,seq(1,11,2)]+0.5*m5d.1$VCV[,1])
-}
-
-n<-100
+n<-1000
 l<-rnorm(n, -1, sqrt(1))
 t<-(-log(1-runif(n)*(1-exp(-exp(l)))))
 y<-rpois(n,exp(l)-t)+1
 y<-c(rep(0, length(y)/2), y)
 data=data.frame(y=y)
 prior=list(R=list(V=diag(2), fix=2, nu=1))
-m1<-MCMCglmm(y~trait-1, rcov=~idh(trait):units, data=data, family="hupoisson", prior=prior)
+m1<-MCMCglmm(y~trait-1, rcov=~idh(trait):units, data=data, family="hupoisson", prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+res30[i]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV[,1]))
+	if(plotit){
+		plot(mcmc(cbind(m1$Sol, m1$VCV[,1])), ask=FALSE)
+	}
+	tpar<-c(-1,-1,1)
+        if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)){
+        print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)/length(tpar), "res30 different from expected"))
+        }
+
+}
+
+
 # truncated Poisson
 
 print("res31")
@@ -950,7 +957,7 @@ t<-(-log(1-runif(n)*(1-exp(-exp(l)))))
 y<-rpois(n,exp(l)-t)+1
 
 dat<-data.frame(y=y)
-m1<-MCMCglmm(y~1, family="ztpoisson", data=dat)
+m1<-MCMCglmm(y~1, family="ztpoisson", data=dat, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 
 res31[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 }
@@ -976,6 +983,7 @@ res32[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 
 
 print("res33")
+if(vgam){
 res33<-matrix(0, nsim, 4)
 R<-diag(2)
 prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
@@ -983,7 +991,7 @@ tune=list(diag(2))
 tpar<-c(0, -1, 1, 1)
 for(i in 1:nsim){
 l<-mvrnorm(300,c(0,-1), R)
-y<-rzibinom(300, 20, exp(l[,1])/(1+exp(l[,1])), plogis(l[,2]))
+y<-VGAM::rzibinom(300, 20, exp(l[,1])/(1+exp(l[,1])), plogis(l[,2]))
 data=data.frame(success=y,failure=20-y)
 m1<-MCMCglmm(cbind(success,failure)~trait-1, rcov=~idh(trait):units, data=data, family="zibinomial",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(plotit){
@@ -995,14 +1003,36 @@ print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(
 res33[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
+}
 
+print("res34")
+
+res34<-matrix(0, nsim, 3)
+
+for(i in 1:nsim){
+library(MCMCglmm)
+id <- sample(1:100, 100, replace = T)
+y <- rnorm(100)
+
+id1 <- sample(id, 100, replace = T)
+id <- as.factor(id)
+id1 <- factor(id1, levels=levels(id))
+
+L<-diag(100)-sir(~id1, ~id)*-0.5
+
+y<-solve(L,y)
+
+my.data <- data.frame(y = y, id = id, id1 = id1, x = rnorm(100))
+m1 <- MCMCglmm(y ~ x + sir(~id1, ~id), data = my.data, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+res34[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$Lambda))
+}
 
 
 tpar<-c(1, 1,1,1,1,1,1,1,-1,1,2,-1,1,2,-1,1,2,-1, 1, 0,0,1,2,-1, 1, 0.5, 0.5, 2, 2,-1, 1, 2, 2,-1, 1,0,0, 2, 2,-1,1,1,0.5,0.5,2,-1,1,1,2,-1,1,2,1,1,2,-1,1,2,0.5,0.5,1,1,2,0,1,2, coef, coef,-1,1,2,0,1,0,1,0,1,1,-1,1,0,0,1,1, -0.5, 0.2, 1,1,0,0,1,-1,1,2,0.25, 0.25,1,-1, 0, 2,1,1,-1, 0, 2,1,1,-1, 0, 2,0,0,1,1,-1,0,2,0.5,0.5,1,1,0,0,1,-1,0.5,1,0.5,1,-1,1,1,0.5,1,0.75,-1,-0.5,1,-1,1,0.5,0.5,1,1,1,0,1,1,0,0,0,1,1,1,0.3,0.9,1,-0.25,-0.25,1,0.5,1,1,2,-1,0,-1,0.5,1,-0.35, -0.35,1)
 
 est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29))
 
-plot(est~tpar)
-abline(0,1)
+
+
 
 

@@ -12,6 +12,8 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 
+
+
 \title{Parameter Expansion}
 \author{Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
 
@@ -68,8 +70,8 @@ To use parameter exapnsion in \texttt{MCMCglmm} it is necessary to specify a pri
 > BTdata$sex <- gdata::drop.levels(BTdata$sex)
 > prior1b = list(R = list(V = 1, fix = 1), G = list(G1 = list(V = 1, 
 +     nu = 1, alpha.mu = 0, alpha.V = 1000)))
-> m7b.1 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, family = "categorical", 
-+     prior = prior1b, verbose = FALSE)
+> m7b.1 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, 
++     family = "categorical", prior = prior1b, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
@@ -79,8 +81,8 @@ and fit a model that does not use parameter expansion:
 \begin{Sinput}
 > prior2b = list(R = list(V = 1, fix = 1), G = list(G1 = list(V = 1e-10, 
 +     nu = -1)))
-> m7b.2 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, family = "categorical", 
-+     prior = prior2b, verbose = FALSE)
+> m7b.2 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, 
++     family = "categorical", prior = prior2b, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
@@ -96,7 +98,7 @@ The prior densities in the two models are very similar across the range of varia
 \label{sexratio-fig}
 \end{figure}
 
-The parameter expanded model is 25\% slower per iteration but the effective sample size is 6.258 times greater:
+The parameter expanded model is 25\% slower per iteration but the effective sample size is 5.705 times greater:
 
 \begin{Schunk}
 \begin{Sinput}
@@ -104,14 +106,14 @@ The parameter expanded model is 25\% slower per iteration but the effective samp
 \end{Sinput}
 \begin{Soutput}
     var1 
-213.5645 
+217.5849 
 \end{Soutput}
 \begin{Sinput}
 > effectiveSize(m7b.2$VCV[, 1])
 \end{Sinput}
 \begin{Soutput}
     var1 
-34.12889 
+38.13934 
 \end{Soutput}
 \end{Schunk}
 
@@ -159,10 +161,11 @@ The response variable \texttt{estimate} is the relative effect of Scholastic Apt
 
 \begin{Schunk}
 \begin{Sinput}
-> prior1 <- list(R = list(V = diag(schools$sd^2), fix = 1), G = list(G1 = list(V = 1e-10, 
-+     nu = -1)))
-> m7a.1 <- MCMCglmm(estimate ~ 1, random = ~school, rcov = ~idh(school):units, 
-+     data = schools, prior = prior1, verbose = FALSE)
+> prior1 <- list(R = list(V = diag(schools$sd^2), 
++     fix = 1), G = list(G1 = list(V = 1e-10, nu = -1)))
+> m7a.1 <- MCMCglmm(estimate ~ 1, random = ~school, 
++     rcov = ~idh(school):units, data = schools, 
++     prior = prior1, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
@@ -181,10 +184,11 @@ We can also use the inverse-gamma prior with scale and shape equal to 0.001:
 
 \begin{Schunk}
 \begin{Sinput}
-> prior2 <- list(R = list(V = diag(schools$sd^2), fix = 1), G = list(G1 = list(V = 1, 
-+     nu = 0.002)))
-> m7a.2 <- MCMCglmm(estimate ~ 1, random = ~school, rcov = ~idh(school):units, 
-+     data = schools, prior = prior2, verbose = FALSE)
+> prior2 <- list(R = list(V = diag(schools$sd^2), 
++     fix = 1), G = list(G1 = list(V = 1, nu = 0.002)))
+> m7a.2 <- MCMCglmm(estimate ~ 1, random = ~school, 
++     rcov = ~idh(school):units, data = schools, 
++     prior = prior2, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
@@ -204,10 +208,12 @@ For the final prior we have \texttt{V=1}, \texttt{nu=1}, \texttt{alpha.mu=0} whi
 
 \begin{Schunk}
 \begin{Sinput}
-> prior3 <- list(R = list(V = diag(schools$sd^2), fix = 1), G = list(G1 = list(V = 1, 
-+     nu = 1, alpha.mu = 0, alpha.V = 25^2)))
-> m7a.3 <- MCMCglmm(estimate ~ 1, random = ~school, rcov = ~idh(school):units, 
-+     data = schools, prior = prior3, verbose = FALSE)
+> prior3 <- list(R = list(V = diag(schools$sd^2), 
++     fix = 1), G = list(G1 = list(V = 1, nu = 1, 
++     alpha.mu = 0, alpha.V = 25^2)))
+> m7a.3 <- MCMCglmm(estimate ~ 1, random = ~school, 
++     rcov = ~idh(school):units, data = schools, 
++     prior = prior3, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
@@ -230,8 +236,8 @@ When analysing binary responses the residual variance is not identified in the l
 \begin{Sinput}
 > prior3b = list(R = list(V = 10, fix = 1), G = list(G1 = list(V = 1, 
 +     nu = 1, alpha.mu = 0, alpha.V = 1000)))
-> m7b.3 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, family = "categorical", 
-+     prior = prior3b, verbose = FALSE)
+> m7b.3 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, 
++     family = "categorical", prior = prior3b, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 
@@ -256,8 +262,9 @@ but rescaling indicates that they are very similar:
 \begin{Schunk}
 \begin{Sinput}
 > c2 <- (16 * sqrt(3)/(15 * pi))^2
-> plot(mcmc.list(m7b.1$VCV[, 1]/(1 + c2 * m7b.1$VCV[, "units"]), 
-+     m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"])))
+> plot(mcmc.list(m7b.1$VCV[, 1]/(1 + c2 * m7b.1$VCV[, 
++     "units"]), m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, 
++     "units"])))
 \end{Sinput}
 \end{Schunk}
 
@@ -274,18 +281,20 @@ The prior specification for the between mother variance is different in the two 
 
 \begin{Schunk}
 \begin{Sinput}
-> effectiveSize(m7b.1$VCV[, 1]/(1 + c2 * m7b.1$VCV[, "units"]))
+> effectiveSize(m7b.1$VCV[, 1]/(1 + c2 * m7b.1$VCV[, 
++     "units"]))
 \end{Sinput}
 \begin{Soutput}
     var1 
-213.5645 
+217.5849 
 \end{Soutput}
 \begin{Sinput}
-> effectiveSize(m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
+> effectiveSize(m7b.3$VCV[, 1]/(1 + c2 * m7b.3$VCV[, 
++     "units"]))
 \end{Sinput}
 \begin{Soutput}
-   var1 
-466.903 
+    var1 
+551.1766 
 \end{Soutput}
 \end{Schunk}
 
@@ -293,13 +302,15 @@ Although the chain mixes faster as the residual variance is set to be larger, nu
  
 \begin{Schunk}
 \begin{Sinput}
-> m7b.4 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, family = "categorical", 
-+     prior = prior3b, verbose = FALSE, slice = TRUE)
-> effectiveSize(m7b.4$VCV[, 1]/(1 + c2 * m7b.3$VCV[, "units"]))
+> m7b.4 <- MCMCglmm(sex ~ 1, random = ~dam, data = BTdata, 
++     family = "categorical", prior = prior3b, verbose = FALSE, 
++     slice = TRUE)
+> effectiveSize(m7b.4$VCV[, 1]/(1 + c2 * m7b.3$VCV[, 
++     "units"]))
 \end{Sinput}
 \begin{Soutput}
     var1 
-816.6899 
+635.7877 
 \end{Soutput}
 \end{Schunk}
 

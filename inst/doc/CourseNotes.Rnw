@@ -33,7 +33,7 @@
 
 \makeindex
 
-%\SweaveOpts{width=60}
+ 
 % \VignetteIndexEntry{MCMCglmm CourseNotes}
 %\newcommand{\begin{document}}{\chapter{}}
 %\newcommand{\begin{master_document}}{\begin{document}}

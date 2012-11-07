@@ -1,11 +1,17 @@
-#source("~/Work/AManal/MCMCglmm_2.16/inst/doc/Figures/buildCN.R")
+#source("~/Work/AManal/MCMCglmm_2.17/inst/doc/Figures/buildCN.R")
 set.seed(32)
 alone=FALSE
 lectures<-1:9
 forCRAN=TRUE
 JSS<-TRUE
 LINUX=TRUE
-options(width=80)
+
+
+options(SweaveHooks=list(fig=function() par(bty="l")))
+options(useFancyQuotes=FALSE)
+options(width=60)
+
+
 
 # Things to check add up
 
@@ -15,12 +21,13 @@ options(width=80)
 #
 
 UPpath="~/Work/AManal/UP_course/Tex/"
-MCpath="~/Work/AManal/MCMCglmm_2.16/inst/doc/"
+MCpath="~/Work/AManal/MCMCglmm_2.17/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)
 library(R2WinBUGS)
 library(kinship)
+library(tools)
 
 data(BTdata)
 
@@ -154,8 +161,6 @@ if(forCRAN){
 	system(paste("cp ", MCpath, "/CourseNotes.tex ", MCpath, "/CourseNotes.Rnw", sep=""))
 	system(paste("cp ", MCpath, "/Overview.Rnw ", MCpath, "/Figures", sep=""))
 	system(paste("cp ", MCpath, "/Overview.tex ", MCpath, "/Overview.Rnw", sep=""))	
-	system(paste("rm ", MCpath, "/CourseNotes.tex", sep=""))
-	system(paste("rm ", MCpath, "/Overview.tex", sep=""))
 	system(paste("rm ", MCpath, "*\\.aux", sep=""))
 	system(paste("rm ", MCpath, "*\\.bbl", sep=""))
 	system(paste("rm ", MCpath, "*\\.blg", sep=""))
@@ -167,7 +172,7 @@ if(forCRAN){
 	system(paste("rm ", MCpath, "Overview.tex", sep=""))
 	system(paste("rm ", MCpath, "jss.cls", sep=""))
  	system(paste("rm ", MCpath, "jss.bst", sep=""))
-        compactPDF(MCpath, gs_cmd="ghostscript")
+        compactPDF(MCpath, gs_cmd="ghostscript", gs_quality="printer")
  	system(paste("rm ", MCpath, "Overview.ps", sep=""))
 }
 

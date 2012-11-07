@@ -974,7 +974,6 @@ if(nL>0){
             if(AtermP[k]>=0){        
 
 /* complex random effects */
-
               KGinvL[k] = cs_chol(KGinv[k] , KGinvS[k]);
 
               for(i=0; i<(nlGR[k]*dimG); i++){
@@ -986,7 +985,7 @@ if(nL>0){
               for(i=0; i<(nlGR[k]*dimG); i++){
                 astar->x[cnt+i]  = bv_tmp[k]->x[KGinvS[k]->pinv[i]];
               }    
-                 
+
             }else{
 
 // blocked random effects 
@@ -1114,6 +1113,7 @@ if(nL>0){
 		break;
 					   
 		case 2:    
+		  cs_invR(Gtmp[i], Ginv[i]);
 		  G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]); 
 		break;	   
 					   
@@ -1923,7 +1923,7 @@ if(nL>0){
      }
 
 /***********************/
-/*   store posterior   */
+/*  store posterior   */
 /***********************/
 
      if(itt%1000 == 0){
@@ -2048,6 +2048,18 @@ if(nL>0){
          }
        }
        post_cnt++;
+     }
+   }
+
+/* read back proposal distribution */
+
+   cnt2=0;
+   for(k=nG; k<nGR; k++){      
+     cnt=0;
+     for (j = 0 ; j < dimG*dimG; j++){
+       propCP[cnt2] = propC[k]->x[cnt];
+       cnt++;
+       cnt2++;
      }
    }
 

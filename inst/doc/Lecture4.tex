@@ -3,6 +3,8 @@
 \newif\iftalk
 \talktrue
 
+
+
 \ifalone
 \documentclass{article}
 \usepackage{graphicx}
@@ -15,7 +17,6 @@
 \usepackage{lscape}
 \usepackage{makeidx}
 \usepackage{color}
-
 
 \title{Continuous Random Interactions}
 
@@ -82,11 +83,12 @@ Growth curves tend to be sigmoidal and so one of the non-linear growth curves su
 
 \begin{Schunk}
 \begin{Sinput}
-> prior.m4a.1 <- list(R = list(V = 1e-16, n = -2), G = list(G1 = list(V = 1, 
-+     n = 1)))
-> m4a.1 <- MCMCglmm(weight ~ Diet + poly(Time, 2, raw = TRUE), 
-+     random = ~Chick, data = ChickWeight, verbose = FALSE, pr = TRUE, 
-+     prior = prior.m4a.1, saveX = TRUE, saveZ = TRUE)
+> prior.m4a.1 <- list(R = list(V = 1e-07, n = -2), 
++     G = list(G1 = list(V = 1, n = 1)))
+> m4a.1 <- MCMCglmm(weight ~ Diet + poly(Time, 2, 
++     raw = TRUE), random = ~Chick, data = ChickWeight, 
++     verbose = FALSE, pr = TRUE, prior = prior.m4a.1, 
++     saveX = TRUE, saveZ = TRUE)
 \end{Sinput}
 \end{Schunk}
 
@@ -109,11 +111,13 @@ We need to combine these parameter estimates with the polynomials for \texttt{Ti
 \begin{Schunk}
 \begin{Sinput}
 > pos.time <- seq(0, 21, length = 100)
-> plot(pop.int + pop.slope * I(pos.time^1) + pop.quad * I(pos.time^2) ~ 
-+     pos.time, type = "l", lwd = 2, ylim = c(-25, 400))
+> plot(pop.int + pop.slope * I(pos.time^1) + pop.quad * 
++     I(pos.time^2) ~ pos.time, type = "l", lwd = 2, 
++     ylim = c(-25, 400))
 > for (i in 1:50) {
-+     lines(pop.int + chick.int[i] + pop.slope * I(pos.time^1) + 
-+         pop.quad * I(pos.time^2) ~ pos.time, col = "red", lty = 2)
++     lines(pop.int + chick.int[i] + pop.slope * 
++         I(pos.time^1) + pop.quad * I(pos.time^2) ~ 
++         pos.time, col = "red", lty = 2)
 + }
 \end{Sinput}
 \end{Schunk}
@@ -174,11 +178,12 @@ $\sigma^{2}_{\color{blue}\texttt{(Intercept)}}$ is the amount of variation in in
 
 \begin{Schunk}
 \begin{Sinput}
-> prior.m4a.2 <- list(R = list(V = 1e-16, nu = -2), G = list(G1 = list(V = diag(2), 
-+     nu = 2)))
-> m4a.2 <- MCMCglmm(weight ~ Diet + poly(Time, 2, raw = TRUE), 
-+     random = ~us(1 + Time):Chick, data = ChickWeight, verbose = FALSE, 
-+     pr = TRUE, prior = prior.m4a.2, saveX = TRUE, saveZ = TRUE)
+> prior.m4a.2 <- list(R = list(V = 1e-07, nu = -2), 
++     G = list(G1 = list(V = diag(2), nu = 2)))
+> m4a.2 <- MCMCglmm(weight ~ Diet + poly(Time, 2, 
++     raw = TRUE), random = ~us(1 + Time):Chick, 
++     data = ChickWeight, verbose = FALSE, pr = TRUE, 
++     prior = prior.m4a.2, saveX = TRUE, saveZ = TRUE)
 \end{Sinput}
 \end{Schunk}
 
@@ -195,13 +200,13 @@ The traces look OKish for the chick (co)variance matrices (Figure \ref{RR2VCV-fi
 
 \begin{Schunk}
 \begin{Sinput}
-> int.slope.cor <- m4a.2$VCV[, 2]/sqrt(m4a.2$VCV[, 1] * m4a.2$VCV[, 
-+     4])
+> int.slope.cor <- m4a.2$VCV[, 2]/sqrt(m4a.2$VCV[, 
++     1] * m4a.2$VCV[, 4])
 > posterior.mode(int.slope.cor)
 \end{Sinput}
 \begin{Soutput}
       var1 
--0.9767131 
+-0.9739967 
 \end{Soutput}
 \end{Schunk}
 
@@ -214,12 +219,12 @@ and shows strong autocorrelation
 \begin{Soutput}
 , , 1
 
-                [,1]
-Lag 0    1.000000000
-Lag 10   0.213576035
-Lag 50   0.002312814
-Lag 100 -0.020849608
-Lag 500 -0.095313496
+               [,1]
+Lag 0   1.000000000
+Lag 10  0.153649477
+Lag 50  0.025183840
+Lag 100 0.024719735
+Lag 500 0.006762837
 \end{Soutput}
 \end{Schunk}
 
@@ -227,8 +232,8 @@ and we should run it for longer in order to sample the posterior adequately. For
 
 \begin{Schunk}
 \begin{Sinput}
-> xyplot(weight + predict(m4a.2, marginal = NULL) ~ Time | Chick, 
-+     data = ChickWeight)
+> xyplot(weight + predict(m4a.2, marginal = NULL) ~ 
++     Time | Chick, data = ChickWeight)
 \end{Sinput}
 \end{Schunk}
 
@@ -245,11 +250,12 @@ and we can see that the fit is much better (See Figure \ref{CWpred.2-fig}). In t
 
 \begin{Schunk}
 \begin{Sinput}
-> prior.m4a.3 <- list(R = list(V = 1, n = 0.002), G = list(G1 = list(V = diag(3), 
-+     n = 3)))
-> m4a.3 <- MCMCglmm(weight ~ Diet + poly(Time, 2, raw = TRUE), 
-+     random = ~us(1 + poly(Time, 2, raw = TRUE)):Chick, data = ChickWeight, 
-+     verbose = FALSE, pr = TRUE, prior = prior.m4a.3, saveX = TRUE, 
+> prior.m4a.3 <- list(R = list(V = 1, n = 0.002), 
++     G = list(G1 = list(V = diag(3), n = 3)))
+> m4a.3 <- MCMCglmm(weight ~ Diet + poly(Time, 2, 
++     raw = TRUE), random = ~us(1 + poly(Time, 2, 
++     raw = TRUE)):Chick, data = ChickWeight, verbose = FALSE, 
++     pr = TRUE, prior = prior.m4a.3, saveX = TRUE, 
 +     saveZ = TRUE)
 \end{Sinput}
 \end{Schunk}
@@ -271,8 +277,8 @@ The model predicts the chick weights to an even better degree  (See Figure \ref{
 
 \begin{Schunk}
 \begin{Sinput}
-> xyplot(weight + predict(m4a.3, marginal = NULL) ~ Time | Chick, 
-+     data = ChickWeight)
+> xyplot(weight + predict(m4a.3, marginal = NULL) ~ 
++     Time | Chick, data = ChickWeight)
 \end{Sinput}
 \end{Schunk}
 
@@ -292,19 +298,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.669
+[1] 5525.363
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.62
+[1] 4545.023
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.942
+[1] 3932.783
 \end{Soutput}
 \end{Schunk}
 
@@ -313,8 +319,8 @@ It is worth seeing whether using an AIC measure using REML also suggests the hig
 \begin{Schunk}
 \begin{Sinput}
 > library(lme4, warn.conflicts = FALSE)
-> m5a.1.REML <- lmer(weight ~ Diet + poly(Time, 2, raw = TRUE) + 
-+     (1 | Chick), data = ChickWeight)
+> m5a.1.REML <- lmer(weight ~ Diet + poly(Time, 
++     2, raw = TRUE) + (1 | Chick), data = ChickWeight)
 > summary(m5a.1.REML)@AICtab[1]
 \end{Sinput}
 \begin{Soutput}
@@ -322,8 +328,9 @@ It is worth seeing whether using an AIC measure using REML also suggests the hig
  5578.963
 \end{Soutput}
 \begin{Sinput}
-> m5a.2.REML <- lmer(weight ~ Diet + poly(Time, 2, raw = TRUE) + 
-+     (poly(Time, 1, raw = TRUE) | Chick), data = ChickWeight)
+> m5a.2.REML <- lmer(weight ~ Diet + poly(Time, 
++     2, raw = TRUE) + (poly(Time, 1, raw = TRUE) | 
++     Chick), data = ChickWeight)
 > summary(m5a.2.REML)@AICtab[1]
 \end{Sinput}
 \begin{Soutput}
@@ -331,8 +338,9 @@ It is worth seeing whether using an AIC measure using REML also suggests the hig
  4732.387
 \end{Soutput}
 \begin{Sinput}
-> m5a.3.REML <- lmer(weight ~ Diet + poly(Time, 2, raw = TRUE) + 
-+     (poly(Time, 2, raw = TRUE) | Chick), data = ChickWeight)
+> m5a.3.REML <- lmer(weight ~ Diet + poly(Time, 
++     2, raw = TRUE) + (poly(Time, 2, raw = TRUE) | 
++     Chick), data = ChickWeight)
 > summary(m5a.3.REML)@AICtab[1]
 \end{Sinput}
 \begin{Soutput}
@@ -351,8 +359,8 @@ Random regression models make strong assumptions about how the variance should c
 \begin{Schunk}
 \begin{Sinput}
 > slope <- rnorm(30)
-> plot(0, type = "n", xlim = c(-1, 1), ylim = c(-3, 3), ylab = "y", 
-+     xlab = "Time")
+> plot(0, type = "n", xlim = c(-1, 1), ylim = c(-3, 
++     3), ylab = "y", xlab = "Time")
 > for (i in 1:30) {
 +     lines(c(-1, 1), c(-slope[i], slope[i]))
 + }
@@ -388,9 +396,12 @@ and we can use this to predict the change in variance as a function of \texttt{T
 +     5]), posterior.mode(m4a.2$Sol[, 6]))
 > beta.3 <- c(posterior.mode(m4a.3$Sol[, 1]), posterior.mode(m4a.3$Sol[, 
 +     5]), posterior.mode(m4a.3$Sol[, 6]))
-> VCV.1 <- matrix(posterior.mode(m4a.1$VCV)[1], 1, 1)
-> VCV.2 <- matrix(posterior.mode(m4a.2$VCV)[1:(2^2)], 2, 2)
-> VCV.3 <- matrix(posterior.mode(m4a.3$VCV)[1:(3^2)], 3, 3)
+> VCV.1 <- matrix(posterior.mode(m4a.1$VCV)[1], 
++     1, 1)
+> VCV.2 <- matrix(posterior.mode(m4a.2$VCV)[1:(2^2)], 
++     2, 2)
+> VCV.3 <- matrix(posterior.mode(m4a.3$VCV)[1:(3^2)], 
++     3, 3)
 > units.1 <- posterior.mode(m4a.1$VCV)[2]
 > units.2 <- posterior.mode(m4a.2$VCV)[5]
 > units.3 <- posterior.mode(m4a.3$VCV)[10]
@@ -405,8 +416,10 @@ and we can use this to predict the change in variance as a function of \texttt{T
 > sd.1 <- sqrt(units.1 + diag(polynomial[, 1, drop = FALSE] %*% 
 +     VCV.1 %*% t(polynomial[, 1, drop = FALSE])))
 > lines(mu.1 ~ pos.time, lwd = 2)
-> lines(I(mu.1 + 1.96 * sd.1) ~ pos.time, lty = 2, lwd = 2)
-> lines(I(mu.1 - 1.96 * sd.1) ~ pos.time, lty = 2, lwd = 2)
+> lines(I(mu.1 + 1.96 * sd.1) ~ pos.time, lty = 2, 
++     lwd = 2)
+> lines(I(mu.1 - 1.96 * sd.1) ~ pos.time, lty = 2, 
++     lwd = 2)
 \end{Sinput}
 \end{Schunk}
 \else
@@ -438,11 +451,14 @@ The simple model, without a slope term has constant variance across the range, a
 \begin{Sinput}
 > plot(weight ~ Time, data = ChickWeight, cex.lab = 1.5)
 > mu.2 <- polynomial %*% beta.2
-> sd.2 <- sqrt(units.2 + diag(polynomial[, 1:2, drop = FALSE] %*% 
-+     VCV.2 %*% t(polynomial[, 1:2, drop = FALSE])))
+> sd.2 <- sqrt(units.2 + diag(polynomial[, 1:2, 
++     drop = FALSE] %*% VCV.2 %*% t(polynomial[, 
++     1:2, drop = FALSE])))
 > lines(mu.2 ~ pos.time, lwd = 2)
-> lines(I(mu.2 + 1.96 * sd.2) ~ pos.time, lty = 2, lwd = 2)
-> lines(I(mu.2 - 1.96 * sd.2) ~ pos.time, lty = 2, lwd = 2)
+> lines(I(mu.2 + 1.96 * sd.2) ~ pos.time, lty = 2, 
++     lwd = 2)
+> lines(I(mu.2 - 1.96 * sd.2) ~ pos.time, lty = 2, 
++     lwd = 2)
 \end{Sinput}
 \end{Schunk}
 \else
@@ -450,8 +466,9 @@ The simple model, without a slope term has constant variance across the range, a
 \begin{Sinput}
 > plot(weight ~ Time, data = ChickWeight)
 > mu.2 <- polynomial %*% beta.2
-> sd.2 <- sqrt(units.2 + diag(polynomial[, 1:2, drop = FALSE] %*% 
-+     VCV.2 %*% t(polynomial[, 1:2, drop = FALSE])))
+> sd.2 <- sqrt(units.2 + diag(polynomial[, 1:2, 
++     drop = FALSE] %*% VCV.2 %*% t(polynomial[, 
++     1:2, drop = FALSE])))
 > lines(mu.2 ~ pos.time)
 > lines(I(mu.2 + 1.96 * sd.2) ~ pos.time, lty = 2)
 > lines(I(mu.2 - 1.96 * sd.2) ~ pos.time, lty = 2)
@@ -472,23 +489,28 @@ has an expected variance structure reasonably close to that observed (Figure \re
 \iftalk
 \begin{Schunk}
 \begin{Sinput}
-> plot(weight ~ Time, data = ChickWeight, ylim = c(-150, 600), 
-+     cex.lab = 1.5)
+> plot(weight ~ Time, data = ChickWeight, ylim = c(-150, 
++     600), cex.lab = 1.5)
 > mu.3 <- polynomial %*% beta.3
-> sd.3 <- sqrt(units.3 + diag(polynomial[, 1:3, drop = FALSE] %*% 
-+     VCV.3 %*% t(polynomial[, 1:3, drop = FALSE])))
+> sd.3 <- sqrt(units.3 + diag(polynomial[, 1:3, 
++     drop = FALSE] %*% VCV.3 %*% t(polynomial[, 
++     1:3, drop = FALSE])))
 > lines(mu.3 ~ pos.time, lwd = 2)
-> lines(I(mu.3 + 1.96 * sd.3) ~ pos.time, lty = 2, lwd = 2)
-> lines(I(mu.3 - 1.96 * sd.3) ~ pos.time, lty = 2, lwd = 2)
+> lines(I(mu.3 + 1.96 * sd.3) ~ pos.time, lty = 2, 
++     lwd = 2)
+> lines(I(mu.3 - 1.96 * sd.3) ~ pos.time, lty = 2, 
++     lwd = 2)
 \end{Sinput}
 \end{Schunk}
 \else
 \begin{Schunk}
 \begin{Sinput}
-> plot(weight ~ Time, data = ChickWeight, ylim = c(-150, 600))
+> plot(weight ~ Time, data = ChickWeight, ylim = c(-150, 
++     600))
 > mu.3 <- polynomial %*% beta.3
-> sd.3 <- sqrt(units.3 + diag(polynomial[, 1:3, drop = FALSE] %*% 
-+     VCV.3 %*% t(polynomial[, 1:3, drop = FALSE])))
+> sd.3 <- sqrt(units.3 + diag(polynomial[, 1:3, 
++     drop = FALSE] %*% VCV.3 %*% t(polynomial[, 
++     1:3, drop = FALSE])))
 > lines(mu.3 ~ pos.time)
 > lines(I(mu.3 + 1.96 * sd.3) ~ pos.time, lty = 2)
 > lines(I(mu.3 - 1.96 * sd.3) ~ pos.time, lty = 2)
@@ -513,12 +535,12 @@ reparametersitaion\\
 
 \begin{Schunk}
 \begin{Sinput}
-> prior.m4b.1 <- list(R = list(V = 1e-16, nu = -2), G = list(G1 = list(V = diag(2), 
-+     nu = 2)))
-> m4b.1 <- MCMCglmm(weight ~ Diet + poly(Time, 2, raw = TRUE), 
-+     random = ~us(1 + I(Time - 3)):Chick, data = ChickWeight, 
-+     verbose = FALSE, pr = TRUE, prior = prior.m4b.1, saveX = TRUE, 
-+     saveZ = TRUE)
+> prior.m4b.1 <- list(R = list(V = 1e-07, nu = -2), 
++     G = list(G1 = list(V = diag(2), nu = 2)))
+> m4b.1 <- MCMCglmm(weight ~ Diet + poly(Time, 2, 
++     raw = TRUE), random = ~us(1 + I(Time - 3)):Chick, 
++     data = ChickWeight, verbose = FALSE, pr = TRUE, 
++     prior = prior.m4b.1, saveX = TRUE, saveZ = TRUE)
 \end{Sinput}
 \end{Schunk}
 

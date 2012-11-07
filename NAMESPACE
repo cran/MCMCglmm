@@ -13,10 +13,11 @@ import(Matrix)
 export(
 #  buildZ,
 #  find.components,
-#  split.direct.sum
+#  split.direct.sum,
   commutation,
   Dtensor,
   evalDtensor,
+  gelman.prior,
   Ddivergence,
   knorm,
   KPPM, 
@@ -30,6 +31,7 @@ export(
   posterior.cor,
   posterior.evals,
   plotsubspace,
+#  priorformat,
   Ptensor,
   Tri2M,
   rbv,

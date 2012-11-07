@@ -1,6 +1,6 @@
 "predict.MCMCglmm"<-function(object, newdata=NULL, marginal=object$Random$formula, type="response", interval="none", level=0.95, ...){
 
-  warning("predict.MCMCglmm is still developmental - be careful")
+ # warning("predict.MCMCglmm is still developmental - be careful")
 
   if(type%in%c("response", "terms")==FALSE){stop("type must be response or terms")}
   if(interval%in%c("none", "confidence", "prediction")==FALSE){stop("interval must be none, confidence or prediction")}
@@ -10,8 +10,8 @@
 
   if(any(mcomponents%in%rcomponents==FALSE)){stop("marginal formula does not correspond to model formula")}
 
-  marginal<-rep(rep(as.numeric(rcomponents%in%mcomponents), object$Random$nrt), object$Random$nfl)
-  
+  marginal<-rep(as.numeric(rcomponents%in%mcomponents), object$Random$nrt)
+
   if(is.null(newdata)==FALSE){
    stop("sorry newdata not implemented yet")
   }
@@ -27,11 +27,12 @@
   }
 
   if(is.null(object$Random$nfl)==FALSE){  # there are random effects
-    st<-c(1,cumsum(rep(object$Random$nrl, object$Random$nfl))+1)
+    st<-c(1,cumsum(object$Random$nrl*object$Random$nfl)+1)  # starting column for random effects of each component 
     st<-st[-length(st)]
-    end<-cumsum(rep(object$Random$nrl, object$Random$nfl)) 
-    comp<-rep(1:length(object$Random$nfl), object$Random$nfl)
-    keep<-unlist(mapply(st[which(marginal==0)], end[which(marginal==0)], FUN=":"))
+    end<-cumsum(object$Random$nrl*object$Random$nfl)        # ennding column for random effects of each component 
+    keep<-unlist(mapply(st[which(marginal==0)], end[which(marginal==0)], FUN=":"))    # random effects to be kept
+    v.terms<-as.factor(rep(1:sum(object$Random$nfl), rep(object$Random$nrl,object$Random$nfl))) # denotes the variance term that the column of Z refers to.
+    rm.v<-rep(marginal==0, object$Random$nfl)
   }else{
     keep<-NULL
   }
@@ -46,45 +47,44 @@
     # need to calculate variance when
     # i) prediction to be made on data scale for non-gaussian data 
     # ii) obtaining prediction intervals
+    pos.error<-sum(object$Random$nfl^2)+cumsum(unlist(sapply(object$Residual$nfl, simplify=FALSE, function(x){c(1,rep(x+1,x-1))})))
 
-    vpred<-matrix(0,dim(object$X)[1], sum(object$Random$nfl[which(marginal==1)]^2, na.rm=T)+sum(object$Residual$nfl^2))  # obtain (co)variances for all marginised effects and error term
+    postvar<-t(apply(object$VCV, 1, function(x){x[pos.error[object$error.term]]}))
 
-    cnt<-0
+    if(is.null(object$Random$nfl)==FALSE){  # there are random effects
 
-    if(any(marginal==1)){
+       same.block<-which(outer(rep(1:length(object$Random$nfl), object$Random$nfl), rep(1:length(object$Random$nfl), object$Random$nfl), "=="))
+       # gets positions in V that could have non-zero (co)variances
 
-      st<-st[which(marginal==1)]
-      end<-end[which(marginal==1)]
-      comp<-comp[which(marginal==1)]
+       if(nlevels(v.terms)>1){
 
-      for(i in 1:length(st)){   # iterate through G-terms        
-        for(j in 1:length(st)){   
-          if(comp[i]==comp[j]){
-            cnt<-cnt+1
-            vpred[,cnt]<-diag(object$Z[,st[i]:end[i]]%*%t(object$Z[,st[j]:end[j]]))
-          }
-        }
+         vpred<-apply(object$Z, 1, function(x){
+           nz<-which(x!=0)
+           ZZ<-crossprod(t(x[nz]))
+           M<-model.matrix(~v.terms[nz]-1)
+           M[,which(rm.v),]<-0
+           ZZ<-t(M)%*%ZZ%*%M
+           ZZ[same.block]
+         })
+
+      }else{
+        vpred<-apply(object$Z, 1, function(x){
+          nz<-which(x!=0)
+          ZZ<-crossprod(t(x[nz]))
+          M<-matrix(1,1,1)
+          M[,which(rm.v)]<-0
+          ZZ<-t(M)%*%ZZ%*%M
+          ZZ[same.block]
+        })
       }
+
+      # sum((zz')*V) this gives the expected variance due to the random effects.
+      # zeroing out rows/columns of (zz') that pertian to non-marginalised (co)variances gives the variance due marginalised components
+      # removing off-diagonal elements of (zz') that pertian to random effects in different components reduces the storage space.
+
+      postvar<-postvar+object$VCV[,1:sum(object$Random$nfl^2), drop=FALSE]%*%vpred
     }
-
-    comp<-rep(1:length(object$Residual$nfl), object$Residual$nfl)
- 
-    for(i in 1:length(comp)){   # iterate through R-terms        
-      for(j in 1:length(comp)){    
-        if(comp[i]==comp[j]){
-         cnt<-cnt+1
-         vpred[,cnt][which(object$error.term==i & object$error.term==j)]<-1 
-        }
-      }  
-    } 
- 
-    keep<-which(rep(rep(as.numeric(rcomponents%in%mcomponents), object$Random$nrt), object$Random$nfl^2)==1)
-
-    keep<-c(keep, which(rep(rep(rep(1, length(object$Residual$nrt)), object$Residual$nrt), object$Residual$nfl^2)==1)) 
-
-    postvar<-t(apply(object$VCV[,keep,drop=FALSE],1, function(x){(vpred%*%x)}))
   }
-
   post.pred<-t(apply(object$Sol,1, function(x){(W%*%x)@x}))
 
   if(interval=="prediction"){

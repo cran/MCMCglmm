@@ -17,9 +17,7 @@ MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL,
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
 are passed as a matrix using cbind}
-  \item{random}{\code{\link{formula}} for the random effects. Multiple random terms
-can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):random.term}.
-Currently, the only \code{variance.functions} available are \code{idv}, \code{idh}, \code{us} and \code{cor}. \code{idv} fits a constant variance across all components in \code{formula}, and \code{cor} fixes the variances to 1. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.term} effects. For simple random effects the \code{variance.function(formula)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are two reserved variables: \code{units} which index rows of the response variable and \code{trait} which index columns of the response variable} 
+  \item{random}{\code{\link{formula}} for the random effects. Multiple random terms can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):linking.function(random.terms)}. Currently, the only \code{variance.functions} available are \code{idv}, \code{idh}, \code{us} and \code{cor}. \code{idv} fits a constant variance across all components in \code{formula}, and \code{cor} fixes the variances to 1. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.terms} effects.  Currently, the only \code{linking.functions} available are \code{mm} and \code{str}. \code{mm} fits a multimembership model where multiple random terms are separated by the \code{+} operator. \code{str} allows covariances to exist between multiple random terms that are also separated by the \code{+} operator. In both cases the levels of all multiple random terms have to be the same.  For simpler models the \code{variance.function(formula)} and \code{linking.function(random.terms)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are two reserved variables: \code{units} which index rows of the response variable and \code{trait} which index columns of the response variable} 
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
@@ -82,7 +80,7 @@ saved?}
   \item{XL}{sparse structural parameter design matrix}
   \item{error.term}{residual term for each datum}
   \item{family}{distribution of each datum}
-
+  \item{Tune}{(co)variance matrix of the proposal distribution for the latent variables}
 }
 \references{
 	General analyses: Hadfield, J.D. (2010) Journal of Statistical Software 33 2 1-22

@@ -2,7 +2,9 @@ find.components<-function(x, data, nginverse=NULL){
 
   notrait=is.null(data$trait)
 
-  vtype="us"
+  vtype="us"    # form of covariances for the random effets of a random term classified by some factor 
+  rtype="iid"   # form of covariances between random effets of random terms
+
   if(length(grep("^idh\\(", x))>0){
     vtype<-"idh"
   }
@@ -15,8 +17,19 @@ find.components<-function(x, data, nginverse=NULL){
   if(length(grep("^idv\\(", x))>0){
     vtype<-"idv"
   }
+  if(length(grep("(^|:)mm\\(", x))>0){
+    rtype<-"mm"
+  }
+  if(length(grep("(^|:)str\\(", x))>0){
+    rtype<-"str"
+  }
+
 
   fformula<-gsub("^(us|cor|corh|idh|idv)\\(", "", x)
+
+  if(grepl("^str\\(|^mm\\(", fformula)){
+    fformula<-paste("):", fformula, sep="")
+  }
 
   openB<-gregexpr("\\(", fformula)[[1]]
   closeB<-gregexpr("\\)", fformula)[[1]]
@@ -30,7 +43,15 @@ find.components<-function(x, data, nginverse=NULL){
   }
 
   rterms<-substr(fformula,closeB[1]+2,nchar(fformula))
-  rterms<-strsplit(rterms, ":")[[1]]
+  rterms<-gsub("(^|:)(str|mm|)\\(", "", rterms)
+  rterms<-gsub("\\)$", "", rterms)
+  if(rtype!="iid" & any(grepl(":", rterms))){
+    stop("interactions not permitted in str and mm structures")
+  }
+
+  rterms<-strsplit(rterms, ":| \\+ ")[[1]]
+
+  drop.rlevels<-rep(TRUE, length(rterms))
 
   fformula<-substr(fformula,1,closeB-1)
   fformula<-gsub(" ", "", fformula)
@@ -60,20 +81,22 @@ find.components<-function(x, data, nginverse=NULL){
     if(any(fformula=="trait") & notrait){
       fformula<-fformula[-which(fformula=="trait")]
       if(length(fformula)==0){
-        fformula<-NULL
+        fformula=NULL
       }
     }
   }
-  if(any(rterms%in%nginverse)){
-     if(is.null(fformula)){
-       fformula<-"MCMC_dummy"
-     }
-  }else{
-    if(is.null(fformula) | vtype=="idh"| vtype=="idv"){
-      rterms<-NULL
-      fformula=NULL
-    }
+  if(any(rterms%in%nginverse) | rtype!="iid"){
+      drop.rlevels<-rep(FALSE, length(rterms))
   }
+
+  if(is.null(fformula) | vtype=="idh"| vtype=="idv"){
+    if(any(rterms%in%nginverse) | rtype!="iid"){
+    }else{
+      rterms<-NULL
+    }
+    fformula=NULL
+  }
+
   # if any terms are interacted they have to be added
   if(length(interact)>0){
     i<-1
@@ -89,5 +112,5 @@ find.components<-function(x, data, nginverse=NULL){
     }  
   }
 
-  return(list(rterms=rterms,fformula=c(as.list(fformula), interact)))
+  return(list(rterms=rterms,drop.rlevels=drop.rlevels, rtype=rtype,fformula=c(as.list(fformula), interact)))
 }

@@ -78,20 +78,21 @@ To illustrate, lets take the phylogeny of bird families included in the \texttt{
 \begin{Sinput}
 > data("bird.families")
 > bird.families <- makeNodeLabel(bird.families)
-> some.families <- c("Certhiidae", "Paridae", "Gruidae", "Struthionidae")
+> some.families <- c("Certhiidae", "Paridae", "Gruidae", 
++     "Struthionidae")
 > Nphylo <- drop.tip(bird.families, setdiff(bird.families$tip.label, 
 +     some.families))
 > INphylo <- inverseA(Nphylo)
 > INphylo$pedigree
 \end{Sinput}
 \begin{Soutput}
-     node.names                  
-[1,] "Node58"        NA        NA
-[2,] "Node122"       "Node58"  NA
-[3,] "Struthionidae" NA        NA
-[4,] "Gruidae"       "Node58"  NA
-[5,] "Certhiidae"    "Node122" NA
-[6,] "Paridae"       "Node122" NA
+     node.names                 
+[1,] "Node13"        NA       NA
+[2,] "Node26"        "Node13" NA
+[3,] "Struthionidae" NA       NA
+[4,] "Gruidae"       "Node13" NA
+[5,] "Certhiidae"    "Node26" NA
+[6,] "Paridae"       "Node26" NA
 \end{Soutput}
 \end{Schunk}
 
@@ -113,7 +114,8 @@ The full phylogeny, with these families and their connecting notes displayed, is
 > INphylo$inbreeding
 \end{Sinput}
 \begin{Soutput}
-[1] 0.2285714 0.3857143 1.0000000 0.7714286 0.3857143 0.3857143
+[1] 0.2285714 0.3857143 1.0000000 0.7714286 0.3857143
+[6] 0.3857143
 \end{Soutput}
 \end{Schunk}
 
@@ -121,11 +123,11 @@ You will notice that the Struthionidae have an inbreeding coefficient of 1 becau
 
 \begin{Schunk}
 \begin{Sinput}
-> sum(INphylo$inbreeding[which(INphylo$pedigree[, 1] %in% c("Paridae", 
-+     "Node122", "Node58"))])
+> sum(INphylo$inbreeding[which(INphylo$pedigree[, 
++     1] %in% c("Paridae", "Node122", "Node58"))])
 \end{Sinput}
 \begin{Soutput}
-[1] 1
+[1] 0.3857143
 \end{Soutput}
 \end{Schunk}
 
@@ -146,19 +148,29 @@ The structure of pedigrees and phylogenies can be expressed in terms of the rela
 
 \begin{Schunk}
 \begin{Sinput}
-> Aped <- 2 * kinship::kinship(Nped[, 1], Nped[, 2], Nped[, 3])
+> Aped <- 2 * kinship::kinship(Nped[, 1], Nped[, 
++     2], Nped[, 3])
 > Aped
 \end{Sinput}
 \begin{Soutput}
-        R187920 R187921 R187726 R187724 R187723 R187613 R187612 R187609
-R187920     1.0     0.0     0.5     0.5     0.5     0.5     0.5     0.5
-R187921     0.0     1.0     0.5     0.5     0.5     0.5     0.5     0.5
-R187726     0.5     0.5     1.0     0.5     0.5     0.5     0.5     0.5
-R187724     0.5     0.5     0.5     1.0     0.5     0.5     0.5     0.5
-R187723     0.5     0.5     0.5     0.5     1.0     0.5     0.5     0.5
-R187613     0.5     0.5     0.5     0.5     0.5     1.0     0.5     0.5
-R187612     0.5     0.5     0.5     0.5     0.5     0.5     1.0     0.5
-R187609     0.5     0.5     0.5     0.5     0.5     0.5     0.5     1.0
+        R187920 R187921 R187726 R187724 R187723 R187613
+R187920     1.0     0.0     0.5     0.5     0.5     0.5
+R187921     0.0     1.0     0.5     0.5     0.5     0.5
+R187726     0.5     0.5     1.0     0.5     0.5     0.5
+R187724     0.5     0.5     0.5     1.0     0.5     0.5
+R187723     0.5     0.5     0.5     0.5     1.0     0.5
+R187613     0.5     0.5     0.5     0.5     0.5     1.0
+R187612     0.5     0.5     0.5     0.5     0.5     0.5
+R187609     0.5     0.5     0.5     0.5     0.5     0.5
+        R187612 R187609
+R187920     0.5     0.5
+R187921     0.5     0.5
+R187726     0.5     0.5
+R187724     0.5     0.5
+R187723     0.5     0.5
+R187613     0.5     0.5
+R187612     1.0     0.5
+R187609     0.5     1.0
 \end{Soutput}
 \end{Schunk}
 
@@ -182,8 +194,8 @@ In fact, all of the mixed models we fitted in earlier sections also used an ${\b
 
 \begin{Schunk}
 \begin{Sinput}
-> m3a.1 <- MCMCglmm(tarsus ~ sex, random = ~dam + fosternest, data = BTdata, 
-+     verbose = FALSE)
+> m3a.1 <- MCMCglmm(tarsus ~ sex, random = ~dam + 
++     fosternest, data = BTdata, verbose = FALSE)
 \end{Sinput}
 \end{Schunk}
 

@@ -7,21 +7,13 @@ priorformat<-function(prior, start, nfl, meta, diagR){
            stop("V not specified for some prior$G/prior$R elements")
          }
          if(is.matrix(prior$V)==FALSE){
-           prior$V<-as.matrix(prior$V)
+            prior$V<-as.matrix(prior$V)
          }
-         if(is.null(prior$alpha.mu)){
-           prior$alpha.mu<-rep(1, nrow(prior$V))
-         }else{
-           if(diagR>0){
-             stop("Parameter exapnded priors not implemented for residual structures")
-           }
+         if(!is.null(prior$alpha.mu) & diagR>0){
+            stop("Parameter exapnded priors not implemented for residual structures")
          }
-         if(is.null(prior$alpha.V)){
-           prior$alpha.V<-matrix(0, nrow(prior$V), nrow(prior$V))
-         }else{
-           if(diagR>0){
-             stop("Parameter exapnded priors not implemented for residual structures")
-           }
+         if(!is.null(prior$alpha.V) & diagR>0){
+           stop("Parameter exapnded priors not implemented for residual structures")
          }
          if(is.null(prior$fix)){
            prior$fix<-0
@@ -39,8 +31,14 @@ priorformat<-function(prior, start, nfl, meta, diagR){
              stop("V is the wrong dimension for some prior$G/prior$R elements")
            }
          }
-         if(is.positive.definite(prior$V)==FALSE){
-           stop("V is not positive definite for some prior$G/prior$R elements")
+         if(diagR==1){
+           if(!all(diag(prior$V)>0)){
+             stop("V is not positive definite for some prior$G/prior$R elements")
+           }
+         }else{
+           if(is.positive.definite(prior$V)==FALSE){
+             stop("V is not positive definite for some prior$G/prior$R elements")
+           }
          }
          if(is.null(prior$alpha.V)){
             prior$alpha.V<-prior$V*0
@@ -84,7 +82,7 @@ priorformat<-function(prior, start, nfl, meta, diagR){
          }
        }
        if(is.null(start)){
-         if(det(prior$V)<1e-8 & prior$fix!=0){
+         if(det(prior$V)<1e-8 & prior$fix==0){
            start<-prior$V+diag(nrow(prior$V))
          }else{
            start<-prior$V
@@ -113,8 +111,8 @@ priorformat<-function(prior, start, nfl, meta, diagR){
          }
        }
 
-       prior<-mapply(x=cumsum(nfl)-(nfl-1), y=cumsum(nfl),  function(x,y){list(V=prior$V[x:y,x:y, drop=FALSE], nu=prior$n, fix=pfix(x,y), alpha.mu=prior$alpha.mu[x:y], alpha.V=prior$alpha.V[x:y,x:y, drop=FALSE])}, SIMPLIFY=FALSE)
-       start<-mapply(x=cumsum(nfl)-(nfl-1), y=cumsum(nfl),  function(x,y){list(start=start[x:y,x:y, drop=FALSE])}, SIMPLIFY=FALSE)
+       prior<-mapply(x=cumsum(nfl)-(nfl-1), y=cumsum(nfl),  function(x,y){list(V=as.matrix(prior$V[x:y,x:y, drop=FALSE]), nu=prior$n, fix=pfix(x,y), alpha.mu=prior$alpha.mu[x:y], alpha.V=as.matrix(prior$alpha.V[x:y,x:y, drop=FALSE]))}, SIMPLIFY=FALSE)
+       start<-mapply(x=cumsum(nfl)-(nfl-1), y=cumsum(nfl),  function(x,y){list(start=as.matrix(start[x:y,x:y, drop=FALSE]))}, SIMPLIFY=FALSE)
 
        return(list(prior=prior, start=start))
 }

@@ -47,18 +47,21 @@
   }else{
     Gterms<-rep(rep(1:length(object$Random$nrt), object$Random$nrt), object$Random$nfl^2) 
   }
+  Rterms<-rep(rep(1:length(object$Residual$nrt), object$Residual$nrt), object$Residual$nfl^2) 
 
-  output<-list(DIC=DIC, fixed.formula=fixed.formula, random.formula=random.formula,residual.formula=residual.formula, solutions=solutions, Gcovariances=Gcovariances, Gterms=Gterms,  Rcovariances=Rcovariances,cstats=cstats,cutpoints=cutpoints)
+  output<-list(DIC=DIC, fixed.formula=fixed.formula, random.formula=random.formula,residual.formula=residual.formula, solutions=solutions, Gcovariances=Gcovariances, Gterms=Gterms,  Rcovariances=Rcovariances,Rterms=Rterms, cstats=cstats,cutpoints=cutpoints)
   attr(output, "class")<-c("summary.MCMCglmm", "list")
   output
 }
 
-"print.summary.MCMCglmm"<-function (x, digits = max(3, getOption("digits") - 3), has.Pvalue=TRUE, eps.Pvalue = 1/(x$cstats[4]-1), ...) 
+"print.summary.MCMCglmm"<-function (x, digits = max(3, getOption("digits") - 3), has.Pvalue=TRUE, eps.Pvalue = 1/(x$cstats[4]-1), cstats=TRUE, ...) 
 {
 
- cat("\n Iterations =", paste(x$cstats[1], ":", x$cstats[2], sep=""))
- cat("\n Thinning interval  =" , x$cstats[3]) 
- cat("\n Sample size  =" , x$cstats[4], "\n") 
+ if(cstats){
+   cat("\n Iterations =", paste(x$cstats[1], ":", x$cstats[2], sep=""))
+   cat("\n Thinning interval  =" , x$cstats[3]) 
+   cat("\n Sample size  =" , x$cstats[4], "\n") 
+ }
  cat("\n DIC:", x$DIC, "\n")
  if(is.null(x$random.formula)==FALSE){
    rcomponents<-split.direct.sum(as.character(x$random.formula)[2])
@@ -72,9 +75,15 @@
      print(as.data.frame(x$Gcovariance[x$Gterms==i,,drop=FALSE]), digits=digits, ...)
    }
  }
- cat(paste("\n R-structure:  ~", split.direct.sum(as.character(x$residual.formula)[2]), "\n\n", sep=""))
-# rownames(x$Rcovariance)<-unlist(lapply(strsplit(rownames(x$Rcovariance), "\\..*$"), function(x){x[1]}))
- print(as.data.frame(x$Rcovariance), digits=digits, ...)
+ rcomponents<-split.direct.sum(as.character(x$residual.formula)[2])
+ for(i in 1:length(rcomponents)){
+   if(i==1){
+     cat(paste("\n R-structure:  ~", rcomponents[i], "\n\n", sep=""))
+   }else{
+     cat(paste("\n               ~", rcomponents[i], "\n\n", sep=""))
+   }
+   print(as.data.frame(x$Rcovariance[x$Rterms==i,,drop=FALSE]), digits=digits, ...)
+ }
 
  cat("\n Location effects:", paste(as.expression(x$fixed.formula)), "\n\n")
  printCoefmat(as.data.frame(x$solutions), has.Pvalue=has.Pvalue, digits=digits, eps.Pvalue=eps.Pvalue, ...)

@@ -20,12 +20,13 @@
   \item{residual.formula}{model formula for the residual terms}
   \item{solutions}{posterior mean, 95\% HPD interval, MCMC p-values and effective sample size of fixed (and random) effects}
   \item{Gcovariances}{posterior mean, 95\% HPD interval and effective sample size of random effect (co)variance components}
-  \item{Rcovariances}{posterior mean, 95\% HPD interval and effective sample size of residual (co)variance components}
-  \item{cutpoints}{posterior mean, 95\% HPD interval and effective sample size of cut-points from an ordinal model}
-  \item{csats}{chain length, burn-in and thinning interval}
   \item{Gterms}{indexes random effect (co)variances by the component terms defined in the random formula}
+  \item{Rcovariances}{posterior mean, 95\% HPD interval and effective sample size of residual (co)variance components}
+  \item{Rterms}{indexes residuals (co)variances by the component terms defined in the rcov formula}
+  \item{csats}{chain length, burn-in and thinning interval}
+  \item{cutpoints}{posterior mean, 95\% HPD interval and effective sample size of cut-points from an ordinal model}
  }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{\link{MCMCglmm}}}
 \keyword{models}
 

@@ -14,7 +14,7 @@ spl(x,  k=10, knots=NULL, type="LRTP")
 \value{
 	Design matrix post-multiplied by the inverse square root of the penalty matrix 
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \examples{
 \dontrun{
 x<-rnorm(100)
@@ -24,11 +24,11 @@ lines((x^2+cos(x)-x+0.2*x^3)[order(x)]~sort(x))
 
 dat<-data.frame(y=y, x=x)
 
-m1<-MCMCglmm(y~x, random=~idv(spl(x)), data=dat, pr=TRUE, saveX=TRUE, saveZ=TRUE, verbose=FALSE) # penalised smoother
-m2<-MCMCglmm(y~x+spl(x),data=dat, saveX=TRUE, verbose=FALSE)                                     # non-penalised
+m1<-MCMCglmm(y~x, random=~idv(spl(x)), data=dat, pr=TRUE, verbose=FALSE) # penalised smoother
+m2<-MCMCglmm(y~x+spl(x),data=dat,  verbose=FALSE)                        # non-penalised
 
-pred1<-(cBind(m1$X,m1$Z)%*%colMeans(m1$Sol))@x
-pred2<-(cBind(m2$X)%*%colMeans(m2$Sol))@x
+pred1<-(cBind(m1$X,m1$Z)\%*\%colMeans(m1$Sol))@x
+pred2<-(cBind(m2$X)\%*\%colMeans(m2$Sol))@x
 
 lines(pred1[order(x)]~sort(x), col="red")
 lines(pred2[order(x)]~sort(x), col="green")

@@ -15,7 +15,7 @@ rtnorm(n = 1, mean = 0, sd = 1, lower = -Inf, upper = Inf)
 \value{
   vector 
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \references{Robert, C.P. (1995) Statistics & Computing 5 121-125}
 \seealso{\code{\link[msm]{rtnorm}}}
 \examples{

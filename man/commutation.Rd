@@ -15,7 +15,7 @@ commutation(m, n)
   \item{}{Commutation Matrix}
 }
 \references{Magnus, J. R. & Neudecker, H. (1979) Annals of Statistics 7 (2) 381-394}
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \examples{
 commutation(2,2)
 }

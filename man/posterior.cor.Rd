@@ -11,7 +11,7 @@ posterior.cor(x)
 \value{
   posterior correlation matrices
  }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{\link{posterior.evals}}}
 \examples{
 v<-rIW(diag(2),3, n=1000)

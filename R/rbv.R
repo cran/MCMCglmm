@@ -50,15 +50,17 @@ rbv<-function(pedigree=NULL, G, nodes="ALL", scale=TRUE, ggroups=NULL, gmeans=NU
     
   }else{
 
+    if (is.null(pedigree$node.label)) {
+       pedigree <- makeNodeLabel(pedigree)
+    }  
+
     roots<-setdiff(pedigree$edge[,1], pedigree$edge[,2])  
     reorder<-order((pedigree$edge[,1]%in%roots==FALSE)*pedigree$edge[,2]+10000000*(pedigree$edge[,2]<=length(pedigree$tip.label)))
-        
+      
     id<-pedigree$edge[,2][reorder]
     tips<-which(id<=length(pedigree$tip.label))
 
-    node.names<-id
-    node.names[tips]<-pedigree$tip.label
-    node.names[-tips]<-paste("a", 1:(length(id)-length(tips)), sep="")
+    node.names <- c(pedigree$tip.label, pedigree$node.label)[id]
 
     dam<-match(pedigree$edge[,1][reorder], id)
     dam[which(is.na(dam))]<--998

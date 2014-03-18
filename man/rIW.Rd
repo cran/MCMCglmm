@@ -44,7 +44,7 @@ matrix of dimension \code{n} x \code{length(V)}
 \code{rIW(V, nu)} \tab from MCMCglmm >=1.11\cr
 }
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \references{Korsgaard, I.R. et. al. 1999 Genetics Selection Evolution 31 (2) 
 177:181}
 \seealso{\code{\link[bayesm]{rwishart}}, \code{\link[MCMCpack]{rwish}}}

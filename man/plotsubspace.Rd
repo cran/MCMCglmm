@@ -28,13 +28,14 @@ subspace is defined by the first three eigenvectors of CA, and the percentage of
 variance for each matrix along these three dimensions is given in the plot 
 title. 
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk} with code taken from the \code{rgl} package}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk} with code taken from the \code{rgl} package}
 \seealso{\code{\link[rgl]{rgl}}}
 \examples{
  if(require(rgl)!=FALSE){
    G1<-rIW(diag(4),10)
    G2<-G1*1.2
-   plotsubspace(G1, G2, shadeCB=FALSE)
+ #  plotsubspace(G1, G2, shadeCB=FALSE)
+ # commented out because of problems with rgl 
  } 
 }
 \keyword{hplot}

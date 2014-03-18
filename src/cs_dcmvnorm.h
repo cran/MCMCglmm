@@ -8,5 +8,5 @@
 #include "cs_inv.h"
 #endif
 
-double cs_dcmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv, const cs *M, int *keep, int nkeep, int *cond, int ncond);
+double cs_dcmvnorm(const cs *beta,  const cs *mu, const cs *M, int *keep, int nkeep, int *cond, int ncond);
 

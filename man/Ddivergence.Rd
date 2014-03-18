@@ -14,7 +14,7 @@ Ddivergence(CA=NULL, CB=NULL, n=10000)
   \item{}{d-divergence}
 }
 \references{Ovaskainen, O.  et. al. (2008) Proc. Roy. Soc - B (275) 1635 593-750}
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \examples{
 CA<-rIW(diag(2),10, n=1)
 CB<-rIW(diag(2),10, n=1)

@@ -1,15 +1,9 @@
 useDynLib(MCMCglmm)
-#import(MASS)
-#import(corpcor)
-#import(combinat)
-#import(mvtnorm)
-#import(orthopolynom)
-#import(tensorA)
 import(Matrix)
-#export(merge.level)
-#export(at.level)
-#export(leg)
-#import(coda)
+import(ape)
+importFrom(tensorA, to.tensor)
+importFrom(corpcor, is.positive.definite)
+import(coda)
 export(
 #  buildZ,
 #  find.components,
@@ -45,9 +39,12 @@ export(
   at.level,
   leg,
   rtnorm,
+  rtcmvnorm,
+  dcmvnorm,
   spl,
   summary.MCMCglmm,
   predict.MCMCglmm,
+#  simulate.MCMCglmm,
   residuals.MCMCglmm,
   plot.MCMCglmm
 ) 
@@ -56,5 +53,3 @@ S3method(print, summary.MCMCglmm)
 S3method(predict, MCMCglmm)
 S3method(residuals, MCMCglmm)
 S3method(plot, MCMCglmm)
-
-

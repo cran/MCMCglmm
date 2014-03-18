@@ -38,6 +38,6 @@ Genetics, Springer
 	
 	Rice (2004) Evolutionary Theory: Mathematical and Conceptual Foundations, Sinauer
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 
 

@@ -23,7 +23,7 @@ unit length (distance from root to tip)?}
 \value{
   matrix of breeding values/phylogenetic effects
  }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \examples{
 data(bird.families)
 bv<-rbv(bird.families, diag(2))

@@ -16,7 +16,7 @@ sm2asreml(A=NULL, rownames=NULL)
   data.frame: if \code{A} was formed from a pedigree equivalent to giv format 
 returned by \code{asreml.Ainverse}
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{inverseA}
 \examples{
 data(bird.families)

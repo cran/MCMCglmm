@@ -32,6 +32,11 @@ extern "C"{
 }
 #endif
 
+#ifndef _CS_KRONECKERIMII_H
+extern "C"{
+#include "cs_kroneckerImii.h"
+}
+#endif
 
 #ifndef _CS_OMEGA_H
 extern "C"{
@@ -87,6 +92,12 @@ extern "C"{
 }
 #endif
 
+#ifndef _PCMVNORM_H
+extern "C"{
+#include "pcmvnorm.h"
+}
+#endif
+
 #ifndef _CS_TMULTIPLYUPDATE_H
 extern "C"{
 #include "cs_tmultiplyupdate.h"
@@ -102,6 +113,12 @@ extern "C"{
 #ifndef _RTNORM_H
 extern "C"{
 #include "rtnorm.h"
+}
+#endif
+
+#ifndef _RTCMVNORM_H
+extern "C"{
+#include "rtcmvnorm.h"
 }
 #endif
 

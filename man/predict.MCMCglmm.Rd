@@ -17,7 +17,7 @@
 }
 
 \value{Expectation and credible interval}  
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{\link{MCMCglmm}}}
 \keyword{models}
 

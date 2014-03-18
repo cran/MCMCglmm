@@ -1,4 +1,5 @@
 Ptensor<-function(x, k){
+
   rankx<-dim(x)[2]
   if(is.null(rankx)==FALSE){
     x<-scale(x, scale=FALSE)

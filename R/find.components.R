@@ -8,11 +8,17 @@ find.components<-function(x, data, nginverse=NULL){
   if(length(grep("^idh\\(", x))>0){
     vtype<-"idh"
   }
+  if(length(grep("^cor\\(", x))>0){
+    vtype<-"cor"
+  }
   if(length(grep("^corh\\(", x))>0){
     vtype<-"corh"
   }
-  if(length(grep("^cor\\(", x))>0){
-    vtype<-"cor"
+  if(length(grep("^corg\\(", x))>0){
+    vtype<-"corg"
+  }
+  if(length(grep("^corgh\\(", x))>0){
+    vtype<-"corgh"
   }
   if(length(grep("^idv\\(", x))>0){
     vtype<-"idv"
@@ -25,7 +31,7 @@ find.components<-function(x, data, nginverse=NULL){
   }
 
 
-  fformula<-gsub("^(us|cor|corh|idh|idv)\\(", "", x)
+  fformula<-gsub("^(us|cor|corh|corgh|corg|idh|idv)\\(", "", x)
 
   if(grepl("^str\\(|^mm\\(", fformula)){
     fformula<-paste("):", fformula, sep="")
@@ -72,7 +78,6 @@ find.components<-function(x, data, nginverse=NULL){
 
   X<-model.matrix(fformula, data=ndata)
 
-  
   fformula=names(attr(X, "contrasts"))
 
   # IDEALLY - WHEN ANIMAL SPECIFIED at.level/set.level TERMS SHOULD BE RETAINED IN fformula

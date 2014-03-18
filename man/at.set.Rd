@@ -12,7 +12,7 @@ at.set(x, level)
 \value{
     incidence matrix for the set \code{level} in x
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{\link{at.level}}}
 \examples{
 fac<-gl(3,10,30, labels=letters[1:3])

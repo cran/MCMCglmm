@@ -11,7 +11,7 @@ list2bdiag(x)
 \value{
     matrix
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \examples{
 M<-list(rIW(diag(3), 10), rIW(diag(2), 10))
 list2bdiag(M)

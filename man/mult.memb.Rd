@@ -11,7 +11,7 @@ mult.memb(formula)
 \value{
     design matrix
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \details{
 Currently \code{mult.memb} can only usefully be used inside an \code{idv} variance function. The formula usually contains serveral factors that have the same factor levels.
 }

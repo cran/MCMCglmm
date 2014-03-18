@@ -56,6 +56,7 @@ double rtnorm(double mu, double sd, double lower, double upper)
       }else{
         while(sample==1){
           z = runif(slower,supper);
+
           if(slower<=0.0 && 0.0<=supper){
               pz = -z*z/2.0;
           }else{

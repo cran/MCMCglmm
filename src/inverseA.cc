@@ -139,7 +139,7 @@ void inverseA(
   cs_spfree(tTD);
   cs_spfree(A);
   cs_spfree(tA);
-  free(AN);
-  free(li);
+  delete[] AN;
+  delete[] li;
 }
 }

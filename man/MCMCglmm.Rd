@@ -21,8 +21,8 @@ are passed as a matrix using cbind}
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
-\code{"multinomial"},  \code{"ordinal"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
-\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"}, \code{"hupoisson"} and \code{"zibinomial"} are 
+\code{"multinomial"},  \code{"ordinal"}, \code{"threshold"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
+\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"}, \code{"hupoisson"}, \code{"zibinomial"} and \code{"threshold"} are 
 supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, the prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL}, \code{data} needs to contain a 
 \code{family} column.}
   \item{mev}{optional vector of measurement error variances for each data point 
@@ -89,7 +89,7 @@ saved?}
 	
 	Background Sorensen, D. & Gianola, D. (2002) Springer
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{\link[coda]{mcmc}}}
 \examples{
 

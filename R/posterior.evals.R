@@ -11,7 +11,7 @@
    coerce.eval<-function(x){eigen(matrix(x, sqrt(length(x)), sqrt(length(x))))$values}
 
    if(is.mcmc(x)==FALSE){
-     warning("posterior.mode expecting mcmc object")
+     warning("posterior.evals expecting mcmc object")
      t(apply(x, 1, coerce.eval))
    }else{   
      as.mcmc(t(apply(x, 1, coerce.eval)))

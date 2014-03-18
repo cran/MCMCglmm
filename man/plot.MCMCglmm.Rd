@@ -11,7 +11,7 @@
  \item{random}{logical; should saved random effects be plotted}
  \item{\dots}{Further arguments to be passed}
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{plot.mcmc}, \code{\link{MCMCglmm}}}
 \keyword{hplot}
 

@@ -4,6 +4,9 @@
 
   if(type%in%c("response", "terms")==FALSE){stop("type must be response or terms")}
   if(interval%in%c("none", "confidence", "prediction")==FALSE){stop("interval must be none, confidence or prediction")}
+  if(!is.null(marginal)){
+    if(class(marginal)!="formula"){stop("marginal should be NULL or a formula")}
+  }
 
   rcomponents<-split.direct.sum(as.character(object$Random$formula)[2])
   mcomponents<-split.direct.sum(as.character(marginal)[2])
@@ -62,7 +65,7 @@
            nz<-which(x!=0)
            ZZ<-crossprod(t(x[nz]))
            M<-model.matrix(~v.terms[nz]-1)
-           M[,which(rm.v),]<-0
+           M[,which(rm.v)]<-0
            ZZ<-t(M)%*%ZZ%*%M
            ZZ[same.block]
          })
@@ -92,7 +95,7 @@
   }
 
   if(type=="response"){
-    if(any(object$family%in%c("poisson","cenpoisson","multinomial","categorical","gaussian","cengaussian", "ordinal")==FALSE)){
+    if(any(object$family%in%c("poisson","cenpoisson","multinomial","categorical","gaussian","cengaussian", "ordinal", "threshold")==FALSE)){
       stop("sorry - prediction on data scale not implemented for this family")
     }
     if(any(object$family%in%c("poisson","cenpoisson"))){
@@ -128,9 +131,15 @@
       post.pred[,keep]<-q
       rm(q) 
     }
-
+    if(any(object$family%in%c("threshold"))){      
+      keep<-which(object$family%in%c("threshold"))
+      if(interval=="prediction"){         
+           post.pred[,keep]<-post.pred[,keep]>0
+      }else{
+           post.pred[,keep]<-pnorm(post.pred[,keep],0,sqrt(postvar[,keep]))
+      }
+    }
   }
-
   pred<-matrix(colMeans(post.pred), dim(post.pred)[2],1)
     
   if(interval!="none"){

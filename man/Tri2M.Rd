@@ -6,7 +6,7 @@
 lower/upper triangle elements
   }
 \usage{
-Tri2M(x, lower.tri = TRUE, reverse = TRUE)
+Tri2M(x, lower.tri = TRUE, reverse = TRUE, diag = TRUE)
 }
 \arguments{
   \item{x}{Matrix or vector}
@@ -17,11 +17,12 @@ returned. If \code{x} is a vector a matrix is formed under the assumption that
 elements.}
   \item{reverse}{logical: if\code{TRUE} a symmetric matrix is formed, if 
 \code{FALSE} the remaining triangle is left as zeros.}
+  \item{diag}{logical: if\code{TRUE} diagonal elements are included.}
 }
 \value{
   \item{}{numeric or matrix}
 }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \examples{
 M<-rIW(diag(3), 10)
 x<-Tri2M(M)

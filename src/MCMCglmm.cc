@@ -74,8 +74,7 @@ void MCMCglmm(
         double *xLXP,
         double *lambdaP,        
         double *LvpP,          // prior for structural parameters
-        double *LmupP  
-  
+        double *LmupP
 ){         
 
 int     i, j, k,l,p,cnt,cnt2,cnt3, rterm,itt,record,dimG,nthordinal,
@@ -128,7 +127,6 @@ int lambda_new = 1;    // indexes freed Lambda
 int *diagLambdaL = new int[ny]; // indexes diagonal elements of L and U from LU decomposition of Lambda
 int *diagLambdaU = new int[ny];
 
-
 double log_alphaL;     // MH ratio for lambda
 
         cnt2=0;
@@ -164,12 +162,14 @@ double  densityl1,
         interval,
         remainder;
  
+
 	
 //double inf = std::numeric_limits<double>::max();
 
         int *cumsum_ncutpoints = new int[nordinal+1];
             cumsum_ncutpoints[0] = 0;
         int ncutpoints_store = 0;
+        int *cutpoints_updated = new int[nordinal];
 
         if(cp){
           for(i=0; i<nordinal; i++){          
@@ -212,7 +212,7 @@ double  densityl1,
           zn[k]=0.0;
         }
 
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *linki, *linki_tmp, *predi, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl;
 
 csn	*L, *pvBL, *alphaL, *AlphainvL, *pvLL, *LambdaLU, *tYKrinvYL;
 css     *S, *pvBS, *alphaS, *AlphainvS, *pvLS, *LambdaS, *tYKrinvYS;
@@ -222,6 +222,9 @@ cs*     *muG = new cs*[nGR];
 cs*     *propC = new cs*[nGR*2];
 cs*     *propCinv = new cs*[nGR*2];
 cs*     *muC = new cs*[nGR*2];
+cs*     *linki = new cs*[nGR];
+cs*     *linki_tmp = new cs*[nGR];
+cs*     *predi = new cs*[nGR];
 cs*     *G = new cs*[nGR];
 cs*     *pG = new cs*[nGR];
 cs*     *CM = new cs*[nGR];	
@@ -312,7 +315,6 @@ if(nL>0){
 // lambda parameter vector and form kronecker(lamba, I)
 
         lambda[0] = cs_spalloc(nL, 1, nL, true, false); 
-        lambda[1] = cs_spalloc(nL, 1, nL, true, false); 
 
          for (i = 0 ; i < nL ; i++){
           lambda[0]->i[i] = i;
@@ -358,8 +360,8 @@ if(nL>0){
          pvL->p[nL] = nL*nL;
        }
 
-       pvLS = cs_schol(1, pvL);                    // Symbolic factorisation of L
-       pvLL = cs_chol(pvL, pvLS);                  // cholesky factorisation of L^{-1} for forming N(0, L)
+       pvLS = cs_schol(1, pvL);                    // Symbolic factorisation of pvL
+       pvLL = cs_chol(pvL, pvLS);                  // cholesky factorisation of pvL^{-1} for forming N(0, pvL)
 }
 // read in random-effects design matrix Z 
                                                             /*     Za_1 0   0   Zb_1 0   0  */
@@ -474,6 +476,9 @@ if(nL>0){
           tvc += dimG*dimG; 
         }
 
+
+        dimG = GRdim[nG];
+
 /**************************************/	
 /* Read in any condtional submatrices */
 /**************************************/
@@ -571,11 +576,18 @@ if(nL>0){
 /*********************************/
         cnt2=0;
         for (k = nG ; k < nGR; k++){
+
           dimG = GRdim[k];
+
           propC[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           muC[k] = cs_spalloc(dimG, 1, dimG, true, false);
           propC[k+nGR] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           muC[k+nGR] = cs_spalloc(dimG, 1, dimG, true, false);
+
+          linki[k] = cs_spalloc(dimG, 1, dimG, true, false);
+          linki_tmp[k] = cs_spalloc(dimG, 1, dimG, true, false);
+          predi[k] = cs_spalloc(dimG, 1, dimG, true, false);         
+
           cnt=0;
           for (i = 0 ; i < dimG; i++){
             propC[k]->p[i] = i*dimG;
@@ -595,11 +607,23 @@ if(nL>0){
           muC[k]->p[1] = dimG;
           muC[k+nGR]->p[0] = 0;
           muC[k+nGR]->p[1] = dimG;
+
+          linki[k]->p[0] = 0;
+          linki[k]->p[1] = dimG;
+          linki_tmp[k]->p[0] = 0;
+          linki_tmp[k]->p[1] = dimG;
+          predi[k]->p[0] = 0;
+          predi[k]->p[1] = dimG;
+
           for (i = 0 ; i < dimG; i++){
             muC[k]->i[i] = i;
             muC[k]->x[i] = 0.0;
             muC[k+nGR]->i[i] = i;
             muC[k+nGR]->x[i] = 0.0;
+
+            linki[k]->i[i] = i;    
+            linki_tmp[k]->i[i] = i;    
+            predi[k]->i[i] = i;    
           }
           propCinv[k] = cs_inv(propC[k]);
           propCinvS[k] = cs_schol(1, propCinv[k]);   
@@ -613,7 +637,6 @@ if(nL>0){
 
         zstar = cs_spalloc(ny, 1, ny, true, false);
         linky = cs_spalloc(ny, 1, ny, true, false);
-        pred = cs_spalloc(ny, 1, ny, true, false);
 	mupred = cs_spalloc(ny, 1, ny, true, false);
 	mulinky = cs_spalloc(ny, 1, ny, true, false);
 
@@ -621,20 +644,14 @@ if(nL>0){
         location = cs_spalloc(dimAS, 1, dimAS, true, false);
         location_tmp = cs_spalloc(dimAS, 1, dimAS, true, false);
 
-        linki = cs_spalloc(dimG, 1, dimG, true, false);
-        linki_tmp = cs_spalloc(dimG, 1, dimG, true, false);
-        predi = cs_spalloc(dimG, 1, dimG, true, false);                 // This is dimG because this is the dimesnion of the R structures (all of which are the same)
-
         for (i = 0 ; i < ny; i++){   
            zstar->i[i] = i;
            linky->i[i] = i;
 	   mupred->i[i] = i;
 	   mupred->x[i] = 0.0;
-	   pred->i[i] = i;
-	   pred->x[i] = 0.0;
 	   mulinky->i[i] = i;
 	   mulinky->x[i] = 0.0;
-           linky->x[i] = liabP[i];                         /* this needs to be changed for random regression */
+           linky->x[i] = liabP[i];             
         }
 
         zstar->p[0] = 0; 
@@ -643,20 +660,10 @@ if(nL>0){
         linky->p[1] = ny;
     	mupred->p[0] = 0; 
         mupred->p[1] = ny;
-    	pred->p[0] = 0; 
-        pred->p[1] = ny;
         mulinky->p[0] = 0; 
 	mulinky->p[1] = ny;
 
-        if(nL==0){       
-          linky = cs_spalloc(ny, 1, ny, true, false);
-          for (i = 0 ; i < ny; i++){   
-            linky->i[i] = i;
-            linky->x[i] = liabP[i];                        
-          }
-          linky->p[0] = 0; 
-          linky->p[1] = ny; 
-        }else{                                    /* for rec/sim models need to presevere non-transformed latent variable i.e. solve(Lambda, linky) - This =y (in gaussian case) */
+        if(nL>0){            /* for rec/sim models need to presevere non-transformed latent variable i.e. solve(Lambda, linky) - This =y (in gaussian case) */
           linky_orig = cs_spalloc(ny, 1, ny, true, false);
           for (i = 0 ; i < ny; i++){   
             linky_orig->i[i] = i;
@@ -683,17 +690,6 @@ if(nL>0){
         location_tmp->p[0] = 0;
         location_tmp->p[1] = dimAS;
 
-        for (i = 0 ; i < dimG; i++){
-           linki->i[i] = i;    
-           linki_tmp->i[i] = i;    
-           predi->i[i] = i;    
-        }
-        linki->p[0] = 0;
-        linki->p[1] = dimG;
-        linki_tmp->p[0] = 0;
-        linki_tmp->p[1] = dimG;
-        predi->p[0] = 0;
-        predi->p[1] = dimG;
 
 // form W = [X, Z] 
 
@@ -739,13 +735,18 @@ if(nL>0){
             
 // form KGinv = G^{-1} \otimes I    
 
-        for (k = 0 ; k < nGR ; k++){
+        for (k = 0 ; k < nG ; k++){
            if(AtermP[k]>=0){
-             KGinv[k] = cs_kroneckerA(Ginv[k],A[k]);            //  form kronecker(G^{-1}, A^{-1}) structure
+             KGinv[k] = cs_kroneckerA(Ginv[k],A[k]);         //  form kronecker(G^{-1}, A^{-1}) structure
              KGinvS[k] = cs_schol(1, KGinv[k]);              // Symbolic factorisation of kronecker(G^{-1}, A^{-1})
            }else{
              KGinv[k] = cs_kroneckerI(Ginv[k],nlGR[k]);      //  form G^{-1} structure
            }
+        }
+ 
+
+        for (k = nG ; k < nGR ; k++){
+          KGinv[k] = cs_kroneckerI(Ginv[k],nlGR[k]);      //  form G^{-1} structure
         }
 
         KRinv = cs_directsum(KGinv, nG, nGR);
@@ -824,7 +825,7 @@ if(nL>0){
             detLambda[0] += log(fabs(LambdaLU->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU->U->x[diagLambdaU[i]]));
          }
 
- 
+         cs_spfree(linky);
          linky = cs_multiply(Lambda[0], linky_orig);   
 
          cs_sortdv(linky);
@@ -876,13 +877,29 @@ if(nL>0){
 /**********************************************************************************************************/
 
         for (itt = 0; itt < (nitt+DICP[0]); itt++){
-			
+
+ 
+/***************************/
+/* form G and R structures */
+/***************************/
+						
+	  for (k = 0 ; k < nGR; k++){                             
+	    if(updateP[k]>0){
+	      if(AtermP[k]>=0){
+	        cs_kroneckerAupdate(Ginv[k],A[k],KGinv[k]);           //  form kronecker(G^{-1}, A^{-1}) structure
+	      }else{
+	        cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
+	      }
+	    }  
+	  }
+
+/***************/
+/* free memory */
+/***************/
+
           if(itt>0){
             for (i = 0 ; i < nGR; i++){
-              if(updateP[i]>0){
-                cs_spfree(G[i]); 
-              }
-              if(AtermP[i]>=0){
+               if(AtermP[i]>=0){
   	        cs_nfree(KGinvL[i]);
               }
             }
@@ -897,6 +914,11 @@ if(nL>0){
             }
           }
 
+          for (i = 0 ; i < nGR; i++){
+            if(updateP[i]>0){
+              cs_spfree(G[i]); 
+            }
+          }
           if(missing){	
             for (i = nG ; i < nGR; i++){
 	      cs_nfree(propCinvL[i]);
@@ -929,25 +951,15 @@ if(nL>0){
 /* form equations */
 /******************/
 						
-			for (k = 0 ; k < nGR; k++){                             
-				if(updateP[k]>0){
-					if(AtermP[k]>=0){
-						cs_kroneckerAupdate(Ginv[k],A[k],KGinv[k]);              //  form kronecker(G^{-1}, A^{-1}) structure
-					}else{
-						cs_kroneckerIupdate(Ginv[k],nlGR[k],KGinv[k]);        //  form G^{-1} structure
-					}
-				}  
-			}
+	  cs_directsumupdate(KGinv, nG, nGR, KRinv);
 			
-			cs_directsumupdate(KGinv, nG, nGR, KRinv);
+	  WtmKRinv = cs_multiply(Wt, KRinv);   
 			
-			WtmKRinv = cs_multiply(Wt, KRinv);   
+	  M = cs_multiply(WtmKRinv, W);                          // form M = WtmKRinv%*%W  
 			
-			M = cs_multiply(WtmKRinv, W);                          // form M = WtmKRinv%*%W  
+	  cs_omegaupdate(KGinv, nG, pvB, Omega);                 // update Omega = bdiag(0, KGinv) 
 			
-			cs_omegaupdate(KGinv, nG, pvB, Omega);                 // update Omega = bdiag(0, KGinv) 
-			
-			MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
+	  MME = cs_add(M, Omega, 1.0, 1.0);                      // form MME = M + Omega; mixed model equations 
 
 
 /*************************/
@@ -1008,7 +1020,6 @@ if(nL>0){
           cnt=0;
 
           for(k=nG; k<nGR; k++){
-
             dimG = GRdim[k];
             for(i=0; i<nlGR[k]; i++){
               for(j=0; j<dimG; j++){
@@ -1020,7 +1031,7 @@ if(nL>0){
               }
             }
             cnt += dimG*nlGR[k];  
-          }    
+          }
 
 /************************/
 /* sample pseudo vector */
@@ -1096,7 +1107,9 @@ if(nL>0){
                    for(l=0; l<nlGR[i]; l++){
                      Gtmp[i]->x[cnt] += location->x[cnt2+nlGR[i]*j+l]*location->x[cnt2+nlGR[i]*k+l];
                    }
+                   // sum-ofsquares for random effect i
                    Gtmp[i]->x[cnt] += pG[i]->x[cnt];
+                   // add prior sum-ofsquares prior$V*prior$nu (or I for corg or Diag(V) for corgh)
                  }
                }
                for(j=1; j<dimG; j++){
@@ -1117,11 +1130,11 @@ if(nL>0){
 		  G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]); 
 		break;	   
 					   
-		case 3:  				 
-		  G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i]);
+		case 3:  
+		  G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i], pG[i]);
 		break;
-	     }		
-	     ldet[i] = log(cs_invR(G[i], Ginv[i]));  
+	     }
+	     ldet[i] = log(cs_invR(G[i], Ginv[i]));             
 	     cs_nfree(GinvL[i]);
 	     GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of G^{-1} for Gibbs sampling PX working parameters. 
            }
@@ -1133,7 +1146,8 @@ if(nL>0){
          cnt2=0;
 			
 
-         for(i=nG; i<nGR; i++){    
+         for(i=nG; i<nGR; i++){  
+  
             if(updateP[i]>0){ 
               dimG = GRdim[i];
               for(j=0; j<dimG; j++){
@@ -1152,108 +1166,110 @@ if(nL>0){
                 }
               }
               cnt2 += nlGR[i]*dimG;
-	          if(diagR>0){
-	            cnt=0;  
-	            for(j=0; j<dimG; j++){
-		      for(k=0; k<dimG; k++){
-		        if(j==k){
-                          if(diagR==2 && cnt!=0){
-                            Gtmp[i]->x[0] += Gtmp[i]->x[cnt] - pG[i]->x[cnt];
-                          }
-                        }else{
-			  Gtmp[i]->x[cnt] = 0.0;
-                        }
-		        cnt++;
-		      }
-	            }	
-	          }
-
-                  switch(updateP[i]){
-
-	            case 1: 
-		      cs_invR(Gtmp[i], Ginv[i]);
-		      G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
-		    break;
-						
-	            case 2: 
-		      cs_invR(Gtmp[i], Ginv[i]);
-		      G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);
-		    break;	   
-			
-	            case 3:  
-		      cs_cov2cor(Gtmp[i]);
-		      G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i]);  
-	            break;
-	          }					
-	          if(diagR>0){
-	            cnt=0;  
-	            for(j=0; j<dimG; j++){
-		      for(k=0; k<dimG; k++){
-		        if(j==k){
-                          if(diagR==2){
-                            G[i]->x[cnt] = G[i]->x[0];
-                          }                          
-                        }else{
-		          G[i]->x[cnt] = 0.0;
-                        }
-			cnt++;
-		      }
-		    }	
+	      if(diagR>0){
+	        cnt=0;  
+	        for(j=0; j<dimG; j++){
+		  for(k=0; k<dimG; k++){
+		    if(j==k){
+                      if(diagR==2 && cnt!=0){
+                        Gtmp[i]->x[0] += Gtmp[i]->x[cnt] - pG[i]->x[cnt];
+                      }
+                    }else{
+	              Gtmp[i]->x[cnt] = 0.0;
+                    }
+		    cnt++;
 		  }
-		  ldet[i] = log(cs_invR(G[i], Ginv[i]));
-	          cs_nfree(GinvL[i]);	
-	          GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of R^{-1} for Gibbs sampling fully missing data. 
-		}
-	    }
+	        }	
+	      }
+
+              switch(updateP[i]){
+
+	        case 1: 
+		  cs_invR(Gtmp[i], Ginv[i]);
+		  G[i] = cs_rinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], GinvS[i]);
+		break;
+						
+	        case 2: 
+		  cs_invR(Gtmp[i], Ginv[i]);
+		  G[i] = cs_rCinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i], CM[i]);
+		break;	   
+			
+	        case 3:
+ 		  G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i], pG[i]);  
+	        break;
+	      }					
+	      if(diagR>0){
+	        cnt=0;  
+	        for(j=0; j<dimG; j++){
+		  for(k=0; k<dimG; k++){
+		    if(j==k){
+                      if(diagR==2){
+                        G[i]->x[cnt] = G[i]->x[0];
+                      }                          
+                    }else{
+		      G[i]->x[cnt] = 0.0;
+                    }
+		    cnt++;
+		  }
+		}	
+              }
+              ldet[i] = log(cs_invR(G[i], Ginv[i]));
+	      cs_nfree(GinvL[i]);	
+	      GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of R^{-1} for Gibbs sampling fully missing data. 
+            }
+	  }
 
 /**********************/
 /* calculate deviance */   
 /**********************/
-     dbar =0.0;
+          dbar =0.0;
 
-     if(itt>=burnin && DICP[0]==1){
-       if(itt==nitt){
-          for(k=nG; k<nGR; k++){
-             dimG = GRdim[k];
-             for(i=0; i<(dimG*dimG); i++){          
-               G[k]->x[i] = muG[k]->x[i];
-             }
-             ldet[k] = log(cs_invR(G[k], Ginv[k]));  
+          if(itt>=burnin && DICP[0]==1){
+            if(itt==nitt){
+              for(k=nG; k<nGR; k++){
+                dimG = GRdim[k];
+                for(i=0; i<(dimG*dimG); i++){          
+                  G[k]->x[i] = muG[k]->x[i];
+                }
+                ldet[k] = log(cs_invR(G[k], Ginv[k]));  
+              }
+              for(i=0; i<ny; i++){          
+                linky->x[i] = mulinky->x[i];
+                pred->x[i] = mupred->x[i];
+              }
+            }         
+            cnt2=0;
+            for(k=nG; k<nGR; k++){          // Iterate through R-structures
+              dimG = GRdim[k];
+              for(j=0; j<nlGR[k]; j++){     // Iterate through levels
+                nkeep=0;
+                ncond=0;
+                for(i=0; i<dimG; i++){       // Iterate through fixed levels
+                  record=cnt2+nlGR[k]*i+j;
+                  linki[k]->x[i] = linky->x[record];              
+                  predi[k]->x[i] =  pred->x[record];
+                  if(familyP[record]==1 && observedP[record]==1){
+                    keep[nkeep] = i;
+                    nkeep ++;
+                  }else{
+                    if(familyP[record]==20 && observedP[record]==1){ // don't condition on threshold liabilities
+                    }else{
+                      cond[ncond] = i;
+                      ncond ++;
+                    }
+                  }
+                }
+                if(nkeep>0){      // some gaussian observed traits
+                  if(ncond>0 || (nkeep+ncond)!=dimG){   // some non-gaussian or non-observed traits
+                    dbar += cs_dcmvnorm(linki[k], predi[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
+                  }else{
+                    dbar += cs_dmvnorm(linki[k], predi[k], ldet[k], Ginv[k]);                            // all gaussian observed
+                  }
+                }
+              }
+              cnt2+=nlGR[k]*dimG;
+            }
           }
-          for(i=0; i<ny; i++){          
-            linky->x[i] = mulinky->x[i];
-            pred->x[i] = mupred->x[i];
-          }
-       }         
-       cnt2=0;
-       for(k=nG; k<nGR; k++){          // Iterate through R-structures
-         dimG = GRdim[k];
-         for(j=0; j<nlGR[k]; j++){     // Iterate through levels
-           nkeep=0;
-           ncond=0;
-           for(i=0; i<dimG; i++){       // Iterate through fixed levels
-             record=cnt2+nlGR[k]*i+j;
-             linki->x[i] = linky->x[record];              
-             predi->x[i] =  pred->x[record];
-             if(familyP[record]==1 && observedP[record]==1){
-               keep[nkeep] = i;
-               nkeep ++;
-             }else{
-               cond[ncond] = i;
-               ncond ++;
-             }
-           }
-           if(nkeep>0){      // some gaussian observed traits
-             if(ncond>0){   // some non-gaussian or non-observed traits
-               dbar += cs_dcmvnorm(linki, predi, ldet[k], Ginv[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
-             }else{
-               dbar += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);                                     // all gaussian observed
-             }
-           }
-         }
-         cnt2+=nlGR[k]*dimG;
-       }
-     }
 
 /********************/
 /* update cutpoints */
@@ -1272,9 +1288,13 @@ if(nL>0){
          for(i=0; i<dimG; i++){    // Iterate through first indiviual to find any ordinal variables
            dimG = GRdim[k];
            record=cnt2+nlGR[k]*i;
-           if(familyP[record]==14){
+           if(familyP[record]==14 || familyP[record]==20){
              nthordinal = mfacP[rterm+i];
-             cutpointMHR[nthordinal] = dcutpoints(linky, yP, observedP, record,record+nlGR[k], oldcutpoints, newcutpoints, cumsum_ncutpoints[nthordinal], ncutpointsP[i], sdcp[nthordinal]);
+             if(familyP[record]==14){
+               cutpointMHR[nthordinal] = dcutpoints(linky, yP, observedP, record,record+nlGR[k], oldcutpoints, newcutpoints, cumsum_ncutpoints[nthordinal], ncutpointsP[nthordinal], sdcp[nthordinal], 1.0);
+             }else{
+               cutpointMHR[nthordinal] = dcutpoints(pred, yP, observedP, record,record+nlGR[k], oldcutpoints, newcutpoints, cumsum_ncutpoints[nthordinal], ncutpointsP[nthordinal], sdcp[nthordinal], sqrt(G[k]->x[i*(dimG+1)]));
+             }
              wncp[nthordinal] *= rACCEPT;
              zncp[nthordinal] *= rACCEPT;
              wncp[nthordinal] ++;
@@ -1285,6 +1305,9 @@ if(nL>0){
                for(j=2; j<(ncutpointsP[nthordinal]-1); j++){ 
                  oldcutpoints[cumsum_ncutpoints[nthordinal]+j] = newcutpoints[cumsum_ncutpoints[nthordinal]+j];
                }
+               cutpoints_updated[nthordinal] = 1;
+             }else{
+               cutpoints_updated[nthordinal] = 0;
              } 
              if(itt<burnin){          
                sdcp[nthordinal] *= pow(qACCEPT, ((zncp[nthordinal]/wncp[nthordinal])-0.44));
@@ -1444,18 +1467,20 @@ if(nL>0){
            p = k+proposal[cnt+j]*nGR;  // indexes proposal distributions
 
            for(i=0; i<dimG; i++){
-             linki_tmp->x[i] = rnorm(0.0,1.0);
+             linki_tmp[k]->x[i] = rnorm(0.0,1.0);
+             linki[k]->x[i] = linky->x[cnt2+nlGR[k]*i+j];
+             predi[k]->x[i] =  pred->x[cnt2+nlGR[k]*i+j];
            }
 
            if(mvtype[cnt+j]==1){         // can be Gibbsed  
-             cs_ltsolve(GinvL[k]->L, linki_tmp->x);  
+             cs_ltsolve(GinvL[k]->L, linki_tmp[k]->x);  
              for(i=0; i<dimG; i++){
-               linky->x[nlGR[k]*i+j+cnt2] = linki_tmp->x[i]+pred->x[nlGR[k]*i+j+cnt2];
+               linky->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i]+pred->x[nlGR[k]*i+j+cnt2];
              }
            }
 			 
            if(mvtype[cnt+j]<0){         // has to be MHed
-             cs_ltsolve(propCinvL[p]->L, linki_tmp->x);
+             cs_ltsolve(propCinvL[p]->L, linki_tmp[k]->x);
            }
 
            for(i=0; i<dimG; i++){       // Iterate through fixed levels
@@ -1464,12 +1489,10 @@ if(nL>0){
 
              if(mvtype[cnt+j]>0){break;} // has been Gibbsed, or is fully observed and Guassian and therefore knwon
 
-             linki->x[i] = linky->x[record];
-             predi->x[i] =  pred->x[record];
-             linki_tmp->x[i] += linki->x[i];
+             linki_tmp[k]->x[i] += linki[k]->x[i];
 
              if(familyP[record]==1 && observedP[record]==1){;
-               linki_tmp->x[i] = linki->x[i];
+               linki_tmp[k]->x[i] = linki[k]->x[i];
 
              }else{
 
@@ -1482,32 +1505,31 @@ if(nL>0){
   
                    case 2:  /* Posisson */
 
-                     densityl1 += dpois(yP[record], exp(linki->x[i]), true);
-                     densityl2 += dpois(yP[record], exp(linki_tmp->x[i]), true);
+                     densityl1 += dpois(yP[record], exp(linki[k]->x[i]), true);
+                     densityl2 += dpois(yP[record], exp(linki_tmp[k]->x[i]), true);
 
                    break;
 
                    case 3:  /* Nominal Multinomial Logit */
 
                      if(mvtype[cnt+j]==0){   // univraiate binary models can be slice sampled
-                       if(yP[record]>0.5){
+                        if(yP[record]>0.5){
                          u = linky->x[record]-log1p(exp(linky->x[record]));  // needed for the deviance calculation
-                         densityl1 += u;
+                         dbar += u;
                          u -= rexp(1.0);
-                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]),u-log1p(-exp(u)), 1e+35);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]),u-log1p(-exp(u)), 1e+35);                          
                        }else{
                          u = -log1p(exp(linky->x[record])); // needed for the deviance calculation
-                         densityl1 += u;
+                         dbar += u;
                          u -= rexp(1.0);
-                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, log1p(-exp(u))-u);				
-                       }
-
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, log1p(-exp(u))-u);	
+                       }			
                      }else{
 
-                       mndenom1 += exp(linki->x[i]);
-                       mndenom2 += exp(linki_tmp->x[i]);
-                       densityl1 += yP[record]*linki->x[i];
-                       densityl2 += yP[record]*linki_tmp->x[i];
+                       mndenom1 += exp(linki[k]->x[i]);
+                       mndenom2 += exp(linki_tmp[k]->x[i]);
+                       densityl1 += yP[record]*linki[k]->x[i];
+                       densityl2 += yP[record]*linki_tmp[k]->x[i];
 
                        if(mfacP[rterm+i]==nthmnl){ 
                          densityl1 -= y2P[record]*log(mndenom1);
@@ -1522,49 +1544,49 @@ if(nL>0){
                    break;
      
                    case 4: /* Weibull */
-                     densityl1 += dweibull(yP[record], 1.0, exp(-linki->x[i]), true);
-                     densityl2 += dweibull(yP[record], 1.0, exp(-linki_tmp->x[i]), true);
+                     densityl1 += dweibull(yP[record], 1.0, exp(-linki[k]->x[i]), true);
+                     densityl2 += dweibull(yP[record], 1.0, exp(-linki_tmp[k]->x[i]), true);
                    break;
     
                    case 5: /* Exponential */
-                     densityl1 += dexp(yP[record], exp(-linki->x[i]), true);
-                     densityl2 += dexp(yP[record], exp(-linki_tmp->x[i]), true);
+                     densityl1 += dexp(yP[record], exp(-linki[k]->x[i]), true);
+                     densityl2 += dexp(yP[record], exp(-linki_tmp[k]->x[i]), true);
                    break;
     
                    case 6: /* Censored Gaussian */
 
-                     if(linki_tmp->x[i]<yP[record] || linki_tmp->x[i]>y2P[record]){
-                        interval = (linki_tmp->x[i]-y2P[record])/(y2P[record]-yP[record]);
-                        remainder = (linki_tmp->x[i]-y2P[record])-double(int(interval))*(y2P[record]-yP[record]);
-                       if(linki_tmp->x[i]<yP[record]){
+                     if(linki_tmp[k]->x[i]<yP[record] || linki_tmp[k]->x[i]>y2P[record]){
+                        interval = (linki_tmp[k]->x[i]-y2P[record])/(y2P[record]-yP[record]);
+                        remainder = (linki_tmp[k]->x[i]-y2P[record])-double(int(interval))*(y2P[record]-yP[record]);
+                       if(linki_tmp[k]->x[i]<yP[record]){
                          if(int(interval)%2==1){
-                           linki_tmp->x[i] = yP[record] - remainder;
+                           linki_tmp[k]->x[i] = yP[record] - remainder;
                          }else{
-                           linki_tmp->x[i] = y2P[record] + remainder;
+                           linki_tmp[k]->x[i] = y2P[record] + remainder;
                         }
                       }else{
                          if(int(interval)%2==1){
-                          linki_tmp->x[i] = yP[record] + remainder;
+                          linki_tmp[k]->x[i] = yP[record] + remainder;
                         }else{
-                          linki_tmp->x[i] = y2P[record] - remainder;
+                          linki_tmp[k]->x[i] = y2P[record] - remainder;
                        }
                      }
                    }
 		   break;
  
 		   case 7: /* Censored Poisson */
-	             densityl1 += log(ppois(y2P[record], exp(linki->x[i]), true, false)-ppois(yP[record], exp(linki->x[i]), true, false));
-		     densityl2 += log(ppois(y2P[record], exp(linki_tmp->x[i]), true, false)-ppois(yP[record], exp(linki_tmp->x[i]), true, false));
+	             densityl1 += log(ppois(y2P[record], exp(linki[k]->x[i]), true, false)-ppois(yP[record], exp(linki[k]->x[i]), true, false));
+		     densityl2 += log(ppois(y2P[record], exp(linki_tmp[k]->x[i]), true, false)-ppois(yP[record], exp(linki_tmp[k]->x[i]), true, false));
 		   break;
 						 
                    case 8: /* Censored Weibull */
-                     densityl1 += log(pweibull(y2P[record], 1.0, exp(-linki->x[i]), true, false)-pweibull(yP[record],1.0, exp(-linki->x[i]), true, false));
-                     densityl2 += log(pweibull(y2P[record], 1.0, exp(-linki_tmp->x[i]), true, false)-pweibull(yP[record],1.0, exp(-linki_tmp->x[i]), true, false));
+                     densityl1 += log(pweibull(y2P[record], 1.0, exp(-linki[k]->x[i]), true, false)-pweibull(yP[record],1.0, exp(-linki[k]->x[i]), true, false));
+                     densityl2 += log(pweibull(y2P[record], 1.0, exp(-linki_tmp[k]->x[i]), true, false)-pweibull(yP[record],1.0, exp(-linki_tmp[k]->x[i]), true, false));
                    break;                                            
 
                    case 9: /* Censored Exponential */
-                     densityl1 += log(pexp(y2P[record], exp(-linki->x[i]), true, false)-pexp(yP[record], exp(-linki->x[i]), true, false));
-                     densityl2 += log(pexp(y2P[record], exp(-linki_tmp->x[i]), true, false)-pexp(yP[record], exp(-linki_tmp->x[i]), true, false));
+                     densityl1 += log(pexp(y2P[record], exp(-linki[k]->x[i]), true, false)-pexp(yP[record], exp(-linki[k]->x[i]), true, false));
+                     densityl2 += log(pexp(y2P[record], exp(-linki_tmp[k]->x[i]), true, false)-pexp(yP[record], exp(-linki_tmp[k]->x[i]), true, false));
                    break;  
 						 
 		   case 10: /* Zero-inflated Gaussian */
@@ -1573,14 +1595,14 @@ if(nL>0){
 		   case 11: /* Zero-inflated Poisson */
 
                      if(mfacP[rterm+i]==0){
-                       mndenom1 = dpois(yP[record], exp(linki->x[i]), true);  
-                       mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true);  
+                       mndenom1 = dpois(yP[record], exp(linki[k]->x[i]), true);  
+                       mndenom2 = dpois(yP[record], exp(linki_tmp[k]->x[i]), true);  
                      }else{
-			mndenom1 += log1p(-exp(linki->x[i])/(1.0+exp(linki->x[i])));
-			mndenom2 += log1p(-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
+			mndenom1 += log1p(-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
+			mndenom2 += log1p(-exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));
                         if(yP[record]>0.5){
-			  mndenom1 = log(exp(mndenom1)+exp(linki->x[i])/(1.0+exp(linki->x[i])));
-			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));  
+			  mndenom1 = log(exp(mndenom1)+exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
+			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));  
 			}
                         densityl1 += mndenom1;
                         densityl2 += mndenom2;
@@ -1596,19 +1618,18 @@ if(nL>0){
                    case 13: /* Zero-inflated Exponential */
 		   break;  
 
-                   case 14: /* Ordered Mulinomial Probit */
+                   case 14: /* Ordered Multinomial Probit */
 
                      if(mvtype[cnt+j]==0){   // univraiate binary models can be slice sampled
-
-                       
+                      
                        if(yP[record]>1.5){
 	                 u = pnorm(linky->x[record], 0.0, 1.0, true, true);
-                         densityl1 += u;    // needed for the deviance calculation   
+                         dbar += u;    // needed for the deviance calculation   
                          u -= rexp(1.0);
                          linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), qnorm(u, 0.0, 1.0, true, true), 1e+35);
                        }else{
                          u = pnorm(linky->x[record], 0.0, 1.0, false, true);
-                         densityl1 += u;   // needed for the deviance calculation
+                         dbar += u;   // needed for the deviance calculation
                          u -= rexp(1.0);
                          linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, qnorm(u, 0.0, 1.0, false, true));		
                        }
@@ -1618,15 +1639,15 @@ if(nL>0){
 
                        if(int(yP[record])==1 || int(yP[record])==(ncutpointsP[nthordinal]-1)){
                          if(int(yP[record])==1){
-                           densityl1 += pnorm(linki->x[i], 0.0, 1.0, false,true);
-                           densityl2 += pnorm(linki_tmp->x[i], 0.0, 1.0, false,true);
+                           densityl1 += pnorm(linki[k]->x[i], 0.0, 1.0, false,true);
+                           densityl2 += pnorm(linki_tmp[k]->x[i], 0.0, 1.0, false,true);
                          }else{
-                           densityl1 += pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, false,true);
-                           densityl2 += pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, false,true);
+                           densityl1 += pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki[k]->x[i], 0.0, 1.0, false,true);
+                           densityl2 += pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp[k]->x[i], 0.0, 1.0, false,true);
                          }
                        }else{
-                         densityl1 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki->x[i], 0.0, 1.0, true,false));
-                         densityl2 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp->x[i], 0.0, 1.0, true,false));
+                         densityl1 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki[k]->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki[k]->x[i], 0.0, 1.0, true,false));
+                         densityl2 += log(pnorm(oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]-linki_tmp[k]->x[i], 0.0, 1.0, true,false)-pnorm(oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]]-linki_tmp[k]->x[i], 0.0, 1.0, true,false));
                        }
                      }
                    break;
@@ -1635,16 +1656,16 @@ if(nL>0){
 
                     if(mfacP[rterm+i]==0){
                        if(yP[record]>0.5){
-                         mndenom1 = dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));
-                         mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i]))); 
+                         mndenom1 = dpois(yP[record], exp(linki[k]->x[i]), true)-log1p(-exp(-exp(linki[k]->x[i])));
+                         mndenom2 = dpois(yP[record], exp(linki_tmp[k]->x[i]), true)-log1p(-exp(-exp(linki_tmp[k]->x[i]))); 
                        } 
                      }else{
 	               if(yP[record]>0.5){
-                         mndenom1 = (linki->x[i] - log1p(exp(linki->x[i])));
-			 mndenom2 = (linki_tmp->x[i] - log1p(exp(linki_tmp->x[i]))); 		       		 
+                         mndenom1 = (linki[k]->x[i] - log1p(exp(linki[k]->x[i])));
+			 mndenom2 = (linki_tmp[k]->x[i] - log1p(exp(linki_tmp[k]->x[i]))); 		       		 
 		       }else{
-                         mndenom1 += -linki->x[i] - log1p(exp(-linki->x[i]));
-			 mndenom2 += -linki_tmp->x[i] - log1p(exp(-linki_tmp->x[i]));     
+                         mndenom1 += -linki[k]->x[i] - log1p(exp(-linki[k]->x[i]));
+			 mndenom2 += -linki_tmp[k]->x[i] - log1p(exp(-linki_tmp[k]->x[i]));     
                        }
                         densityl1 += mndenom1;
                         densityl2 += mndenom2;
@@ -1655,15 +1676,15 @@ if(nL>0){
 
                    case 16:  /* Zero-truncated Poisson */
 
-                     densityl1 += dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));
-                     densityl2 += dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i])));
+                     densityl1 += dpois(yP[record], exp(linki[k]->x[i]), true)-log1p(-exp(-exp(linki[k]->x[i])));
+                     densityl2 += dpois(yP[record], exp(linki_tmp[k]->x[i]), true)-log1p(-exp(-exp(linki_tmp[k]->x[i])));
 
                    break;
 
                    case 17:  /* Geometric */
 
-                     densityl1 += linki->x[i]-log1p(exp(linki->x[i]))-yP[record]*(linki->x[i]+log1p(exp(-linki->x[i]))); 
-                     densityl2 += linki_tmp->x[i]-log1p(exp(linki_tmp->x[i]))-yP[record]*(linki_tmp->x[i]+log1p(exp(-linki_tmp->x[i])));  
+                     densityl1 += linki[k]->x[i]-log1p(exp(linki[k]->x[i]))-yP[record]*(linki[k]->x[i]+log1p(exp(-linki[k]->x[i]))); 
+                     densityl2 += linki_tmp[k]->x[i]-log1p(exp(linki_tmp[k]->x[i]))-yP[record]*(linki_tmp[k]->x[i]+log1p(exp(-linki_tmp[k]->x[i])));  
 
                    break;
 
@@ -1671,17 +1692,16 @@ if(nL>0){
 
                     if(mfacP[rterm+i]==0){
                        if(yP[record]>0.5){
-                         mndenom1 = dpois(yP[record], exp(linki->x[i]), true)-log1p(-exp(-exp(linki->x[i])));
-                         mndenom2 = dpois(yP[record], exp(linki_tmp->x[i]), true)-log1p(-exp(-exp(linki_tmp->x[i]))); 
+                         mndenom1 = dpois(yP[record], exp(linki[k]->x[i]), true)-log1p(-exp(-exp(linki[k]->x[i])));
+                         mndenom2 = dpois(yP[record], exp(linki_tmp[k]->x[i]), true)-log1p(-exp(-exp(linki_tmp[k]->x[i]))); 
                        } 
                      }else{
 	               if(yP[record]>0.5){
-                         mndenom1 = log1p(-pexp(exp(linki->x[i]), 1.0,true, false));
-        		   mndenom2 = log1p(-pexp(exp(linki_tmp->x[i]),1.0, true, false));	
-		       		 	       		 
+                         mndenom1 = log1p(-pexp(exp(linki[k]->x[i]), 1.0,true, false));
+        		 mndenom2 = log1p(-pexp(exp(linki_tmp[k]->x[i]),1.0, true, false));			       		 	       		 
 		       }else{
-                         mndenom1 += pexp(exp(linki->x[i]),1.0,true, true);
-   			 mndenom2 += pexp(exp(linki_tmp->x[i]),1.0,true, true);     
+                         mndenom1 += pexp(exp(linki[k]->x[i]),1.0,true, true);
+   			 mndenom2 += pexp(exp(linki_tmp[k]->x[i]),1.0,true, true);     
                        }
                         densityl1 += mndenom1;
                         densityl2 += mndenom2;
@@ -1694,14 +1714,14 @@ if(nL>0){
                    case 19:  /* Zero-inflated Binomial */
 
                      if(mfacP[rterm+i]==0){  // non-zero bit
-                       mndenom1 = dbinom(yP[record], y2P[record], exp(linki->x[i])/(1.0+exp(linki->x[i])), true);  
-                       mndenom2 = dbinom(yP[record], y2P[record], exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])), true);  
+                       mndenom1 = dbinom(yP[record], y2P[record], exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])), true);  
+                       mndenom2 = dbinom(yP[record], y2P[record], exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])), true);  
                      }else{
-			mndenom1 += log1p(-exp(linki->x[i])/(1.0+exp(linki->x[i])));
-			mndenom2 += log1p(-exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));
+			mndenom1 += log1p(-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
+			mndenom2 += log1p(-exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));
                         if(yP[record]>0.5){
-			  mndenom1 = log(exp(mndenom1)+exp(linki->x[i])/(1.0+exp(linki->x[i])));
-			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp->x[i])/(1.0+exp(linki_tmp->x[i])));  
+			  mndenom1 = log(exp(mndenom1)+exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
+			  mndenom2 = log(exp(mndenom2)+exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));  
 			}
                         densityl1 += mndenom1;
                         densityl2 += mndenom2;
@@ -1710,23 +1730,51 @@ if(nL>0){
                      }
                    break;
 
+                   case 20: /* Threshold */
+                     if(cp){   // with cutpoints only Gibbs if MH step of cutpoints is accepted
+                       nthordinal = mfacP[rterm+i];
+                       if(DICP[0]==1){
+                         dbar += pcmvnorm(predi[k], linki[k], G[k], i, oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]], oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]);    
+                       } 
+                       if(cutpoints_updated[nthordinal] == 1){
+                           linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]], oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]);
+                       }
+                       linki[k]->x[i] = linky->x[record];
+                       linki_tmp[k]->x[i] = linky->x[record];
+                     }else{                     // binary models can be directly Gibbsed
+                       if(yP[record]>1.5){
+                          if(DICP[0]==1){
+                           dbar += pcmvnorm(predi[k], linki[k], G[k], i,  0.0, 1e+35);    
+                         } 
+                         linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, 0.0, 1e+35);
+                       }else{ 
+                         if(DICP[0]==1){
+                           dbar += pcmvnorm(predi[k], linki[k], G[k], i,  -1e+35, 0.0);    
+                         } 
+                         linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, -1e+35, 0.0);	
+                       }
+                       linki[k]->x[i] = linky->x[record];
+                       linki_tmp[k]->x[i] = linky->x[record];
+                     }
+                   break;
                  }
                }
-             }
+             }                                                                
            }
            dbar += densityl1;
 
            if(mvtype[cnt+j]<0){
 
-             densityl1 += cs_dmvnorm(linki, predi, ldet[k], Ginv[k]);
-             densityl2 += cs_dmvnorm(linki_tmp, predi, ldet[k], Ginv[k]);
+             densityl1 += cs_dmvnorm(linki[k], predi[k], ldet[k], Ginv[k]);
+             densityl2 += cs_dmvnorm(linki_tmp[k], predi[k], ldet[k], Ginv[k]);
+
              zn[p] *= rACCEPT; 
              wn[p] *= rACCEPT;
              wn[p] ++;
 
              if((densityl2-densityl1)>log(runif(0.0,1.0))){
                for(i=0; i<dimG; i++){
-                 linky->x[nlGR[k]*i+j+cnt2] = linki_tmp->x[i];
+                 linky->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i];
                }
                zn[p]++;
                Eaccl++;  
@@ -2088,12 +2136,9 @@ if(nL>0){
         cs_spfree(location);
         cs_spfree(location_tmp);
         cs_spfree(linky);
-        cs_spfree(linki);
-        cs_spfree(linki_tmp);
         cs_spfree(pred);
    	cs_spfree(mupred);
    	cs_spfree(mulinky);
-        cs_spfree(predi);
         cs_spfree(dev);                              
         cs_spfree(pvB);
         cs_spfree(pmuB);  
@@ -2120,6 +2165,8 @@ if(nL>0){
 	  cs_nfree(LambdaLU);
           cs_sfree(tYKrinvYS);
           cs_nfree(tYKrinvYL);
+          cs_spfree(tYKrinv);                                     
+          cs_spfree(tYKrinvY);   
         }
                                                   
         cs_nfree(L);
@@ -2179,44 +2226,56 @@ if(nL>0){
 	    cs_nfree(propCinvL[i+nGR]);
 	    cs_spfree(muC[i]);
  	    cs_spfree(muC[i+nGR]);
+            cs_spfree(linki[i]);
+            cs_spfree(linki_tmp[i]);
+            cs_spfree(predi[i]);
         }
 
-        free(cond);
-        free(keep);
-        free(diagLambdaL);
-        free(diagLambdaU);
-        free(t);
-        free(sd);
-        free(wn); 
-        free(zn);
-        free(ldet);
-        free(cumsum_ncutpoints);
-        free(oldcutpoints);
-        free(newcutpoints);
-        free(sdcp);
-        free(wncp);
-        free(zncp);
-        free(accp);
-        free(cutpointMHR);
-        free(Ginv);
-        free(muG);	
-        free(propC);
-        free(propCinv);
-        free(muC);
-        free(G);
-        free(pG);
-        free(CM);
-        free(Gtmp);
-        free(Grv); 
-        free(GinvS);
-        free(GinvL);
-        free(propCinvS);
-        free(propCinvL);
-        free(KGinv);
-        free(lambda);
-        free(lambdaI);
-        free(Lambda);
-        free(Lambda_tmp);
+        delete [] cond;
+        delete [] keep;
+        delete [] t;
+        delete [] sd;
+        delete [] wn; 
+        delete [] zn;
+        delete [] ldet;
+        delete [] cumsum_ncutpoints;
+        delete [] oldcutpoints;
+        delete [] newcutpoints;
+        delete [] cutpoints_updated;
+        delete [] sdcp;
+        delete [] wncp;
+        delete [] zncp;
+        delete [] accp;
+        delete [] cutpointMHR;
+        delete [] Ginv;
+        delete [] muG;	
+        delete [] propC;
+        delete [] propCinv;
+        delete [] muC;
+        delete [] linki;
+        delete [] linki_tmp;
+        delete [] predi;
+        delete [] G;
+        delete [] pG;
+        delete [] CM;
+        delete [] Gtmp;
+        delete [] Grv; 
+        delete [] GinvS;
+        delete [] GinvL;
+        delete [] propCinvS;
+        delete [] propCinvL;
+        delete [] KGinv;
+        delete [] KGinvL;  
+        delete [] KGinvS;
+        delete [] A;
+        delete [] bv;
+        delete [] bv_tmp;
+        delete [] diagLambdaL;
+        delete [] diagLambdaU;
+        delete [] lambda;
+        delete [] lambdaI;
+        delete [] Lambda;
+        delete [] Lambda_tmp;
 }
 }
 

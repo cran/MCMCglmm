@@ -16,5 +16,5 @@
 #include "R.h" 
 #include "Rmath.h" 
 
-cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, double Roldldet);
+cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, double Roldldet, const cs *pG);
 

@@ -177,8 +177,8 @@ void rbv(
   cs_spfree(Grv);
   cs_sfree(GinvS);                
   cs_nfree(GinvL);        
-  free(f);
-  free(AN);
-  free(li);
+  delete[] f;
+  delete[] AN;
+  delete[] li;
 }
 }

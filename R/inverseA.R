@@ -1,5 +1,5 @@
 inverseA<-
-function (pedigree = NULL, nodes = "ALL", scale = TRUE) 
+function (pedigree = NULL, nodes = "ALL", scale = TRUE, reduced=FALSE) 
 {
     ped = TRUE
     if (length(attr(pedigree, "class")) != 0) {
@@ -98,6 +98,17 @@ function (pedigree = NULL, nodes = "ALL", scale = TRUE)
         else {
             node.names <- pedigree[, 1]
         }
+        mii<-rep(0, length(dii))
+        if(reduced){
+           parents<-which(as.character(pedigree[,1])%in%union(as.character(pedigree[,2]), as.character(pedigree[,3])))
+           Ainv<-inverseA(pedigree[parents,])$Ainv
+           pedigree<-apply(pedigree, 2, as.character)
+           pedigree[,2][parents]<-pedigree[,1][parents]
+           pedigree[,3][parents]<-pedigree[,1][parents]
+           mii<-dii
+           mii[parents]<-0
+           node.names<-pedigree[,1][parents]
+        }
     }
     else {
         if (any(duplicated(c(pedigree$tip.label, pedigree$node.label)))) {
@@ -120,7 +131,7 @@ function (pedigree = NULL, nodes = "ALL", scale = TRUE)
         roots <- setdiff(pedigree$edge[, 1], pedigree$edge[, 
             2])
         reorder <- order((pedigree$edge[, 1] %in% roots == FALSE) * 
-            pedigree$edge[, 2] + 1e+07 * (pedigree$edge[, 2] <= 
+            pedigree$edge[, 2] + 1e+10 * (pedigree$edge[, 2] <= 
             length(pedigree$tip.label)))
         id <- pedigree$edge[, 2][reorder]
         tips <- which(id <= length(pedigree$tip.label))
@@ -142,6 +153,18 @@ function (pedigree = NULL, nodes = "ALL", scale = TRUE)
                 ind <- dam[ind]
             }
             inbreeding <- inbreeding/root2tip
+        }
+        mii<-rep(0, length(inbreeding))
+        if(reduced){
+          parents<-which(as.character(pedigree[,1])%in%union(as.character(pedigree[,2]), as.character(pedigree[,3])))
+          mii<-inbreeding
+          mii[parents]<-0
+          dam<-dam[parents]
+          id<-id[parents]
+          tips<-match(pedigree[,2][tips], id)
+          inbreeding<-inbreeding[parents]
+          node.names<-pedigree[,1][parents]
+          pedigree[,2][parents]<-pedigree[,1][parents]
         }
         Ainv <- Matrix(0, length(dam), length(dam))
         off <- tapply(id, dam, function(x) {
@@ -174,5 +197,5 @@ function (pedigree = NULL, nodes = "ALL", scale = TRUE)
     rownames(Ainv) <- node.names
     return(list(Ainv = Ainv, inbreeding = inbreeding, dii = dii, 
         node.names = node.names, pedigree = pedigree, phylogeny = ped != 
-            TRUE))
+            TRUE, mii=mii))
 }

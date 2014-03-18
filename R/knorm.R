@@ -22,6 +22,6 @@ knorm<-function(V,k){
       }
       MM<-MM+ah*Ksigma
   }
-  as.tensor(array(KPM%*%MM%*%KPM, dim=rep(m,k*2)))
+  to.tensor(array(KPM%*%MM%*%KPM, dim=rep(m,k*2)))
 }
 

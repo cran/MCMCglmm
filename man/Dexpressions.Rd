@@ -24,7 +24,7 @@ linear predictor (d1f) from the Poisson-Weibull (PW) model.}
   \item{PW.d3Wd3s}{}
   \item{PW.d3Wd3f}{}
   }
-\author{Jarrod Hadfield \email{jarrod.hadfield@zoo.ox.ac.uk}}
+\author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
 \seealso{\code{\link{Dtensor}}}
 \keyword{symbolmath}
 

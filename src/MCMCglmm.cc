@@ -1,4 +1,4 @@
-#include "MCMCglmm.h"
+#include "MCMCglmmcc.h"
 
 extern "C"{  
 
@@ -476,14 +476,12 @@ if(nL>0){
           tvc += dimG*dimG; 
         }
 
-
-        dimG = GRdim[nG];
-
 /**************************************/	
 /* Read in any condtional submatrices */
 /**************************************/
 	
 	for (k = 0 ; k < nGR; k++){	
+           dimG = GRdim[k];
 	   if(updateP[k]!=2){
 	     CM[k] = cs_spalloc(1,1,1,true, false);
            }else{	
@@ -763,7 +761,7 @@ if(nL>0){
    
         M = cs_multiply(WtmKRinv, W);
 
-// form Omega = bdiag(0, KGinv) 
+// form Omega = bdiag(pvB, KGinv) 
 
         Omega = cs_omega(KGinv, nG, pvB);
 
@@ -1736,7 +1734,7 @@ if(nL>0){
                        if(DICP[0]==1){
                          dbar += pcmvnorm(predi[k], linki[k], G[k], i, oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]], oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]);    
                        } 
-                       if(cutpoints_updated[nthordinal] == 1){
+                       if(cutpoints_updated[nthordinal] == 1 || itt==0){
                            linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, oldcutpoints[int(yP[record])-1+cumsum_ncutpoints[nthordinal]], oldcutpoints[int(yP[record])+cumsum_ncutpoints[nthordinal]]);
                        }
                        linki[k]->x[i] = linky->x[record];

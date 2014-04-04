@@ -1,4 +1,4 @@
-#include "dcmvnormR.h"
+#include "MCMCglmmcc.h"
 
 extern "C"{  
 

@@ -1,6 +1,6 @@
 #include "MCMCglmm.h"
 
-cs *cs_kroneckerI(const cs *A, int nI){
+cs *cs_kroneckerD(const cs *A, int nI, double *diag, int reciprocal){
 
     int i, j, k, cnt, anz, cnz, *Cp, *Ap, *Ci, *Ai, am, an, cm, cn;
     double *Cx, *Ax;
@@ -28,15 +28,25 @@ cs *cs_kroneckerI(const cs *A, int nI){
 	}
     }
     cnt = 0;
-    for(i = 0; i < an; i++){
+    if(reciprocal){
+      for(i = 0; i < an; i++){
      	for(j = 0 ; j < nI ; j++){
-            for(k = 0; k < am; k++){
-              Cx[cnt] = Ax[i*an+k];
-              cnt++;
-            }
+          for(k = 0; k < am; k++){
+            Cx[cnt] = Ax[i*an+k]/diag[j];
+            cnt++;
+          }
 	}
+      }
+    }else{
+     for(i = 0; i < an; i++){
+     	for(j = 0 ; j < nI ; j++){
+          for(k = 0; k < am; k++){
+            Cx[cnt] = Ax[i*an+k]*diag[j];
+            cnt++;
+          }
+	}
+      }
     }
-
     cs_sprealloc (C, 0) ;		// remove extra space from C 
     return (cs_done (C, NULL, NULL, 1)) ;	/* success; free workspace, return C */
 }

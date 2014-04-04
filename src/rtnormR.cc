@@ -1,4 +1,4 @@
-#include "rtnormR.h"
+#include "MCMCglmmcc.h"
 
 extern "C"{  
 

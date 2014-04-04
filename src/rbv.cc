@@ -1,5 +1,4 @@
-#include "rbv.h"
-
+#include "MCMCglmmcc.h"
 
 extern "C"{  
 

@@ -1,4 +1,4 @@
-#include "rIW.h"
+#include "MCMCglmmcc.h"
 
 extern "C"{  
 

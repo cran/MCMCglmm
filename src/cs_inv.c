@@ -1,4 +1,4 @@
-#include "cs_inv.h"
+#include "MCMCglmm.h"
 
 /* matrix inversion through Gauss-Jordan elimination: modified from numerical recipes */
 

@@ -1,4 +1,4 @@
-#include "cs_directsum.h"
+#include "MCMCglmm.h"
 
 cs *cs_directsum(cs **KGinv, int nG, int nGR){
 

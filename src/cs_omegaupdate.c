@@ -1,4 +1,4 @@
-#include "cs_omega.h"
+#include "MCMCglmm.h"
 
 void cs_omegaupdate(cs **KGinv, int nG, cs *pvB, const cs *C){
 

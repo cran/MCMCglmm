@@ -1,6 +1,4 @@
-#include "cs_dcmvnorm.h"
-
-#define LPIx2 1.837877066409345339082
+#include "MCMCglmm.h"
 
 double cs_dcmvnorm(const cs *beta,  const cs *mu, const cs *M, int *keep, int nkeep, int *cond, int ncond){
 

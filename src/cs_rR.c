@@ -1,4 +1,4 @@
-#include "cs_rR.h"
+#include "MCMCglmm.h"
 # define Dtol  1e-7
 
 cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, double Roldldet, const cs *pG){

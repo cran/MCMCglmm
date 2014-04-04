@@ -1,4 +1,4 @@
-#include "rtnorm.h"
+#include "MCMCglmm.h"
 
 double rtnorm(double mu, double sd, double lower, double upper)
 {

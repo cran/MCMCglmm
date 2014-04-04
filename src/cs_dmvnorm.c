@@ -1,6 +1,4 @@
-#include "cs_dmvnorm.h"
-
-#define LPIx2 1.837877066409345339082
+#include "MCMCglmm.h"
 
 double cs_dmvnorm(const cs *beta,  const cs *mu, double ldet, const cs *Minv){
 

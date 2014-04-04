@@ -1,4 +1,4 @@
-#include "cs_rinvwishart.h"
+#include "MCMCglmm.h"
 
 cs *cs_rinvwishart(const cs *A, double nu, const css *As){
     

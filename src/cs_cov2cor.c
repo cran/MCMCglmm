@@ -1,4 +1,4 @@
-#include "cs_cov2cor.h"
+#include "MCMCglmm.h"
 
 void cs_cov2cor(const cs *A){
     

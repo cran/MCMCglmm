@@ -1,4 +1,4 @@
-#include "cs_rwishart.h"
+#include "MCMCglmm.h"
 
 cs *cs_rwishart(const cs *A, double nu, const css *As){
     

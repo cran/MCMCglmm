@@ -538,6 +538,8 @@
 
     nR<-nr-nG-1  # number of R structures
 
+    if(nR>1 & diagR!=1){stop("sorry - block-diagonal R structures not yet implemented for responses involving multinomial data with more than 2 categories or zero-infalted/altered/hurdle models")}
+
     if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
 
     if(is.null(tune)){
@@ -1025,19 +1027,21 @@
         colnames(VCV)<-variance.names
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
 
-        if(diagR==2){
+        if(diagR==2){  # idh structures that were held as us 
           VCV<-VCV[,-c(((dim(VCV)[2]-nfl[nG+1]^2+1):dim(VCV)[2])[-diag(matrix(1:(nfl[nG+1]^2),nfl[nG+1],nfl[nG+1]))]),drop=FALSE]          
           colnames(VCV)[(dim(VCV)[2]-nfl[nG+1]+1):dim(VCV)[2]]<-sapply(colnames(VCV)[(dim(VCV)[2]-nfl[nG+1]+1):dim(VCV)[2]], function(x){substr(x, gregexpr(":", x)[[1]][ceiling(length(gregexpr(":", x)[[1]])/2)]+1, nchar(x))})
           nfl<-c(nfl,rep(1,nfl[nG+1]-1))
           nrl<-c(nrl,rep(nrl[nG+1],nfl[nG+1]-1))
+          nrt[nG+1]<-nfl[nG+1]
           nR<-nfl[nG+1]
-          nfl[nG+1]<-1          
+          nfl[nG+1]<-1        
         }
-        if(diagR==3){
+        if(diagR==3){ # trait:unit structures that were held as us 
           VCV<-VCV[,-((dim(VCV)[2]-nfl[nG+1]^2+2):dim(VCV)[2]),drop=FALSE]
           colnames(VCV)[dim(VCV)[2]]<-"trait:units" 
           nrl[nG+1]<-nrl[nG+1]*nfl[nG+1]
           nfl[nG+1]<-1
+          nrt[nG+1]<-1
           nR<-1
         }
 

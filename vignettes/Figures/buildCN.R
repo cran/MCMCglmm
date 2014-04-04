@@ -175,6 +175,10 @@ if(forCRAN){
  	system(paste("rm -f ", MCpath, "jss.bst", sep=""))
         tools::compactPDF(MCpath)
         tools::compactPDF(MCpath.old)
+	system(paste("cp ", MCpath, "CourseNotes.Rnw", MCpath, "Figures", sep=""))
+	system(paste("cp ", MCpath, "Overview.Rnw", MCpath, "Figures", sep=""))
+	system(paste("cp ", MCpath, "CourseNotes.pdf", MCpath.old, sep=""))
+	system(paste("cp ", MCpath, "Overview.pdf", MCpath.old, sep=""))
  	system(paste("rm -f ", MCpath, "Overview.ps", sep=""))
 }
 

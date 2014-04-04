@@ -1,5 +1,4 @@
-#include "inverseA.h"
-
+#include "MCMCglmmcc.h"
 
 extern "C"{  
 

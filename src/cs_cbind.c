@@ -1,4 +1,4 @@
-#include "cs_cbind.h"
+#include "MCMCglmm.h"
 
 cs *cs_cbind(const cs *A, const cs *B){
 

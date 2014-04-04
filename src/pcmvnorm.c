@@ -1,6 +1,4 @@
-#include "pcmvnorm.h"
-
-#define LPIx2 1.837877066409345339082
+#include "MCMCglmm.h"
 
 double pcmvnorm(const cs *predi, const cs *linki, const cs *G, int keep, double lower, double upper){
 

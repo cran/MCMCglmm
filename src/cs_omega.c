@@ -1,4 +1,4 @@
-#include "cs_omega.h"
+#include "MCMCglmm.h"
 
 cs *cs_omega(cs **KGinv, int nG, cs *pvB){
 

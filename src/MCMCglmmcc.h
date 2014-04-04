@@ -1,6 +1,8 @@
-#define _GENERAL_H
+#define _MCMCGLMMCC_H
+
 extern "C"{
 #include "cs.h"
+#include "MCMCglmm.h" 
 }
 #include <math.h>
 #include <map>                  
@@ -11,3 +13,6 @@ extern "C"{
 #include <iostream>
 #include <limits>
 using namespace std;
+
+
+

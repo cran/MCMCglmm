@@ -1,4 +1,4 @@
-#include "cs_rCinvwishart.h"
+#include "MCMCglmm.h"
 #ifndef  Ctol
 #define Ctol  1e-12
 #endif

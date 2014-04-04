@@ -1,4 +1,4 @@
-#include "cs_kroneckerI.h"
+#include "MCMCglmm.h"
 
 void cs_kroneckerIadd(const cs *A, int nI, const cs *C, double *mii){
 

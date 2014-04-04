@@ -6,6 +6,7 @@ vgam=TRUE
 verbose=FALSE
 plotit=FALSE
 DICtest=TRUE
+SUMtest=TRUE
 leg=TRUE
 nsim<-1 #10
 nitt<-10 #13000*5
@@ -36,7 +37,9 @@ if(abs(-2*sum(dpois(data$y1, exp(m1$Liab[1,]), log=TRUE))-m1$Deviance[2])<1e-6){
 }}
 
 m1<-MCMCglmm(cbind(y1)~1, family="poisson", data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -57,6 +60,9 @@ for(i in 1:nsim){
 y<-rbinom(100,10,plogis(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=10-y)
 m1<-MCMCglmm(cbind(y1,y2)~1, family="multinomial2", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -78,6 +84,9 @@ y<-rbinom(100,1,plogis(rnorm(100,1,1)))
 data=data.frame(y1=y, y2=1-y)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
 m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -106,8 +115,10 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
 }else{
  stop("Deviance wrong for sliced logit (res3b)")
 }}
-
 m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, slice=TRUE)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -140,7 +151,9 @@ if(abs(-2*sum(dnorm(data$y1, (cBind(m1$X, m1$Z)%*%m1$Sol[2,])@x, sqrt(m1$VCV[2,2
  stop("Deviance wrong for univariate Gaussian (res4)")
 }}
 m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -165,6 +178,9 @@ fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, c(-1), R)+mvrnorm(75, c(0), G)[fac]
 data=data.frame(y1=rbinom(300, 1,plogis(y)), fac=fac, y2=y)
 m1<-MCMCglmm(y1~1,random=~fac,  data=data, prior=prior, family="categorical",verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -189,6 +205,9 @@ Ped<-cbind(1:400, c(rep(NA,100), sample(1:50,300,TRUE)),c(rep(NA,100), sample(51
 y<-mvrnorm(300, c(-1), R)+rbv(Ped,G)[101:400]
 data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]), fac=gl(2,150))
 system.time(m1<-MCMCglmm(y1~1, random=~animal, pedigree=Ped, data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin))
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -215,6 +234,9 @@ bv<-rbv(Ped,G)[101:400,]
 y<-mvrnorm(300, c(-1), R)+bv[,1]+bv[,2]*x
 data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]), x=x)
 m1<-MCMCglmm(y1~1, random=~us(leg(x,1,FALSE)):animal, pedigree=Ped, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -243,6 +265,9 @@ facf<-gl(2,2,300)[rear]
 y<-mvrnorm(300, c(-1), R)+rowSums(mvrnorm(75, c(0,0), G)[fac,]*cbind(facf==1,facf==2))
 data=data.frame(y1=y, fac=fac, facf=facf)
 m1<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -267,6 +292,9 @@ facf<-as.factor(sample(1:2,300,replace=TRUE))
 y<-mvrnorm(300, c(-1), R)+rowSums(mvrnorm(75, c(0,0), G)[fac,]*cbind(facf==1,facf==2))
 data=data.frame(y1=y, fac=fac, facf=facf)
 m1<-MCMCglmm(y1~1,random=~idh(facf):fac,  data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -275,6 +303,9 @@ print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(
 }
 tpar<-c(-1, 1,0,0, 2, 2)
 m2<-MCMCglmm(y1~1,random=~us(facf):fac,  data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m2$Sol, m2$VCV)), ask=FALSE)
 }
@@ -321,6 +352,9 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
  stop("Deviance wrong for bivariate Gaussian with missing data (res8)")
 }}
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~us(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, pl=TRUE)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -353,6 +387,9 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
 }}
 
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","gaussian"), rcov=~idh(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -376,6 +413,9 @@ fac<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, c(-1,1), R)+mvrnorm(75, c(0,0), G)[fac,]
 data=data.frame(y1=y[,1], y2=y[,2], fac=fac)
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~idh(trait):fac, family=c("gaussian","gaussian"), rcov=~idh(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -400,7 +440,9 @@ y1<-rbinom(300,10,plogis(y[,1]))
 y2<-rbinom(300,10,plogis(y[,2]))
 data=data.frame(y1s=y1,y1f=10-y1,y2s=y2,y2f=10-y2, fac=fac)
 m1<-MCMCglmm(cbind(y1s,y1f,y2s,y2f)~trait-1, random=~us(trait):fac, family=c("multinomial2","multinomial2"), rcov=~idh(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -467,6 +509,9 @@ if(file.exists("~/Work/Jenny/Data/Intermediate/ThirdC.R")){
     firstP$nodead<-firstP$total-y
     tpar<-coef
     m1test<-MCMCglmm(l~virus+day, random=~us(virus):line+f2rep, rcov=~idh(virus):units, family=c("gaussian"), data=firstP, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1test$Sol, m1test$VCV)), ask=FALSE)
 }
@@ -476,6 +521,9 @@ print(paste(sum(HPDinterval(mcmc(cbind(m1test$Sol, m1test$VCV)))[,1]>tpar | HPDi
 
 
     m1test2<-MCMCglmm(cbind(noalive, nodead)~virus+day, random=~us(virus):line+f2rep, rcov=~idh(virus):units, family=c("multinomial2"), data=firstP, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m2)
+}
 if(plotit){
 plot(mcmc(cbind(m1test2$Sol, m1test2$VCV)), ask=FALSE)
 }
@@ -505,6 +553,9 @@ mev<-rchisq(300,10)
 y<-mvrnorm(300, c(-1), R)+rnorm(300, c(0), sqrt(mev))
 data=data.frame(y1=y)
 m1<-MCMCglmm(y1~1,data=data, prior=prior, mev=mev,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -537,6 +588,10 @@ if(any(y1==-Inf) | any(y2==Inf)){
   m1<-MCMCglmm(ym~1, data=data, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 }
   m2<-MCMCglmm(cbind(y1, y2)~1, data=data, family="cengaussian",verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
+if(SUMtest){
+summary(m2)
+}
   if(plotit){
     plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
   }
@@ -569,6 +624,9 @@ y1[100]<-l[100]
 y2[100]<-l[100]
 data=data.frame(y1=y1, y2=y2)
 m1<-MCMCglmm(cbind(y1, y2)~1, data=data, family="cenpoisson", prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -594,6 +652,9 @@ l<-mvrnorm(300,c(0,-1), R)
 y<-VGAM::rzipois(300, exp(1+l[,1]), plogis(l[,2]))
 data=data.frame(y1=y)
 m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -619,7 +680,9 @@ tpar<-c(1, -0.5, 0.2, 1,1,1)
 	y<-VGAM::rzipois(300, exp(1+l[,1]+r[fac]+0.2*x), plogis(l[,2]))
 	data=data.frame(y1=y, x=x, fac=fac)
 	m1<-MCMCglmm(y1~trait+at.level(trait, 1):x-1, random=~us(at.level(trait,1)):fac, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
        if(plotit){
           plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
        }
@@ -665,6 +728,9 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
  stop("Deviance wrong for idh bivariate Gaussian/categorical (res20)")
 }}
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, family=c("gaussian","categorical"), rcov=~us(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -705,6 +771,11 @@ data=data.frame(y1=y, time=time, ind=ind)
 	m1<-MCMCglmm(y1~time, random=~us(leg(time,0,FALSE)):ind+us(leg(time,-1,FALSE)):ind, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 	m2<-MCMCglmm(y1~time, random=~idh(leg(time,1,FALSE)):ind, data=data, prior=prior2,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
         m3<-MCMCglmm(y1~time, random=~us(1+poly(time,1, raw=TRUE)):ind, data=data, prior=prior2,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+summary(m2)
+summary(m3)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -746,6 +817,9 @@ y[j]<-which(rmultinom(1,1,prob=c(1,exp(l[j,][1]), exp(l[j,][2])))==1)
 
 data=data.frame(y=y, fac=fac)
 m1<-MCMCglmm(y~trait-1, random=~us(trait):fac, family=c("categorical"), rcov=~us(trait):units, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -792,7 +866,9 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
  stop("Deviance OK for sliced probit (res23)")
 }}
 m1<-MCMCglmm(y1~xcov,data=data, prior=prior, family="ordinal", verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, slice=TRUE)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -827,7 +903,9 @@ for(j in 1:300){
 
 data=data.frame(y1=y1, fac=fac, xcov=x)
 m1<-MCMCglmm(y1~xcov,data=data, prior=prior, family="ordinal", verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -868,6 +946,9 @@ for(j in 1:300){
 
 data=data.frame(y1=y1, y2=y2, fac=fac, xcov=x)
 m1<-MCMCglmm(cbind(y1,y2)~trait+trait:xcov-1,random=~us(trait):fac, rcov=~idh(trait):units, data=data, prior=prior, family=cbind("ordinal", "ordinal"),verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -893,6 +974,9 @@ fac2<-as.factor(sample(1:75,300,replace=TRUE))
 y<-mvrnorm(300, 0, R)+mvrnorm(75, 0, G)[fac1]+mvrnorm(75, 0, G)[fac2]
 data=data.frame(y=y, fac1=fac1,fac2=fac2)
 m1<-MCMCglmm(y~1,random=~idv(fac1+fac2), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -923,7 +1007,9 @@ fac3<-as.factor(sample(1:3, 300, T))
 y<-mvrnorm(300, 0, R)+mvrnorm(75, 0, G)[fac1]+mvrnorm(75, 0, G)[fac2]+rnorm(75,0,sqrt(G2))[id]
 data=data.frame(y=y, fac1=fac1,fac2=fac2, fac3=fac3, id=id)
 m1<-MCMCglmm(y~fac3,random=~idv(fac1+fac2)+id, data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(mcmc(m1$Sol[,1:3]), m1$VCV)), ask=FALSE)
 }
@@ -950,7 +1036,9 @@ for(i in 1:nsim){
 	y<-mvrnorm(300, mu, R)
 	data=data.frame(apply(y,2, function(x){rbinom(length(x), 1, plogis(x))}))
 	m1<-MCMCglmm(cbind(X1, X2)~trait-1,rcov=~corg(trait):units, family=rep("categorical", nT), data=data, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-	
+if(SUMtest){
+summary(m1)
+}	
 	if(plotit){
 		plot(mcmc(cbind(mcmc(m1$Sol), m1$VCV)), ask=FALSE)
 	}
@@ -989,6 +1077,9 @@ for(i in 1:nsim){
 	}
 	data=data.frame(y1=y1, y2=y2, fac=fac, xcov=x)
 	m1<-MCMCglmm(cbind(y1, y2)~trait+trait:xcov-1,rcov=~corg(trait):units, data=data, prior=prior, family=c("ordinal", "ordinal"), verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 	if(plotit){
 		plot(mcmc(cbind(m1$CP, m1$Sol, m1$VCV)), ask=FALSE)
 	}
@@ -1019,6 +1110,9 @@ data=data.frame(y=y)
 prior=list(R=list(V=diag(2), fix=2, nu=1))
 m1<-MCMCglmm(y~trait-1, rcov=~idh(trait):units, data=data, family="hupoisson", prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 res30[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
+if(SUMtest){
+summary(m1)
+}
 	if(plotit){
 		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 	}
@@ -1066,7 +1160,9 @@ y<-rgeom(n,plogis(rnorm(n,-1,sqrt(0.5))))
 
 dat<-data.frame(y=y)
 m1<-MCMCglmm(y~1, family="geometric", data=dat, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 res32[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 
         if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)){
@@ -1090,6 +1186,9 @@ l<-mvrnorm(300,c(0,-1), R)
 y<-VGAM::rzibinom(300, 20, exp(l[,1])/(1+exp(l[,1])), plogis(l[,2]))
 data=data.frame(success=y,failure=20-y)
 m1<-MCMCglmm(cbind(success,failure)~trait-1, rcov=~idh(trait):units, data=data, family="zibinomial",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -1154,6 +1253,9 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
  stop("Deviance wrong for univariate threshold (res35)")
 }}
 m1<-MCMCglmm(y~x, family="threshold", data=data, verbose=verbose, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol)), ask=FALSE)
 }
@@ -1185,7 +1287,9 @@ y[,2]<-y[,2]-0.5*x
 data=data.frame(y1=y[,1], y2=as.numeric(y[,2]>0), x=x)
 
 m1<-MCMCglmm(cbind(y1,y2)~trait-1+trait:x, rcov=~us(trait):units, family=c("gaussian", "threshold"), data=data, verbose=verbose, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -1212,7 +1316,9 @@ A<-inverseA(tree)
 data=data.frame(y=as.numeric(y>0), x=x, species=tree$tip.label)
 plot(data$y)
 m1<-MCMCglmm(y~1, random=~species, rcov=~units, family="threshold", ginv=list(species=A$Ainv),verbose=verbose,  data=data, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -1243,7 +1349,9 @@ data=data.frame(y1=as.numeric(y[,1]>0), y2=as.numeric(y[,2]>0), g1=y[,1], g2=y[,
 prior=list(R=list(V=diag(2), nu=3), G=list(G1=list(V=G, nu=3)))
 
 m1<-MCMCglmm(cbind(y1, y2)~trait-1+trait:x, random=~us(trait):id, rcov=~corg(trait):units, family=c("threshold","threshold"), data=data, verbose=verbose, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol)), ask=FALSE)
 }
@@ -1280,7 +1388,9 @@ dat<-data.frame(y1=y1, y2=y2, fac=fac, id=BTped[,1][which(!is.na(BTped[,2]))])
 A<-inverseA(BTped)
 
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~us(trait):id, rcov=~us(trait:at.level(fac,1)):units+idh(trait:at.level(fac,2)):units, data=dat, family=rep("gaussian", 2), prior=prior, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
@@ -1322,7 +1432,9 @@ for(i in 1:nsim){
      m1<-MCMCglmm(y~x, random=~mother, rcov=~idh(taxon):units, ginverse=list(mother=A$Ainv),
      data=dat, prior=prior, verbose=FALSE, family="threshold")
 
-
+if(SUMtest){
+summary(m1)
+}
 if(plotit){
 plot(mcmc(m1$Sol), ask=FALSE)
 }
@@ -1387,7 +1499,9 @@ if(abs(-2*d-m1$Deviance[2])<1e-6){
 }}
 
 m1<-MCMCglmm(cbind(y1,y2, y3)~trait-1+trait:x, rcov=~us(trait):units, family=c("gaussian", "poisson", "threshold"), data=data, verbose=verbose, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
-
+if(SUMtest){
+summary(m1)
+}
 
 if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)

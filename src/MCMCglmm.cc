@@ -482,7 +482,7 @@ if(nL>0){
 	
 	for (k = 0 ; k < nGR; k++){	
            dimG = GRdim[k];
-	   if(updateP[k]!=2){
+	   if(updateP[k]!=2 & updateP[k]!=4){
 	     CM[k] = cs_spalloc(1,1,1,true, false);
            }else{	
 	     cnt = 0;	
@@ -1131,6 +1131,10 @@ if(nL>0){
 		case 3:  
 		  G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i], pG[i]);
 		break;
+
+		case 4:  
+		  G[i] = cs_rRsubinvwishart(Gtmp[i], double(nlGR[i]), splitP[i], GRnpP[i], pG[i], CM[i]);
+		break;
 	     }
 	     ldet[i] = log(cs_invR(G[i], Ginv[i]));             
 	     cs_nfree(GinvL[i]);
@@ -1195,6 +1199,10 @@ if(nL>0){
 	        case 3:
  		  G[i] = cs_rR(Gtmp[i], double(nlGR[i]), GRnpP[i], GinvS[i], Ginv[i], ldet[i], pG[i]);  
 	        break;
+
+		case 4:  
+		  G[i] = cs_rRsubinvwishart(Gtmp[i], double(nlGR[i]), splitP[i], GRnpP[i], pG[i], CM[i]);
+		break;
 	      }					
 	      if(diagR>0){
 	        cnt=0;  

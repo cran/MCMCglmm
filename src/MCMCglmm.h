@@ -38,11 +38,13 @@ cs *cs_omega(cs **KGinv, int nG, cs *pvB);
 void cs_omegaupdate(cs **KGinv, int nG, cs *pvB, const cs *C);
 /* overwrites C with the direct sum of pvB KGinv[1] KGinv[2] ... KGinv[nG] */
 cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM);
-/* samples from the conditional inverse Wishart*/
+/* samples from the conditional inverse Wishart given *inverse* scale matrix A*/
 cs *cs_rinvwishart(const cs *A, double nu, const css *As);
-/* samples from the inverse Wishart*/
+/* samples from the inverse Wishart given *inverse* scale matrix A*/
+cs *cs_rRsubinvwishart(const cs *A, double nu, int split, double nuR, const cs *pG, const cs *CM);
+/* samples a correlation sub-matrix, then conditions on it and samples from inverse-Wishart given scale matrix A (CM is the correlation sub-matrix from the previous iteration)*/
 cs *cs_rR(const cs *A, double nu, double nuR, const css *As, const cs *Roldinv, double Roldldet, const cs *pG);
-/* samples a correlation matrix*/
+/* samples a correlation matrix given scale matrix A */
 cs *cs_rwishart(const cs *A, double nu, const css *As);
 /* samples from the Wishart*/
 void cs_sortdv(const cs *A);

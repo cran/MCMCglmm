@@ -1,4 +1,4 @@
-#source("~/Work/AManal/MCMCglmm_2.18/vignettes/Figures/buildCN.R")
+#source("~/Work/AManal/MCMCglmm_2.19/vignettes/Figures/buildCN.R")
 #set.seed(32)
 set.seed(34)
 alone=FALSE
@@ -22,8 +22,8 @@ options(width=60)
 #
 
 UPpath="~/Work/AManal/UP_course/Tex/"
-MCpath="~/Work/AManal/MCMCglmm_2.18/vignettes/"
-MCpath.old="~/Work/AManal/MCMCglmm_2.18/inst/doc/"
+MCpath="~/Work/AManal/MCMCglmm_2.19/vignettes/"
+MCpath.old="~/Work/AManal/MCMCglmm_2.19/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)
@@ -175,10 +175,10 @@ if(forCRAN){
  	system(paste("rm -f ", MCpath, "jss.bst", sep=""))
         tools::compactPDF(MCpath)
         tools::compactPDF(MCpath.old)
-	system(paste("cp ", MCpath, "CourseNotes.Rnw", MCpath, "Figures", sep=""))
-	system(paste("cp ", MCpath, "Overview.Rnw", MCpath, "Figures", sep=""))
-	system(paste("cp ", MCpath, "CourseNotes.pdf", MCpath.old, sep=""))
-	system(paste("cp ", MCpath, "Overview.pdf", MCpath.old, sep=""))
+	system(paste("cp ", MCpath, "CourseNotes.Rnw ", MCpath, "Figures", sep=""))
+	system(paste("cp ", MCpath, "Overview.Rnw ", MCpath, "Figures", sep=""))
+	system(paste("cp ", MCpath, "CourseNotes.pdf ", MCpath.old, sep=""))
+	system(paste("cp ", MCpath, "Overview.pdf ", MCpath.old, sep=""))
  	system(paste("rm -f ", MCpath, "Overview.ps", sep=""))
 }
 

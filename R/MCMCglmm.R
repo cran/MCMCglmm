@@ -433,7 +433,9 @@
           prior$G<-list(G1=list(V=as.matrix(1), nu=1, fix=1))
         }
       }else{
-        random<-update(random,~.+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta)
+        print(random)
+        random<-paste(paste(as.character(random), collapse=""),"+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta", sep="")
+        print(random)
         if(is.null(start$G)==FALSE){
           start$G[[length(start$G)+1]]<-as.matrix(1)
         }
@@ -512,9 +514,7 @@
              prior$R<-list(R1=prior$R)
           }
         }
-
         GRtmp<-priorformat(if(NOpriorG){NULL}else{prior$R[[r-ngstructures]]},if(NOstartG){NULL}else{start$R[[r-ngstructures]]}, Zlist$nfl, meta=any(grepl("MCMC_meta", rmodel.terms[r])), diagR=diagR)
-
        }
        for(i in 1:length(GRtmp$prior)){
          GRprior[[nr]]<-GRtmp$prior[[i]]  
@@ -828,7 +828,7 @@
 
     split<-unlist(lapply(GRprior, function(x){x$fix}))
     if(any(split>nfl | (split<1 & split!=0))){stop("fix term in priorG/priorR must be at least one less than the dimension of V")}
-    if(any(split>1 & grepl("cor", update))){stop("sorry, fix terms cannot yet be used in conjunction with cor structures")}
+    if(any(split>1 & grepl("corg|corgh", update))){stop("sorry, fix terms cannot yet be used in conjunction with corg/corh structures")}
 
     if(diagR==2){  # need to reform priors such that the marginal distribution of us is equal to distribution of idh 
       GRprior[[nG+nR]]$V<-GRprior[[nG+nR]]$V*GRprior[[nG+nR]]$n/(GRprior[[nG+nR]]$n+(dim(GRprior[[nG+nR]]$V)[1]+1))
@@ -836,7 +836,6 @@
     }	
     GRinv<-unlist(lapply(GR, function(x){c(solve(x))}))
     GRvpP<-lapply(GRprior, function(x){(x$V)*(x$n)})
-
     if(any(update=="corg")){  # correlation matrices get I which is removed from Gtmp.
       for(i in which(update=="corg")){
 	GRvpP[[i]]<-diag(nrow(GRprior[[i]]$V))  	
@@ -846,12 +845,19 @@
       for(i in which(update=="corgh")){
 	GRvpP[[i]]<-diag(diag(GRprior[[i]]$V))  	
       }
-    }	 
+    }
+    if(any(update=="cors")){  # correlation sub-matrix gets I which is removed from Gtmp.
+      for(i in which(update=="cors")){
+	GRvpP[[i]][GRprior[[i]]$fix:nrow(GRprior[[i]]$V),GRprior[[i]]$fix:nrow(GRprior[[i]]$V)]<-diag(length(GRprior[[i]]$fix:nrow(GRprior[[i]]$V))) 	
+      }
+    }	
+	 
     GRvpP<-unlist(GRvpP)
     if(diagR==3){  # need to add aditional prior nu because of way trait:units are updated
       GRprior[[nG+nR]]$n<-GRprior[[nG+nR]]$n+(nrl[nG+nR]+1)*(dim(GRprior[[nG+nR]]$V)[1]-1)
     }
     GRnpP<-unlist(lapply(GRprior, function(x){c(x$n)}))      
+ 
     BvpP<-c(solve(prior$B$V), sum(prior$B$V!=0)==dim(prior$B$V)[1])
     BmupP<-c(prior$B$mu)
     if(nL>0){
@@ -878,13 +884,15 @@
 
     update[which(update=="idh" | update=="idv" | update=="us")]<-1
     update[which(update==1 & split>1)]<-2
-    update[grep("cor", update)]<-3
+    update[grep("corg|corgh", update)]<-3
     update[which(split==1)]<-0
+    update[grep("cors", update)]<-4
 
     # update codes: 0 fixed - do not sample;
     #             : 1 unstructured 
     #             : 2 block diagonal constrained 
     #             : 3 correlation
+    #             : 4 unstructured with correlation sub-matrix
 
     # diagR codes:  1 normal
     #            :  2 idh(trait):units specification turned into us(trait):units to keep latent variables together
@@ -934,6 +942,7 @@
          DIC<-FALSE
       }
     }
+
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
         as.double(data$MCMC_y.additional),

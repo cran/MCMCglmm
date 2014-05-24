@@ -386,7 +386,8 @@ and we can use this to predict the change in variance as a function of \texttt{T
 \begin{Schunk}
 \begin{Sinput}
 > pos.time <- seq(0, 21, length = 100)
-> polynomial <- leg(pos.time, 2, normalized = FALSE)
+> polynomial <- cbind(rep(1, 100), poly(pos.time, 
++     2, raw = TRUE))
 > beta.1 <- c(posterior.mode(m4a.1$Sol[, 1]), posterior.mode(m4a.1$Sol[, 
 +     5]), posterior.mode(m4a.1$Sol[, 6]))
 > beta.2 <- c(posterior.mode(m4a.2$Sol[, 1]), posterior.mode(m4a.2$Sol[, 

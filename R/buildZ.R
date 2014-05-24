@@ -20,6 +20,9 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
   if(length(grep("^corgh\\(", x))>0){
     vtype<-"corgh"
   }
+  if(length(grep("^cors\\(", x))>0){
+    vtype<-"cors"
+  }
   if(length(grep("^idv\\(", x))>0){
     vtype<-"idv"
   }
@@ -30,7 +33,7 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
     rtype<-"str"
   }
 
-  fformula<-gsub("^(us|corg|corgh|corh|cor|idh|idv)\\(", "", x)
+  fformula<-gsub("^(us|corg|corgh|corh|cor|cors|idh|idv)\\(", "", x)
 
   if(grepl("^str\\(|^mm\\(", fformula)){
     fformula<-paste("):", fformula, sep="")

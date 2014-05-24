@@ -1514,11 +1514,68 @@ print(i)
 }
 psets<-c(psets, tpar)
 
-est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29, res30, res31, res32, res33, res34, res35, res36, res37, res38, res39, res40, res41), na.rm=T)
+print("res42")  # Trivariate: 1 Gaussian, 2 threshold with correlation sub-matrix
 
-np<-c(ncol(res1), ncol(res2), ncol(res3), ncol(res3b), ncol(res4), ncol(res4c), ncol(res5),ncol(res5b),ncol(res6), ncol(res7),ncol(res7b), ncol(res8),ncol(res9), ncol(res10), ncol(res11), ncol(res12), ncol(res13), ncol(res14), ncol(res15), ncol(res17a),ncol(res17b), ncol(res18), ncol(res19), ncol(res19b), ncol(res20), ncol(res21), ncol(res21b), ncol(res21c), ncol(res22), ncol(res23), ncol(res24), ncol(res25), ncol(res26), ncol(res27), ncol(res28), ncol(res29), ncol(res30), ncol(res31), ncol(res32), ncol(res33), ncol(res34), ncol(res35), ncol(res36), ncol(res37), ncol(res38), ncol(res39), ncol(res40), ncol(res41))
+library(MASS)
+library(MCMCglmm)
 
-nam<-c("res1", "res2", "res3", "res3b", "res4", "res4c", "res5","res5b","res6", "res7","res7b", "res8","res9", "res10", "res11", "res12", "res13", "res14", "res15", "res17a","res17b", "res18", "res19", "res19b", "res20", "res21", "res21b", "res21c", "res22", "res23", "res24", "res25", "res26", "res27", "res28", "res29", "res30", "res31", "res32", "res33", "res34", "res35", "res36", "res37", "res38", "res39", "res40", "res41")
+vgam=TRUE
+verbose=FALSE
+plotit=FALSE
+DICtest=TRUE
+SUMtest=TRUE
+leg=TRUE
+nsim<-20
+nitt<-13000
+thin<-10
+burnin<-3000
+
+res42<-matrix(0, nsim, 15)
+
+R<-diag(c(2,1,1))
+R[1,3]<-R[3,1]<-1
+R[2,3]<-R[3,2]<-0.25
+
+cp<-1
+tpar<-c(1,0,0.5, -1, 0,-0.5, c(R), cp)
+
+prior<-list(R=list(V=R, nu=0, fix=2))
+
+for(i in 1:nsim){
+
+y<-mvrnorm(100, c(1, 0, 0.5), R)
+x<-rnorm(100)
+y[,1]<-y[,1]-x
+y[,2]<-y[,2]
+y[,3]<-y[,3]-0.5*x
+
+
+data=data.frame(y1=y[,1], y2=y[,2]>0, y3=y[,3]>0, x=x)
+
+if(DICtest){print("DIC not available for this model")}
+m1<-MCMCglmm(cbind(y1,y2, y3)~trait-1+trait:x, rcov=~cors(trait):units, family=c("gaussian", "threshold", "threshold"), data=data, prior=prior, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+
+if(SUMtest){
+summary(m1)
+}
+
+if(plotit){
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res36 different from expected"))
+}
+res42[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
+psets<-c(psets, tpar)
+
+
+est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29, res30, res31, res32, res33, res34, res35, res36, res37, res38, res39, res40, res41, res42), na.rm=T)
+
+np<-c(ncol(res1), ncol(res2), ncol(res3), ncol(res3b), ncol(res4), ncol(res4c), ncol(res5),ncol(res5b),ncol(res6), ncol(res7),ncol(res7b), ncol(res8),ncol(res9), ncol(res10), ncol(res11), ncol(res12), ncol(res13), ncol(res14), ncol(res15), ncol(res17a),ncol(res17b), ncol(res18), ncol(res19), ncol(res19b), ncol(res20), ncol(res21), ncol(res21b), ncol(res21c), ncol(res22), ncol(res23), ncol(res24), ncol(res25), ncol(res26), ncol(res27), ncol(res28), ncol(res29), ncol(res30), ncol(res31), ncol(res32), ncol(res33), ncol(res34), ncol(res35), ncol(res36), ncol(res37), ncol(res38), ncol(res39), ncol(res40), ncol(res41), ncol(res42))
+
+nam<-c("res1", "res2", "res3", "res3b", "res4", "res4c", "res5","res5b","res6", "res7","res7b", "res8","res9", "res10", "res11", "res12", "res13", "res14", "res15", "res17a","res17b", "res18", "res19", "res19b", "res20", "res21", "res21b", "res21c", "res22", "res23", "res24", "res25", "res26", "res27", "res28", "res29", "res30", "res31", "res32", "res33", "res34", "res35", "res36", "res37", "res38", "res39", "res40", "res41", "res42")
 
 nam<-paste(rep(nam,np), unlist(sapply(np,function(x){1:x})), sep=".")
 

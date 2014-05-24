@@ -4,8 +4,8 @@
 #endif
 
 cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
-    
-    cs  *T1inv, *A11, *A12, *A21, *A22, *A11Schur, *halfA11Schur, *CinvSchur, *halfCinvSchur, *A11inv, *Ainv, *varT2, *varT2inv, *IW, *IW11, *halfA11SchurT, *halfCSchur, *CMinv;
+
+    cs  *T1inv, *A11, *A12, *A21, *A22, *A11Schur, *halfA11Schur, *CinvSchur, *A11inv, *varT2, *varT2inv, *IW, *IW11, *halfA11SchurT, *halfCSchur;
     csn *varT2invL;
     css *As, *T2s;
     int nA = A->n,
@@ -20,8 +20,6 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
     A12 = cs_spalloc (nC, split, nC*split, 1, 0);	
     A22 = cs_spalloc (nC, nC, nC*nC, 1, 0);		
     IW = cs_spalloc (nA, nA, nA*nA, 1, 0);	
-
-    Ainv = cs_inv(A);
 
     for (i = 0 ; i < split; i++){
       A11->p[i] = i*split;
@@ -79,16 +77,14 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
     
     for (i = 0 ; i < (nC*split); i++){
       halfA11Schur->x[i] +=  Rv[i];  
-      halfA11Schur->x[i] *= -1.0;  // This equals T2 from G&S 
+      halfA11Schur->x[i] *= -1.0;  // This equals -T2 from Koorsgard et al 
     }
 
-    halfA11SchurT = cs_transpose(halfA11Schur, TRUE);
-    halfCSchur = cs_multiply(CM, halfA11SchurT);
-	CMinv = cs_inv(CM);
-    halfCinvSchur = cs_multiply(CMinv, halfA11SchurT);	
-    CinvSchur = cs_multiply(halfA11Schur, halfCSchur);
+    halfA11SchurT = cs_transpose(halfA11Schur, TRUE);  // -T2'
+    halfCSchur = cs_multiply(CM, halfA11SchurT);       // -T3^{-1}T2'   
+    CinvSchur = cs_multiply(halfA11Schur, halfCSchur); // T2T3^{-1}T2' 
 
-    IW11 = cs_add(T1inv, CinvSchur, 1.0,1.0);
+    IW11 = cs_add(T1inv, CinvSchur, 1.0,1.0);          // T1^{-1}+T2T3^{-1}T2'
     cnt = 0;
 
     for (i = 0 ; i < split; i++){
@@ -100,7 +96,7 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
       }
       for (j = 0; j < nC; j++){
         IW->i[cnt] = j+split;
-        IW->x[cnt] = halfCinvSchur->x[i*nC+j];
+        IW->x[cnt] = halfCSchur->x[i*nC+j];
         cnt++;
       }
     }
@@ -108,12 +104,12 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
       IW->p[(i+split)] = (i+split)*nA;
       for (j = 0; j < split; j++){
         IW->i[cnt] = j;
-        IW->x[cnt] = halfCinvSchur->x[j*nC+i];
+        IW->x[cnt] = halfCSchur->x[j*nC+i];
         cnt++;
       }
       for (j = 0 ; j < nC; j++){
         IW->i[cnt] = j+split;
-		  IW->x[cnt] = CM->x[i*nC+j];
+        IW->x[cnt] = CM->x[i*nC+j];
         cnt++;
       }
     } 
@@ -124,18 +120,15 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
     cs_spfree(A12);
     cs_spfree(A21);
     cs_spfree(A22);
-    cs_spfree(Ainv);
     cs_spfree(A11inv);
     cs_spfree(A11Schur);
     cs_spfree(halfA11Schur);
     cs_spfree(CinvSchur);
-	cs_spfree(halfCSchur);
-    cs_spfree(halfCinvSchur);
+    cs_spfree(halfCSchur);
     cs_spfree(halfA11SchurT);
     cs_spfree(varT2);
     cs_spfree(varT2inv);
     cs_spfree(IW11);
-	cs_spfree(CMinv);
     cs_nfree(varT2invL);
     cs_sfree(T2s);
     cs_sfree(As);

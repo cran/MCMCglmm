@@ -64,10 +64,7 @@ priorformat<-function(prior, start, nfl, meta, diagR){
            }
          } 
          if(prior$fix!=0){
-           CM<-prior$V[prior$fix:nrow(prior$V),prior$fix:nrow(prior$V)]
-           if(sum(CM!=0)>nrow(prior$V) & prior$fix>1){
-             stop("sorry - matrices to be conditioned on must be diagonal")
-           }           
+           CM<-prior$V[prior$fix:nrow(prior$V),prior$fix:nrow(prior$V)]         
            if(prior$fix!=1){
              if(is.null(prior$n)){
                stop("nu not specified for some prior$G/prior$R elements")

@@ -98,13 +98,13 @@ where the parameter (co)variance matrices (${\bf V}$) are usually low-dimensiona
 In the case of ordinal probit models with $>2$ categories (i.e. \texttt{"threshold"} or \texttt{"ordinal"} models), $f_{T}/f_{O}$ depends on an extra set of parameters in addition to the latent variable: the $\textrm{max}(y)+1$ cutpoints ${\bm \gamma}$. The probability of $y_{i}$ is then: 
 
 \begin{equation}
-f_{T}(y_{i} | l_{i}, {\bm \gamma}) = 1\ \textrm{if}\ \gamma_{y_{i}-1} <  l_{i} < \gamma_{y_{i}}
+f_{T}(y_{i} | l_{i}, {\bm \gamma}) = 1\ \textrm{if}\ \gamma_{y_{i}+1} <  l_{i} < \gamma_{y_{i}}
 \end{equation}
 
 and
 
 \begin{equation}
-f_{O}(y_{i} | l_{i}, {\bm \gamma}) = F_{N}(\gamma_{y_{i}} | l_{i}, 1)-F_{N}(\gamma_{y_{i}-1} | l_{i},1)
+f_{O}(y_{i} | l_{i}, {\bm \gamma}) = F_{N}(\gamma_{y_{i}} | l_{i}, 1)-F_{N}(\gamma_{y_{i}+1} | l_{i},1)
 \end{equation}  
 
 where $F_{N}$ is the cumulative density function for the normal. Note that the two models can be made equivalent.
@@ -256,7 +256,7 @@ f_{N}({\bf y} | {\bf W}{\bm \theta},\ {\bf R})
 where ${\bm \Omega} = \left\{{\bm \theta},\ {\bf R}\right\}$.  For discrete response variables in univariate analyses modeled using \texttt{family="threshold"} the density is
 
 \begin{equation}
-\prod_{i} F_{N}(\gamma_{y_{i}} | {\bf w}_{i}{\bm \theta}, \ r_{ii})-F_{N}(\gamma_{y_{i}-1} | {\bf w}_{i}{\bm \theta}, \ r_{ii})
+\prod_{i} F_{N}(\gamma_{y_{i}} | {\bf w}_{i}{\bm \theta}, \ r_{ii})-F_{N}(\gamma_{y_{i}+1} | {\bf w}_{i}{\bm \theta}, \ r_{ii})
 \end{equation}
 
 where ${\bm \Omega} = \left\{{\bm \gamma},\ {\bm \theta},\ {\bf R}\right\}$. For other response variables variables (including discrete response variables modeled using \texttt{family="ordinal"}) it is the product:
@@ -289,7 +289,7 @@ The conditional density of ${\bf y}_{n}$ in Equation \ref{Eq-MVdeviance} is iden
 
 
 \begin{equation}
-\prod_{i} F_{N}(\gamma_{y_{i}} | ({\bm W}{\bm \theta})_{ti|g,n}, \ r_{ti|g, n})-F_{N}(\gamma_{y_{i}-1} | ({\bm W}{\bm \theta})_{ti|g,n}, \ r_{ti|g, n})
+\prod_{i} F_{N}(\gamma_{y_{i}} | ({\bm W}{\bm \theta})_{ti|g,n}, \ r_{ti|g, n})-F_{N}(\gamma_{y_{i}+1} | ({\bm W}{\bm \theta})_{ti|g,n}, \ r_{ti|g, n})
 \label{Eq-cpmvnorm}
 \end{equation}
 
@@ -321,9 +321,9 @@ Distribution   &    No. Data       &         No. latent        &  Density & func
    \texttt{"multinomial$J$"}  &  $J$    &  $J$-1  &     $Pr(y_{k}=n_{k}| k\neq J) =$&$ \left(\frac{\textrm{exp}(l_{k})}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}\right)^{n_{k}}$ \\   
     &      &   &     $Pr(y_{k}=n_{k} | k=J) =$&$ \left(\frac{1}{1+\sum^{J-1}_{j=1}\textrm{exp}(l_{j})}\right)^{n_{k}}$ \\   
 &&&&\\ 
-   \texttt{"ordinal"}  &  1    &  1     &              $Pr(y=k) =$&$ F_{N}(\gamma_{k} | l,1)-F_{N}(\gamma_{k-1} | l,1)$ \\   
+   \texttt{"ordinal"}  &  1    &  1     &              $Pr(y=k) =$&$ F_{N}(\gamma_{k} | l,1)-F_{N}(\gamma_{k+1} | l,1)$ \\   
 &&&&\\
-   \texttt{"threshold"}  &  1    &  1     &              $Pr(y=k) =$&$ F_{N}(\gamma_{k} | {\bf w}{\bm \theta}, \sigma^{2}_{e})-F_{N}(\gamma_{k-1} | {\bf w}{\bm \theta}, \sigma^{2}_{e})$ \\   
+   \texttt{"threshold"}  &  1    &  1     &              $Pr(y=k) =$&$ F_{N}(\gamma_{k} | {\bf w}{\bm \theta}, \sigma^{2}_{e})-F_{N}(\gamma_{k+1} | {\bf w}{\bm \theta}, \sigma^{2}_{e})$ \\   
 &&&&\\
 
 

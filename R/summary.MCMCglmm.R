@@ -19,11 +19,9 @@
 
   random.formula=object$Random$formula
   residual.formula=object$Residual$formula
-  if(is.null(random.formula)){
-    gterms<-0
-  }else{
-    gterms<-sum(object$Random$nfl^2)
-  }
+
+  gterms<-sum(object$Random$nfl^2)
+  
   rterms<-sum(object$Residual$nfl^2)
   covariances<-cbind(colMeans(object$VCV), coda::HPDinterval(object$VCV), effectiveSize(object$VCV))
   colnames(covariances)<-c("post.mean", "l-95% CI", "u-95% CI","eff.samp")

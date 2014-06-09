@@ -433,9 +433,7 @@
           prior$G<-list(G1=list(V=as.matrix(1), nu=1, fix=1))
         }
       }else{
-        print(random)
-        random<-paste(paste(as.character(random), collapse=""),"+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta", sep="")
-        print(random)
+        random<-as.formula(paste(paste(as.character(random), collapse=""),"+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta", sep=""))
         if(is.null(start$G)==FALSE){
           start$G[[length(start$G)+1]]<-as.matrix(1)
         }

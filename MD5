@@ -1,10 +1,10 @@
-855c2497da4f8dc1b4d696c68a6fc0ce *DESCRIPTION
+0e1b78f2b7d54659b9d5a8ace153a254 *DESCRIPTION
 2a1df525959fbe81dd5db5da96379614 *NAMESPACE
 47b8d4f0b8374ad35aaea43b6ddde91d *R/Ddivergence.R
 ec8f4fa6e17d22cd1954dbb0cb4776f7 *R/Dexpressions.R
 4a86612690e89f57dd01db507b6c738c *R/Dtensor.R
 d8c5f1bda5266cad6d671625231e50dd *R/KPPM.R
-430d731ff494b4a615f384a9df2509d7 *R/MCMCglmm.R
+bcc99d74b8bcec3ea6668a7fb007264b *R/MCMCglmm.R
 f4b5c02234963c3d700a708f1f9be7b8 *R/Ptensor.R
 543ba6114d80c897717d048badf7dc7a *R/Tri2M.R
 e44191afcd7e58be3c40bd221c57ebaf *R/buildZ.R
@@ -37,7 +37,7 @@ b80db01d416c789e83fe50593ad9c2c9 *R/sir.R
 b365405e5d0a9fc79d4f5554ea96d7f5 *R/sm2asreml.R
 470441520504a533a22aa8c5dfe21070 *R/spl.R
 6eb0401591dd739c9b85485147e3503d *R/split.direct.sum.R
-4724a7d40f1d21b61c4d43786be34038 *R/summary.MCMCglmm.R
+57bc12194db745ede786e9c8d239ba3e *R/summary.MCMCglmm.R
 3bedc29171dbf12e8ec4e2c3edd214ba *R/test.R
 3da442d07785464d262bc1e5025c57cc *R/test2.R
 a19b73a932981d173bdfd735ddd89378 *build/vignette.rds
@@ -184,9 +184,9 @@ ab5a2b5468e9d74610a2fafcb06ebc4a *src/rtcmvnormR.cc
 75e067363b82c82e2af65d5b8f2ad015 *src/rtnormR.cc
 7f8139b2e98a9844ba712182a51445be *vignettes/CourseNotes.Rnw
 68e7b1fa238a4e0f72d638fa045c1c7a *vignettes/CourseNotes.bib
-7f8139b2e98a9844ba712182a51445be *vignettes/Figures/CourseNotes.Rnw
+2cdef2fcab859cfe3059d8a0e7a5740e *vignettes/Figures/CourseNotes.Rnw
 dd5c8235e13d754cf8e571df80fdfb86 *vignettes/Figures/Overview.Rnw
-0bf2cc6064e2a77018dcbc6187e2bf7f *vignettes/Figures/TEST.R
+2d178d13fc4872c90e0c6b5cbd4b27c7 *vignettes/Figures/TEST.R
 e4763891f3028a412726c6fcc135f690 *vignettes/Figures/Tutorial.Rnw
 289a3294ae328aa4aa76ba96a48b0698 *vignettes/Figures/buildCN.R
 e147ff99989347612ff4f1e3dde48fd1 *vignettes/Figures/defaults.R

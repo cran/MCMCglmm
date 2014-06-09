@@ -8,10 +8,10 @@ plotit=FALSE
 DICtest=TRUE
 SUMtest=TRUE
 leg=TRUE
-nsim<-1 #10
-nitt<-10 #13000*5
-thin<-1 #10*5
-burnin<-3 #3000*5
+nsim<-10
+nitt<-13000*5 #13000*5
+thin<-10*5
+burnin<-3000*5
 
 psets<-c()
 
@@ -1516,28 +1516,13 @@ psets<-c(psets, tpar)
 
 print("res42")  # Trivariate: 1 Gaussian, 2 threshold with correlation sub-matrix
 
-library(MASS)
-library(MCMCglmm)
-
-vgam=TRUE
-verbose=FALSE
-plotit=FALSE
-DICtest=TRUE
-SUMtest=TRUE
-leg=TRUE
-nsim<-20
-nitt<-13000
-thin<-10
-burnin<-3000
-
 res42<-matrix(0, nsim, 15)
 
 R<-diag(c(2,1,1))
 R[1,3]<-R[3,1]<-1
 R[2,3]<-R[3,2]<-0.25
 
-cp<-1
-tpar<-c(1,0,0.5, -1, 0,-0.5, c(R), cp)
+tpar<-c(1,0,0.5, -1, 0,-0.5, c(R))
 
 prior<-list(R=list(V=R, nu=0, fix=2))
 

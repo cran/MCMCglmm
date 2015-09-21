@@ -1,8 +1,9 @@
-split.direct.sum<-function(x){
-
+split.direct.sum<-function(x){  
+  
   if(is.na(x)){
    return(NULL)
   }else{
+    x <- gsub("\n", "", x, fixed=TRUE)  # required if the random formula is very long and broken over lines
     openB<-gregexpr("\\(", x)[[1]]
     closeB<-gregexpr("\\)", x)[[1]]
     true_openB<-openB

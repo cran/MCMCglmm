@@ -20,16 +20,18 @@ at.set<-function(x,level){
 	   as.matrix(M)
 	}
 		
-leg<-function(x,degree, normalized=TRUE){
-             if(require(orthopolynom, quietly = TRUE)==FALSE){stop("orthopolynom not loaded")}			
-	     lp<-legendre.polynomials(n=abs(degree), normalized=normalized)
-             if(degree<0){
-               lp<-lp[-1]
-             }			
-             M<-sapply(lp,function(lp){as.function(lp)(x)})
- 	     colnames(M)<-paste(as.character(as.list(substitute(list(x)))[[2]]),  (0+1*(degree<0)):abs(degree), sep=".")
-             if(degree>=0){
-               M[,1][which(is.na(M[,1]))]<-as.function(lp[[1]])(0)
-             }
-	     M
- }
+#leg<-function(x,degree, normalized=TRUE){
+#             if(requireNamespace("orthopolynom", quietly = TRUE)==FALSE){
+#               stop("orthopolynom not loaded")
+#             } 			
+#	     lp<-orthopolynom::legendre.polynomials(n=abs(degree), normalized=normalized)
+#             if(degree<0){
+#               lp<-lp[-1]
+#             }			
+#             M<-sapply(lp,function(lp){as.function(lp)(x)})
+# 	     colnames(M)<-paste(as.character(as.list(substitute(list(x)))[[2]]),  (0+1*(degree<0)):abs(degree), sep=".")
+#             if(degree>=0){
+#               M[,1][which(is.na(M[,1]))]<-as.function(lp[[1]])(0)
+#             }
+#	     M
+# }

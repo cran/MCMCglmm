@@ -22,7 +22,7 @@ gelman.prior<-function(formula, data, scale=1, intercept=scale, singular.ok=FALS
   }
   P<-solve(t(X1)%*%X1, t(X1)%*%X2)
   I<-diag(nrow(P))*scale^2
-  I[1,1]<-intercept
+  I[1,1]<-intercept^2
   P%*%I%*%t(P)
 }
 

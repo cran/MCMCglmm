@@ -5,12 +5,13 @@
  Evaluates a list of (mixed) partial derivatives
 }
 \usage{
-evalDtensor(x, mu)
+evalDtensor(x, mu, m=1)
 }
 \arguments{
   \item{x}{unevaluated (list) of expression(s)}
   \item{mu}{values at which the derivatives are evaluated: names need to match 
 terms in x}
+  \item{m}{order of derivative}
 }
 \value{
    tensor 

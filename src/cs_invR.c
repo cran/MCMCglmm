@@ -63,14 +63,15 @@ double cs_invR(const cs *C, const cs *A){
                  }
        }
 	  CN *= cs_norm(A);
-	  if(1.0/CN < DBL_EPSILON || det < DBL_EPSILON){
-             if(n==1){
+
+	  if(1.0/fabs(CN) < DBL_EPSILON){
+            if(n==1){
                A->x[0] = 1.0/DBL_EPSILON;
-             }else{
+            }else{
 	       PutRNGstate();
-	       error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
-             }	 
-	   }
+   	       error("ill-conditioned G/R structure (CN = %f): use proper priors if you haven't or rescale data if you have\n", CN);
+            }	 
+	  }
 
 	  return (det) ;	/* success; free workspace, return C */
 

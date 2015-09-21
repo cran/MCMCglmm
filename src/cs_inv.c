@@ -6,7 +6,7 @@ cs *cs_inv(const cs *C){
 	
     int n, i, icol,irow,j,k,l,ll;
     double big,dum,pivinv,temp, det, CN;
-	CN = cs_norm(C);
+    CN = cs_norm(C);
 
     cs *A;
     n = C->n;
@@ -74,14 +74,15 @@ cs *cs_inv(const cs *C){
 
 	CN *= cs_norm(A); 
 
-	if(1.0/CN < DBL_EPSILON || det < DBL_EPSILON){
-		if(n==1){
-			A->x[0] = 1.0/DBL_EPSILON;
-		}else{
-	          PutRNGstate();
-		  error("ill-conditioned G/R structure: use proper priors if you haven't or rescale data if you have\n");
-		}	 
+	if(1.0/fabs(CN) < DBL_EPSILON){
+   	  if(n==1){
+	    A->x[0] = 1.0/DBL_EPSILON;
+	  }else{
+	    PutRNGstate();
+  	       error("ill-conditioned G/R structure (CN = %f): use proper priors if you haven't or rescale data if you have\n", CN);
+          }	 
 	}
+
 	return (cs_done (A, NULL, NULL, 1)) ;	/* success; free workspace, return C */
 
 }

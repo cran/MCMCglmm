@@ -5,7 +5,7 @@
 
 cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
 
-    cs  *T1inv, *A11, *A12, *A21, *A22, *A11Schur, *halfA11Schur, *CinvSchur, *A11inv, *varT2, *varT2inv, *IW, *IW11, *halfA11SchurT, *halfCSchur;
+    cs  *T1inv, *T1, *A11, *A12, *A21, *A22, *A11Schur, *A11Schurinv, *halfA11Schur, *CinvSchur, *A11inv, *varT2inv, *IW, *IW11, *halfA11SchurT, *halfCSchur;
     csn *varT2invL;
     css *As, *T2s;
     int nA = A->n,
@@ -41,7 +41,7 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
     A21 = cs_transpose(A12, TRUE);
 
     A11inv = cs_inv(A11);
-    
+   
     cnt = 0;
     for (i = 0 ; i < nC; i++){
       A22->p[i] = i*nC;
@@ -68,8 +68,10 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
        Rv[i] = rnorm(0.0,1.0);
     }
 
-    varT2 = cs_kroneckerA(T1inv, A11Schur);
-    varT2inv = cs_inv(varT2);
+    T1 = cs_inv(T1inv);
+    A11Schurinv = cs_inv(A11Schur);
+    varT2inv = cs_kroneckerA(T1, A11Schurinv);
+
 
     T2s = cs_schol(0, varT2inv);
     varT2invL = cs_chol(varT2inv, T2s);
@@ -126,7 +128,8 @@ cs *cs_rCinvwishart(const cs *A, double nu, int split, const cs *CM){
     cs_spfree(CinvSchur);
     cs_spfree(halfCSchur);
     cs_spfree(halfA11SchurT);
-    cs_spfree(varT2);
+    cs_spfree(T1);
+    cs_spfree(A11Schurinv);
     cs_spfree(varT2inv);
     cs_spfree(IW11);
     cs_nfree(varT2invL);

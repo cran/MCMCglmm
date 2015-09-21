@@ -9,16 +9,43 @@
     if(class(rcov)!="formula"){stop("rcov should be a formula")}
     if(class(random)!="formula" & class(random)!="NULL"){stop("random should be a formula")}
 
-    reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names")
+    reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names", "MCMC_error.term", "MCMC_dummy")
     family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold")
 
     if(any(names(data)%in%reserved.names)){
       stop(paste(names(data)[which(names(data)%in%reserved.names)], " is a reserved variable please rename it"))
     }
 
+    covu<-0
+
+    if(is.null(prior)==FALSE & any(names(prior)%in%c("R", "G", "B")==FALSE)){stop("prior list should contain elements R, G, and/or B only")}
+
+    if(!is.null(prior)){ # reformat old-style prior 
+      if(!is.list(prior$R[[1]])){
+        prior$R<-list(R1=prior$R)
+      }
+    }
+    if(!is.null(prior$R[[1]]$covu)){
+      if(prior$R[[1]]$covu){
+        covu<-1
+        prior$G<-c(prior$G, list(prior$R[[1]]))
+        prior$G[[length(prior$G)]]$covu<-NULL
+        prior$G[[length(prior$G)]]$fix<-NULL
+      }
+    }
+    if(!is.null(start$R)){
+      if(!is.list(start$R)){
+        start$R<-list(R1=start$R)
+      }
+      if(covu!=0){
+        start$G<-c(start$G,list(start$R[[1]]))
+      }
+    }
+
     if(is.null(prior)==FALSE & any(names(prior)%in%c("R", "G", "B")==FALSE)){stop("prior list should contain elements R, G, and/or B only")}
     if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
     if(((is.null(prior$G) & is.null(random)==FALSE) & is.null(prior$R)==FALSE) | (is.null(prior$R) & is.null(prior$G)==FALSE)){stop("either both or neither R and G structures need a prior")}
+
     if(is.null(start$QUASI)){
       QUASI=TRUE
     }else{
@@ -29,6 +56,7 @@
     original.fixed<-fixed                                                                            # original model specification
     original.random<-random 
     original.rcov<-rcov
+    original.family<-family
 
     response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
     data[,response.names]<-model.frame(as.formula(paste(as.character(fixed)[2], "~1")), data)[[1]]
@@ -57,100 +85,6 @@
           }
 	}
 
-#############################################################################################################
-# for us(ffac):rfac structures all combinations of ffac/rfac must exist. Missing combinations are augmented #
-#############################################################################################################
-
-      nadded<-0  # number of records added
-      rterms<-c(split.direct.sum(as.character(random)[2]), split.direct.sum(as.character(rcov)[2]))
-
-      data$MCMC_dummy<-rep(0,dim(data)[1])
-
-       for(i in 1:length(rterms)){
-
-	components<-find.components(rterms[i], data, names(ginverse))
-
-	if(is.null(components$rterms)==FALSE | length(components$fformula)>0){
-
-          nff<-length(components$fformula)
-          if(nff==0){
-            components$fformula<-"MCMC_liab"
-            data$MCMC_liab<-as.factor(rep(1, nrow(data)))
-          }
-
-          for(j in 1:max(1,nff)){      
-            for(k in 1:max(1,(components$rtype=="str")*length(components$rterms))){  
-
-              if(components$rtype=="iid"){      
-                select.terms<-1:length(components$rterms)          
-              }else{
-               select.terms<-k
-              }
-              MCMC_components1<-interaction(data[,components$rterms[select.terms]], sep=".MCMC.", drop=components$drop.rlevels[k]) # random effect factors
-              MCMC_components2<-interaction(data[,components$fformula[[j]]], sep=".MCMC.", drop=FALSE)  	        # fixed effect factors
-              allc<-expand.grid(levels(MCMC_components1),levels(MCMC_components2))  					# all pairwise combinations
-              missing.combinations<-allc[which(paste(allc[,1], allc[,2])%in%paste(MCMC_components1, MCMC_components2)==FALSE),]   # missing pairwise combinations
-              if(dim(missing.combinations)[1]>0){
-			  
-     	        warning(paste("some combinations in", rterms[i], "do not exist and", dim(missing.combinations)[1], "missing records have been generated"))
-
-                ###################################
-                # find if there are already holes #
-                #    in the missing records       #
-                ###################################
-	        missing.comb1<-which(is.na(MCMC_components1) & is.na(MCMC_components2)==FALSE & data$MCMC_dummy==1)  # nas for random but have fixed
-	        missing.comb2<-which(is.na(MCMC_components1)==FALSE & is.na(MCMC_components2) & data$MCMC_dummy==1)  # nas for fixed but have random
-	        missing.comb12<-which(is.na(MCMC_components1) & is.na(MCMC_components2) & data$MCMC_dummy==1)        # nas for both
-
-	        matching<-match(unique(missing.combinations[,2]), MCMC_components2[missing.comb1])  # some places that can be filled
-  
-                has.dim.names<-which(unlist(lapply(data, function(x){is.null(attributes(x)$dim)==FALSE})))
-                data[has.dim.names]<-lapply(data[has.dim.names], as.vector)
-
-  	        while(any(is.na(matching)==FALSE)){
-                  a.match<-match(MCMC_components2[missing.comb1[na.omit(matching)]],missing.combinations[,2])  # missing combinations to be placed
-	          data[missing.comb1[na.omit(matching)],unlist(components$rterms[select.terms])]<-as.matrix(apply(missing.combinations[a.match,1,drop=FALSE], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
-                  MCMC_components1[missing.comb1[na.omit(matching)]]<-missing.combinations[a.match,1]   # fill in data columns and MCMC_componenets1
-       	          missing.comb1<-missing.comb1[-na.omit(matching)]	
-	          missing.combinations<-missing.combinations[-a.match,, drop=FALSE]
-	          matching<-match(unique(missing.combinations[,2]), MCMC_components2[missing.comb1])
-	        }
-
-	        matching<-match(unique(missing.combinations[,1]), MCMC_components1[missing.comb2])  # some places that can be filled
-
-	        while(any(is.na(matching)==FALSE)){
-                  a.match<-match(MCMC_components1[missing.comb2[na.omit(matching)]],missing.combinations[,1])  # missing combinations to be placed
-	          data[missing.comb2[na.omit(matching)],unlist(components$fformula[[j]])]<-as.matrix(apply(missing.combinations[a.match,2,drop=FALSE], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
-                  MCMC_components2[missing.comb2[na.omit(matching)]]<-missing.combinations[a.match,2]   # fill in data columns and MCMC_componenets1
-       	          missing.comb2<-missing.comb2[-na.omit(matching)]	
-   		  missing.combinations<-missing.combinations[-a.match,, drop=FALSE]
-	          matching<-match(unique(missing.combinations[,1]), MCMC_components1[missing.comb2])
-	        }
-
-                n.rm<-min(length(missing.comb12), dim(missing.combinations)[1])
-	        if(n.rm>0){
-	          data[missing.comb12,c(components$rterms[select.terms], components$fformula[[j]])]<-t(apply(missing.combinations[1:n.rm,], 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))
-                  MCMC_components1[missing.comb12][1:n.rm]<-missing.combinations[,1][1:n.rm]
-                  MCMC_components2[missing.comb12][1:n.rm]<-missing.combinations[,2][1:n.rm]
-	        }	
-	        if(dim(missing.combinations)[1]>0){      
-                  nadded<-nadded+dim(missing.combinations)[1]                                               # add dummy records if still needed
-		  data[dim(data)[1]+1:dim(missing.combinations)[1],]<-NA      
-		  data[,c(components$rterms[select.terms], components$fformula[[j]])][dim(data)[1]-(dim(missing.combinations)[1]-1):0,]<-t(apply(missing.combinations, 1, function(x){unlist(strsplit(x, "\\.MCMC\\."))}))  
-                  data$MCMC_dummy[dim(data)[1]-(dim(missing.combinations)[1]-1):0]<-1 
-                  if(is.null(mev)==FALSE){
-                    mev<-c(mev,rep(1, dim(missing.combinations)[1]))
-                  }
-                }
-	      }
-	    }
-          }
-          if(nff==0){            
-           data<-data[,-match("MCMC_liab", names(data))]
-          }	
-	}
-      }
-
     MVasUV=FALSE  # Multivaraite as Univariate
     if(is.null(family)){
        if(is.null(data$family)){
@@ -165,8 +99,9 @@
            if(any(tapply(data$family, data$trait, function(x){length(unique(x))})!=1)){
              stop("all data from the same trait must come from the same distribution")
            }
+           rterm.family<-data$family[match(levels(data$trait), data$trait)]
          }           
-         if(length(unique(data$family))==1){
+         if(length(unique(data$trait))==1){
            family.names<-as.character(data$family[1])
          }else{     
            family.names<-as.character(data$family)   
@@ -188,9 +123,9 @@
 
     diagR<-1  # should the residual structure be diagonal even if us is used?
 
-    if(length(grep("hu|zi|za|multinomial[3:19]", family.names))>0){ 
-      if(length(grep("idh\\(trait|us\\(trait|trait:units|units:trait", rcov))==0){
-        stop("please use idh(trait):units or us(trait):units or trait:units for error structures involving multinomial data with more than 2 categories or zero-infalted/altered/hurdle models")
+    if(length(grep("hu|zi|za|multinomial[3-9]|[1-9][0-9]", family.names))>0){ 
+      if(length(grep("idh\\(trait|us\\(trait|trait:units|units:trait|corg\\(trait|corgh\\(trait|cors\\(trait|idv\\(trait|ante.*\\(trait|sub\\(trait", rcov))==0){
+        stop("For error structures involving multinomial data with more than 2 categories, or zero-infalted/altered/hurdle models")
       }else{
         if(length(grep("idh\\(", rcov))>0){
           diagR<-2
@@ -202,6 +137,14 @@
         }
       }	  
     }
+
+    if(any(grepl("path\\(", fixed))){ 
+      if(length(grep("idh\\(", rcov))>0){
+        diagR<-2
+        rcov=as.formula(paste(gsub("idh\\(", "us\\(", rcov), collapse=""))
+      } 
+    }
+
 	
     nS<-dim(data)[1]                               # number of subjects
     y.additional<-matrix(NA, nS,0)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
@@ -209,21 +152,35 @@
 
     if(MVasUV){
       mfac<-rep(0, nlevels(data$trait))
+      y.additional<-matrix(NA, nS,1)      # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
       if(any(family.names=="categorical")){
-        ncat<-tapply(data[,response.names][which(family.names=="categorical")], data$trait[which(family.names=="categorical")], function(x){length(unique(x))})
-        if(any(ncat)>2){
+        ncat<-tapply(data[,response.names][which(family.names=="categorical")], as.character(data$trait[which(family.names=="categorical")]), function(x){length(unique(x))})
+        for(i in 1:length(ncat)){
+           trait.i<-unique(data$trait[which(family.names=="categorical")])[i]
+           data[,response.names][which(data$trait==trait.i)]<-as.numeric(as.factor(data[,response.names][which(data$trait==trait.i)]))-1
+        }
+        if(any(ncat>2)){
            stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
-        y.additional<-matrix(NA, nS,1)
         y.additional[which(family.names=="categorical")]<-1
         family.names[which(family.names=="categorical")]<-"multinomial"
-        family.names[which(is.na(family.names))]<-"gaussian"
       }
       if(any(family.names=="ordinal" |  family.names=="threshold")){
         ordinal.traits<-unique(as.numeric(data$trait)[which(family.names=="ordinal" |  family.names=="threshold")])
+        for(i in 1:length(ordinal.traits)){
+           trait.i<-levels(data$trait)[ordinal.traits[i]]
+           data[,response.names][which(data$trait==trait.i)]<-as.numeric(as.factor(data[,response.names][which(data$trait==trait.i)]))
+        }
         if(length(ordinal.traits)>2){slice<-FALSE}
         mfac[ordinal.traits]<-0:(length(ordinal.traits)-1)
-        ncutpoints<-tapply(data[,response.names][which(family.names=="ordinal" | family.names=="threshold")], data$trait[which(family.names=="ordinal" |  family.names=="threshold")], function(x){length(unique(x))})+2
+        ncutpoints<-tapply(data[,response.names][which(family.names=="ordinal" | family.names=="threshold")], data$trait[which(family.names=="ordinal" |  family.names=="threshold")], function(x){length(unique(na.omit(x)))})+1
+        stcutpoints<-tapply(data[,response.names][which(family.names=="ordinal" | family.names=="threshold")], data$trait[which(family.names=="ordinal" |  family.names=="threshold")], function(x){qnorm(cumsum(c(0, prop.table(table(x)))))})
+        ordinal.names<-levels(data$trait)[ordinal.traits]
+        if(any(is.na(ncutpoints))){
+          ordinal.names<-ordinal.names[-which(is.na(ncutpoints))]
+          stcutpoints<-stcutpoints[-which(is.na(ncutpoints))]
+          ncutpoints<-ncutpoints[-which(is.na(ncutpoints))]
+        }
       }else{
         ncutpoints<-c()
       }
@@ -234,12 +191,16 @@
       mfac<-c()                 # stores additional information for each R-structure term. For multinomial models it stores the number of k-2 categories
                                 # for zero inflated models it indicates whether the R-structure term is for the Poisson part (0) or zero infaltion part (1)
                                 # for ordinal responses it indicates whether its the i^th ordinal response. For example R-structure terms for data A:E with 
-                                # multinomialA, multinomialA, multinomialB, ordinalC, zero-inflationD, zero-infaltionD, ordinalE: mfac=c(1,1,0,0,0,1,1) other 
+                                # multinomialA, multinomialA,  multinomialA, multinomialB, multinomialB, ordinalC, zero-inflationD, ordinalE: mfac=c(1,1,0,1,0,1,2) other 
                                 # traits all have 0
       ncutpoints<-c()           # number of cutpoints for ordinal variables = k+1
+      stcutpoints<-list()         
       ordinal.names<-c()
+      rterm.family<-c()
 
       for(i in 1:length(family)){
+
+        rterm.family<-c(rterm.family, family[i])
 
         dist.preffix<-substr(family[i],1,2)                  
         if(nt>length(response.names)){stop("family is the wrong length")}
@@ -250,11 +211,22 @@
 ######################
 				
           if(dist.preffix=="ca"){
-            cont<-as.matrix(model.matrix(~ as.factor(data[[response.names[nt]]]))[,-1])                            # form new J-1 variable   
-            nJ<-dim(cont)[2] 
-            if(nJ>1){slice<-FALSE}  
-            if(length(grep("idh\\(trait|us\\(trait|trait:units|units:trait", rcov))==0 & nJ>1){
-              stop("please use idh(trait):units, us(trait):units or trait:units for error structures involving catgeorical data with more than 2 categories")
+            if(all(is.na(data[[response.names[nt]]]))){
+              cont<-matrix(NA, nrow(data),1)
+              new.names<-paste(response.names[nt], ".", 1, sep="")
+            }else{
+              cont<-as.matrix(model.matrix(~ as.factor(data[[response.names[nt]]]))[,-1])                            # form new J-1 variable   
+              new.names<-paste(response.names[nt], ".", levels(as.factor(data[[response.names[nt]]]))[-1], sep="")   # give new variables names
+            }
+            colnames(cont)<-new.names  
+            nJ<-dim(cont)[2]
+            rterm.family[length(rterm.family)]<-paste("multinomial", nJ+1, sep="") 
+            if(nJ>1){
+              slice<-FALSE
+              rterm.family<-c(rterm.family, rep(rterm.family[length(rterm.family)], nJ-1))  
+            }  
+            if(length(grep("idh\\(trait|us\\(trait|trait:units|units:trait|corg\\(trait|corgh\\(trait|cors\\(trait|idv\\(trait|ante.*\\(trait", rcov))==0 & nJ>1){
+             stop("For error structures involving catgeorical data with more than 2 categories pleasue use trait:units or variance.function(trait):units.")
             }else{
               if(length(grep("idh\\(", rcov))>0  & nJ>1){
                 diagR<-2
@@ -265,9 +237,7 @@
                 diagR<-3
               }
             }	  
-            mfac<-c(mfac, rep(nJ-1,nJ))             
-            new.names<-paste(response.names[nt], ".", levels(as.factor(data[[response.names[nt]]]))[-1], sep="")   # give new variables names
-            colnames(cont)<-new.names  
+            mfac<-c(mfac, rep(nJ-1,nJ))           
             data<-data[,-which(names(data)==response.names[nt]), drop=FALSE]    # remove original variable
 	    row.names(data)<-row.names(cont)
             data<-cbind(data, cont)     # add new variables to data.frame
@@ -287,13 +257,17 @@
 
          if(dist.preffix=="mu"){
            nJ<-as.numeric(substr(family[i],12,nchar(family[i])))-1
-           if(nJ>1){slice<-FALSE}                                                                           # number of J-1 categories
+           if(nJ>1){
+             slice<-FALSE
+             rterm.family<-c(rterm.family, rep(rterm.family[length(rterm.family)], nJ-1))  
+           }                                                                           # number of J-1 categories
  	   if(nJ<1){stop("Multinomial must have at least 2 categories")}	 
            mfac<-c(mfac, rep(nJ-1,nJ))  
            if(all(data[,match(response.names[0:nJ+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:nJ+nt], names(data))]>=0, na.rm=T)==FALSE){
              stop("multinomial data must be positive integers")
            }
            y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
+           if(any(na.omit(y.additional)>1)){slice<-FALSE}                                                                           # number of J-1 categories
 	   if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:nJ+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
              stop("multinomial responses must be either completely observed or completely missing")
            }	 
@@ -344,6 +318,9 @@
 ########################
 
 	 if(dist.preffix=="zi" || dist.preffix=="hu" || dist.preffix=="za"){
+
+           rterm.family<-c(rterm.family, rterm.family[length(rterm.family)])
+ 
            if(grepl("poisson", family[i])){
 	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
 	     if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
@@ -392,9 +369,15 @@
 	  if(family.names[nt]=="ordinal" | family.names[nt]=="threshold"){
             mfac[length(mfac)]<-length(ncutpoints)  
             data[,response.names[nt]]<-as.numeric(as.factor(data[,response.names[nt]]))
-            if(max(data[,response.names[nt]], na.rm=T)>2){slice<-FALSE}  
-            ncutpoints<-c(ncutpoints, max(data[,response.names[nt]], na.rm=T)+1)         
-            ordinal.names<-c(ordinal.names, response.names[nt])     
+            if(all(is.na(data[,response.names[nt]]))){ 
+              ncutpoints<-c(ncutpoints, 3)
+              stcutpoints[[length(stcutpoints)+1]]<-c(-Inf, 0, Inf)
+            }else{
+              if(max(data[,response.names[nt]], na.rm=T)>2){slice<-FALSE}  
+              ncutpoints<-c(ncutpoints, max(data[,response.names[nt]], na.rm=T)+1)
+              stcutpoints[[length(stcutpoints)+1]]<-qnorm(cumsum(c(0, prop.table(table(data[,response.names[nt]])))))
+              ordinal.names<-c(ordinal.names, response.names[nt]) 	
+            }    
 	  }
           y.additional<-cbind(y.additional,matrix(NA,nS,1))     
           nt<-nt+1
@@ -425,15 +408,15 @@
 
     if(is.null(mev)==FALSE){
       if(any(dim(mev)!=dim(y.additional))){stop("mev has to be the same dimension as y")}
-      data$MCMC_mev<-sqrt(mev)	
+      data$MCMC_mev<-mev	
       data$MCMC_meta<-factor(1:dim(data)[1], levels=1:dim(data)[1])
       if(is.null(random)){
-        random = ~us(leg(MCMC_mev, -1, FALSE)):MCMC_meta
+        random = ~us(sqrt(MCMC_mev)):MCMC_meta
         if(is.null(prior$R)==FALSE){
           prior$G<-list(G1=list(V=as.matrix(1), nu=1, fix=1))
         }
       }else{
-        random<-as.formula(paste(paste(as.character(random), collapse=""),"+us(leg(MCMC_mev, -1, FALSE)):MCMC_meta", sep=""))
+        random<-as.formula(paste(paste(as.character(random), collapse=""),"+us(sqrt(MCMC_mev)):MCMC_meta", sep=""))
         if(is.null(start$G)==FALSE){
           start$G[[length(start$G)+1]]<-as.matrix(1)
         }
@@ -444,6 +427,7 @@
     }
 
     rmodel.terms<-split.direct.sum(as.character(random)[2])
+
     ngstructures<-length(rmodel.terms)
     rmodel.terms<-c(rmodel.terms, split.direct.sum(as.character(rcov)[2])) 
 
@@ -456,7 +440,6 @@
     GRprior<-list()
     Aterm<-c()                                                     # 1 if associated with ginverse
     update<-c()                                                    # variance structure type
-    ordering<-c()
     trait.ordering<-c()
 
     if(is.null(start$R)){
@@ -476,20 +459,22 @@
 
     nr<-1
 
-    if(NOpriorG==FALSE & length(prior$G)!=ngstructures){stop("prior$G has the wrong number of structures")}
-    if(NOstartG==FALSE & length(start$G)!=ngstructures){stop("start$G has the wrong number of structures")}
+    if(!NOpriorG){
+      if(length(prior$G)!=ngstructures){stop("prior$G has the wrong number of structures")}
+    }
+    if(!NOstartG){
+      if(length(start$G)!=ngstructures){stop("start$G has the wrong number of structures")}
+    }
 
     for(r in 1:length(rmodel.terms)){
 
        if(r==(ngstructures+1)){nG<-nr-1}  # number of (new) G structures
        if(r<=ngstructures){
-         Zlist<-buildZ(rmodel.terms[r], data=data, formZ=TRUE, nginverse=names(ginverse), augmiss=FALSE)
+         Zlist<-buildZ(rmodel.terms[r], data=data, nginverse=names(ginverse))
        }else{
-         Zlist<-buildZ(rmodel.terms[r], data=data, formZ=FALSE, augmiss=(r==(ngstructures+1)))
+         Zlist<-buildZ(rmodel.terms[r], data=data)
        }
 
-       ordering<-c(ordering ,Zlist$ordering)
-       trait.ordering<-c(trait.ordering ,Zlist$trait.ordering)
        update<-c(update, Zlist$vtype)
 
        nfl<-c(nfl,Zlist$nfl)          
@@ -500,20 +485,51 @@
        variance.names<-c(variance.names, Zlist$vnames)
 
        if(r<=ngstructures){
-         GRtmp<-priorformat(if(NOpriorG){NULL}else{prior$G[[r]]},if(NOstartG){NULL}else{start$G[[r]]}, Zlist$nfl, meta=any(grepl("MCMC_meta", rmodel.terms[r])), diagR=0)
+
+         if(covu!=0 & r==ngstructures){
+           covu<-Zlist$nfl
+           if(!NOpriorG){
+             prior$G[[r]]$V<-prior$G[[r]]$V[1:covu, 1:covu]
+             prior$G[[r]]$alpha.V<-prior$G[[r]]$alpha.V[1:covu, 1:covu]
+             prior$G[[r]]$alpha.mu=prior$G[[r]]$alpha.mu[1:covu]
+           }
+           if(!NOstartG){
+             start$G[[r]]<-start$G[[r]][1:covu, 1:covu]
+           }
+         }
+
+         GRtmp<-priorformat(if(NOpriorG){NULL}else{prior$G[[r]]},if(NOstartG){NULL}else{start$G[[r]]}, Zlist$nfl, meta=any(grepl("MCMC_meta", rmodel.terms[r])), diagR=0, vtype=Zlist$vtype)
+
          if(r==1){
            Z<-Zlist$Z
          }else{
            Z<-cBind(Z, Zlist$Z)     
          }
        }else{
-        if(length(rmodel.terms)-ngstructures==1){ # if only one R-structure, might need to reformat prior in old style 
-          if(!is.list(prior$R[[1]])){
-             prior$R<-list(R1=prior$R)
-          }
-        }
-        GRtmp<-priorformat(if(NOpriorG){NULL}else{prior$R[[r-ngstructures]]},if(NOstartG){NULL}else{start$R[[r-ngstructures]]}, Zlist$nfl, meta=any(grepl("MCMC_meta", rmodel.terms[r])), diagR=diagR)
+         trait.ordering<-c(trait.ordering, Zlist$trait.ordering)
+         if(r==(ngstructures+1)){
+           ZR<-Zlist$Z
+           Zlist$nfl<-Zlist$nfl+covu             
+         }else{
+           ZR<-cBind(ZR, Zlist$Z)     
+         }
+
+         GRtmp<-priorformat(if(NOpriorG){NULL}else{prior$R[[r-ngstructures]]},if(NOstartG){NULL}else{start$R[[r-ngstructures]]}, Zlist$nfl, meta=any(grepl("MCMC_meta", rmodel.terms[r])), diagR=diagR, vtype=Zlist$vtype)
+
+         if(r==(ngstructures+1) & covu>0){
+           beta_rr<-t(solve(GRtmp$start[[1]]$start[1:covu, 1:covu, drop=FALSE], GRtmp$start[[1]]$start[1:covu, (covu+1):Zlist$nfl, drop=FALSE]))+1e-16
+           if(ngstructures==1){
+             ustart<-0
+           }else{
+             ustart<-sum(nfl[1:(ngstructures-1)]*nrl[1:(ngstructures-1)])
+           }
+           if((nfl[length(nfl)-1]*nrl[length(nrl)-1])!=(covu*Zlist$nrl)){
+             stop("number of levels in G and R structure do match for cov=TRUE")
+           }
+           Z[,ustart+1:(covu*Zlist$nrl)]<-Z[,ustart+1:(covu*Zlist$nrl)]+Zlist$Z%*%kronecker(beta_rr, Diagonal(Zlist$nrl))
+         }
        }
+
        for(i in 1:length(GRtmp$prior)){
          GRprior[[nr]]<-GRtmp$prior[[i]]  
          GR[[nr]]<-GRtmp$start[[i]]$start   
@@ -521,27 +537,73 @@
        }
      }
 
-     if(any(duplicated(ordering))){stop("R-structure miss-specified: each residual must be unique to a data point")}
-     if(length(ordering)!=dim(data)[1]){stop("R-structure miss-specified: each data point must have a residual")}
+   nR<-nr-nG-1  # number of R structures
+
+   if(nR>1 & diagR!=1){stop("sorry - block-diagonal R structures not yet implemented for responses involving multinomial data with more than 2 categories or zero-infalted/altered/hurdle models")}
+
+     missing<-which(colSums(ZR)==0)
+     nadded<-length(missing)
+
+     if(nadded>0){
+       ZRaug<-Diagonal(ncol(ZR),as.numeric(colSums(ZR)==0))[missing,]
+       ZR<-rBind(ZR, ZRaug)
+     }
+
+     if(any(colSums(ZR)>1)){stop("R-structure miss-specified: each residual must be unique to a data point")}
+     if(any(rowSums(ZR)==0)){stop("R-structure miss-specified: each data point must have a residual")}
+     if(any(ZR@x!=1)){stop("R-structure miss-specified: random regressions not permitted")}
+ 
+     data$MCMC_dummy<-rep(0,dim(data)[1])
+                                      
+     if(nadded>0){
+       data<-rbind(data,data[dim(data)[1]+1:nadded,])       
+       data$MCMC_dummy[dim(data)[1]-(nadded-1):0]<-1 
+       data$MCMC_family.names[dim(data)[1]-(nadded-1):0]<-"gaussian"  
+       if(ngstructures!=0){
+         Z<-rBind(Z, as(matrix(0,nadded,ncol(Z)), "sparseMatrix"))  
+       }
+     }
+ 
+     ordering<-ZR@i+1
 
     data<-data[ordering,]         
 
+    data$MCMC_error.term<-rep(1:sum(nfl[nG+1:nR]), rep(nrl[nG+1:nR], nfl[nG+1:nR]))
+
     if(ngstructures==0){
-       Z<-as(matrix(0,1,0), "sparseMatrix")
+      Z<-as(matrix(0,1,0), "sparseMatrix")
     }else{                                                     # rearrange data to match R-structure
-       Z<-Z[ordering,]                                                     
+      Z<-Z[ordering,]                                                     
     }
 
     mfac<-mfac[trait.ordering]
 
-    nR<-nr-nG-1  # number of R structures
+    if(any(rterm.family=="threshold" | rterm.family=="ordinal")){
 
-    if(nR>1 & diagR!=1){stop("sorry - block-diagonal R structures not yet implemented for responses involving multinomial data with more than 2 categories or zero-infalted/altered/hurdle models")}
+      nthordinal<-cumsum(rterm.family=="threshold" | rterm.family=="ordinal")*(rterm.family=="threshold" | rterm.family=="ordinal") 
 
-    if(sum(nfl[nG+1:nR]*nrl[nG+1:nR])!=dim(data)[1]){stop("R-structure does not define unique residual for each data point")}
+      if(any(tapply(data$MCMC_family.names[which(data$MCMC_dummy==0)], data$MCMC_error.term[which(data$MCMC_dummy==0)], function(x){length(unique(x))>1 & any(x=="threshold" | x=="ordinal")}))){
+        stop("threshold/ordinal traits must have sperate residual variance from other traits")
+        #stop("threshold/ordinal traits can't have common cutpoints because they differ in their number of categories")
+      }
+
+      ncutpoints<-ncutpoints[nthordinal[trait.ordering]]
+
+      stcutpoints<-stcutpoints[nthordinal[trait.ordering]]
+      stcutpoints<-lapply(stcutpoints, function(x){
+         x<-x-x[2]
+         x[1]<--1e+64
+         x[length(x)]<-1e+64
+         x})
+      stcutpoints<-unlist(stcutpoints)
+      ordinal.names<-ordinal.names[nthordinal[trait.ordering]]
+    }
+
+    rterm.family<-rterm.family[trait.ordering]
 
     if(is.null(tune)){
       AMtune=c(rep(FALSE, nG), rep(TRUE, nR))
+      tune<-as.list(1:nR)
       for(i in 1:nR){
         tune[[i]] = diag(nfl[nG+i])
       }
@@ -563,7 +625,18 @@
 # Build Fixed Effect Model #
 ############################
 
-   fixed<-as.formula(paste("~",paste(deparse(fixed[[3]]), collapse="")))
+   fixed.text<-paste(deparse(fixed[[3]]), collapse="")
+
+   if(grepl("path\\(", fixed.text)){
+     if(nadded>0){stop("observations in residual blocks must be complete")}
+     path.terms<-close.bracket("path\\(", fixed.text)
+     path.terms<-as.formula(paste("~", paste(apply(path.terms,1,function(x){substr(fixed.text, x[1], x[2])}), collapse="+"), "-1"))
+     fixed.text<-gsub("(\\+|\\-) path\\(.*\\)", "", fixed.text)  # remove path analytic terms
+   }else{
+     path.terms<-NULL
+   }
+
+   fixed<-as.formula(paste("~",fixed.text))
 
    ffterms<-names(get_all_vars(fixed, data=data))
 
@@ -577,28 +650,35 @@
      X[which(data$MCMC_dummy==1),]<-0
    }
 
-   if(any(grepl("sir\\(", dimnames(X)[[2]]))){  # Do structural parameters exist?
-     if(any(family.names!="gaussian")){stop("currently simultaneous/recursive models can only be fitted to Gaussian data ")}
-     L<-X[,grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
-     L<-as(L, "sparseMatrix")
+   sir<-any(grepl("sir\\(", dimnames(X)[[2]]))
+
+   if(sir & !is.null(path.terms)){"path and sir functions cannot be used together: fit using sir function only"}
+
+   if(sir | !is.null(path.terms)){  # Do structural parameters exist?
+     if(sir){
+       if(any(family.names!="gaussian")){stop("currently simultaneous/recursive models can only be fitted to Gaussian data unless path() is used")}
+       L<-X[,grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
+       L<-as(L, "sparseMatrix")
+       if(any(is.na(data$MCMC_y) & rowSums(L)!=0)){
+         stop("currently missing observations cannot be augmented if they depend on simultaneous/recursive terms unless path() is used")
+       }
+       pL<-unique(cumsum(((duplicated(attr(X, "assign"))==FALSE)+(grepl("sir\\(", dimnames(X)[[2]])==FALSE))>0)[grep("sir\\(", dimnames(X)[[2]])])
+       # position of structural parameters
+       Lnames<-grep("sir\\(", attr(terms(fixed), "term.labels"))
+       Lnames<-attr(terms(fixed), "term.labels")[Lnames]
+       X<-X[,-grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
+     }else{
+       if(nR>1){stop("path models can only have one R-term")}
+       if(any(family.names=="threshold")){stop("path models are not implemented for threshold responses")}
+       if(sum(ncutpoints)>0){stop("path models are not implemented for ordinal responses with >2 categories")}
+       L<-as(model.matrix(path.terms), "sparseMatrix")
+       Lnames<-attr(terms(path.terms), "term.labels")
+     }
      nL<-dim(L)[2]/dim(L)[1]  # number of structural parameters
-     if(any(is.na(data$MCMC_y) & rowSums(L)!=0)){
-         stop("currently missing observations cannot be augmented if they depend on simultaneous/recursive terms. This could be fixed by liab_orig = solve(Lambda, liab) once after the liab update, and then again after the Lambda update")
-     }
-     if(any(apply(L,1, function(x){all(x==0)}))){
-       L[,1][which(apply(L,1, function(x){all(x==0)}))]<-1e-18
-     }
-     if(any(apply(L,1, function(x){all(x==0)}))){
-       L[1,][which(apply(L,1, function(x){all(x==0)}))]<-1e-18
-     }
-     pL<-unique(cumsum(((duplicated(attr(X, "assign"))==FALSE)+(grepl("sir\\(", dimnames(X)[[2]])==FALSE))>0)[grep("sir\\(", dimnames(X)[[2]])])
-     Lnames<-grep("sir\\(", attr(terms(fixed), "term.labels"))
-     Lnames<-attr(terms(fixed), "term.labels")[Lnames]
-     # position of structural parameters
-     X<-X[,-grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
-     warning("priors for sir parameters not implemented")
+     pL<-FALSE
+     warning("priors for sir/path parameters not implemented")
    }else{
-     L<-as(matrix(0,1,0), "sparseMatrix")
+     L<-Matrix(0,0,0)
      nL<-0
      Lnames=NULL
    }
@@ -616,9 +696,9 @@
    }	
    X<-as(X, "sparseMatrix")
    if(any(apply(X,1, function(x){all(x==0)}))){
-     X[,1][which(apply(X,1, function(x){all(x==0)}))]<-1e-18
+     X[,1][which(apply(X,1, function(x){all(x==0)}))]<-1e-18 
    }
- 
+
 #####################################
 # Check prior for the fixed effects #
 #####################################
@@ -666,15 +746,17 @@
        proposal<-c(proposal, AMtune[i+nG]*((fp==11)*(mp==0 & is.na(mp)==FALSE))[,1])
        missing.pattern<-fp*(is.na(mp)==FALSE) # 0 for missing data 1 for gaussian >1 for other
        mvtype_tmp<-apply(missing.pattern, 1,function(x){all(x==1 | x==0 | x==20)})-2 # -2 if observed non-gaussian non-threshold present, -1 otherwise 
+
        if(nfl[i+nG]==1 & slice){    # if univariate 
           mvtype_tmp[which(missing.pattern==14)]<-0  # ordinal
           if(max(mp, na.rm=T)==1){                   # binary
             mvtype_tmp[which(missing.pattern==3)]<-0
           }    
        }   
+       mvtype_tmp[which(apply(missing.pattern, 1,function(x){all(x==1 | x==20)}))]<-0  
        mvtype_tmp[which(apply(missing.pattern, 1,function(x){all(x==1)}))]<-2          
        mvtype_tmp[which(apply(missing.pattern, 1,function(x){all(x==0)}))]<-1  
-       mvtype_tmp[which(apply(missing.pattern, 1,function(x){all(x==1 | x==20)}))]<-0    
+  
        if(all(mvtype_tmp>c(-1))){AMtune[i+nG]=FALSE}  # If everything can be gibbsed/sliced do not tune
        mvtype<-c(mvtype,mvtype_tmp) 
        cnt<-cnt+nfl[i+nG]*nrl[i+nG]
@@ -686,32 +768,39 @@
        #                    -2 partial or fully observed with non-gaussian (MH)  currently -1 & -2 are both MHed. 
 
     }
-    stcutpoints<-c()	
+
+    if(any(mvtype==0) & !is.null(path.terms)){stop("slice samlping not possible with path/sir models")}
+
     if(is.null(start$liab)){
-       data$MCMC_liab<-rep(NA, length(data$MCMC_y)) 
+       data$MCMC_liab<-rnorm(length(data$MCMC_y)) 
        if(QUASI==TRUE){ 
-        for(i in as.character(unique(data$trait:as.factor(data$MCMC_family.names)))){
-          trait_set<-which((data$trait:as.factor(data$MCMC_family.names))==i)
-          data_tmp<-data[trait_set,]
-          missing_set<-which(is.na(data_tmp$MCMC_y))
-          if(length(missing_set)==length(trait_set)){
+        for(i in unique(data$MCMC_error.term)){
+          trait_set<-which(!is.na(data$MCMC_y) & data$MCMC_dummy==0 & data$MCMC_error.term==i)
+          missing_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==0 & data$MCMC_error.term==i)
+          dummy_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==1 & data$MCMC_error.term==i)
+          if(length(trait_set)<2){
+            if(length(trait_set)==0){
+              warning(paste("all observations are missing for error term ", i, ": liabilities sampled from Norm(0,1)", sep=""))
+            }
             mu<-0
             v<-1
-            data$MCMC_liab[trait_set]<-rnorm(length(trait_set), mu,v)
-          }else{
-            if(data_tmp$MCMC_family.names[1]=="poisson" | data_tmp$MCMC_family.names[1]=="ztpoisson"){
-              mu<-mean(data_tmp$MCMC_y, na.rm=TRUE)
-              v<-abs(log(((var(data_tmp$MCMC_y, na.rm=TRUE)-mu)/(mu^2))+1))
+          }else{ 
+            data_tmp<-data[trait_set,]          
+            family_set<-data_tmp$MCMC_family.names[1]
+
+            if(family_set=="poisson" | family_set=="ztpoisson"){
+              mu<-mean(data_tmp$MCMC_y)
+              v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
               mu<-log(mu)-0.5*v
             }
-            if(data_tmp$MCMC_family.names[1]=="cenpoisson"){
-              mu<-mean(data_tmp$MCMC_y+1, na.rm=TRUE)
-              v<-abs(log(abs(((var(data_tmp$MCMC_y+1, na.rm=TRUE)-mu)/(mu^2))+1)))
+            if(family_set=="cenpoisson"){
+              mu<-mean(data_tmp$MCMC_y+1)
+              v<-abs(log(abs(((var(data_tmp$MCMC_y+1)-mu)/(mu^2))+1)))
               mu<-log(mu)-0.5*v
             }          
-            if(data_tmp$MCMC_family.names[1]=="multinomial"){
+            if(family_set=="multinomial"){
               if(length(table(data_tmp$MCMC_y))>2){
-                 m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional)~1, family="quasibinomial", data=data_tmp,subset=is.na(data_tmp$MCMC_y)==FALSE))
+                 m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional)~1, family="quasibinomial", data=data_tmp))
                  v<-abs(((as.numeric(m1$dispersion[1])-0.5)/2)^2)
                  mu<-as.numeric(m1$coef[1])
               }else{
@@ -719,40 +808,35 @@
                  mu<-0
               }
             }
-            if(data_tmp$MCMC_family.names[1]=="exponential" | data_tmp$MCMC_family.names[1]=="cenexponential"){
-              if(any(data_tmp$MCMC_y==0, na.rm=T)){
+            if(family_set=="exponential" | family_set=="cenexponential"){
+              if(any(data_tmp$MCMC_y==0)){
                 data_tmp$MCMC_y[which(data_tmp$MCMC_y==0)]<-1e-6
               }
-              m1<-summary(glm(MCMC_y~1, family="Gamma", data=data_tmp,subset=is.na(data_tmp$MCMC_y)==FALSE))
+              m1<-summary(glm(MCMC_y~1, family="Gamma", data=data_tmp))
               v<-abs((as.numeric(m1$dispersion[1])-1)/2)
               mu<-as.numeric(m1$coef[1])
             }
-            if(data_tmp$MCMC_family.names[1]=="geometric"){
-              mu<-1/(mean(data_tmp$MCMC_y, na.rm=TRUE)+1)
+            if(family_set=="geometric"){
+              mu<-1/(mean(data_tmp$MCMC_y)+1)
               mu<-log(mu)-log(1-mu)
               v<-mu^2
             }
-            if(data_tmp$MCMC_family.names[1]=="ordinal" | data_tmp$MCMC_family.names[1]=="threshold"){
+            if(family_set=="ordinal" | family_set=="threshold"){
               v<-1
-              cps<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(1+(data_tmp$MCMC_family.names[1]=="ordinal")))
-              mu<-cps[2]
-              cps<-cps-cps[2]
-              cps[1]<--1e+64
-              cps[length(cps)]<-1e+64
-              stcutpoints<-c(stcutpoints, cps)              
+              mu<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(1+(data_tmp$MCMC_family.names[1]=="ordinal")))[2]   
             }
-            if(data_tmp$MCMC_family.names[1]=="cengaussian"){ 
-              v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}) , na.rm=T)
-              mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}) , na.rm=T)
+            if(family_set=="cengaussian"){ 
+              v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
+              mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
             }
-            if(data_tmp$MCMC_family.names[1]=="gaussian"){ 
-              v<-var(data_tmp$MCMC_y, na.rm=T)
-              mu<-mean(data_tmp$MCMC_y, na.rm=T)
+            if(family_set=="gaussian"){ 
+              v<-var(data_tmp$MCMC_y)
+              mu<-mean(data_tmp$MCMC_y)
             }
-            if(data_tmp$MCMC_family.names[1]=="zipoisson" | data_tmp$MCMC_family.names[1]=="hupoisson" | data_tmp$MCMC_family.names[1]=="zapoisson"){
-              if(max(data_tmp$MCMC_y, na.rm=T)==1){
-                mu<-mean(data_tmp$MCMC_y==1, na.rm=T)
-                if(data_tmp$MCMC_family.names[1]!="zapoisson"){
+            if(family_set=="zipoisson" | family_set=="hupoisson" | family_set=="zapoisson"){
+              if(max(data_tmp$MCMC_y)==1){
+                mu<-mean(data_tmp$MCMC_y==1)
+                if(family_set!="zapoisson"){
                    mu<-log(mu/(1-mu))
                 }else{
                    mu<-log(-log(mu))
@@ -760,41 +844,42 @@
                 v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
               }else{
                 data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
-                mu<-mean(data_tmp$MCMC_y, na.rm=TRUE)
-                v<-abs(log(((var(data_tmp$MCMC_y, na.rm=TRUE)-mu)/(mu^2))+1))
+                mu<-mean(data_tmp$MCMC_y)
+                v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
                 mu<-log(mu)-0.5*v
               }
             }
-            if(data_tmp$MCMC_family.names[1]=="zibinomial"){
-              if(max(data_tmp$MCMC_y, na.rm=T)==1){
-                mu<-mean(data_tmp$MCMC_y==1, na.rm=T)
+            if(family_set=="zibinomial"){
+              if(max(data_tmp$MCMC_y)==1){
+                mu<-mean(data_tmp$MCMC_y==1)
                 mu<-log(mu/(1-mu))
                 v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
               }else{
                  data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
-                 m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional)~1, family="quasibinomial", data=data_tmp,subset=is.na(data_tmp$MCMC_y)==FALSE))
+                 m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional)~1, family="quasibinomial", data=data_tmp))
                  v<-abs(((as.numeric(m1$dispersion[1])-0.5)/2)^2)
                  mu<-as.numeric(m1$coef[1])
               }
             }
-            if(length(missing_set)>0){
-              data$MCMC_liab[trait_set][missing_set]<-sample(data$MCMC_liab[trait_set][-missing_set], length(missing_set), TRUE)
-            }
-
+          }
+          if(is.na(v) | is.na(mu)){
+            warning(paste("good starting values not obtained for error term", i, "liabilities: using Norm(0,1)"))
             if(is.na(v)){v<-1}
             if(is.na(mu)){mu<-0}
-
+          }
+          if(length(missing_set)>0){
+            data$MCMC_liab[missing_set]<-rnorm(length(missing_set),mu, sqrt(v))
+          }
+          if(length(dummy_set)>0){
+            data$MCMC_liab[dummy_set]<-rnorm(length(dummy_set), 0, sqrt(v))
+          }
+          if(length(trait_set)>0){
             l_tmp<-sort(rnorm(length(trait_set), mu, sqrt(v)))
-
             mix<-sample(1:length(l_tmp),max(1,as.integer(length(l_tmp)/2)))
             l_tmp[mix]<-l_tmp[rev(mix)] # mix up 50% of latent variables to stop complete separation
             data$MCMC_liab[trait_set][order(data$MCMC_y[trait_set])]<-l_tmp
           }
         }
-      }	
-      if(any(is.na(data$MCMC_liab))){
-         warning("good starting values not obtained for all liabilities: using Norm(0,1)")
-         data$MCMC_liab[which(is.na(data$MCMC_liab))]<-rnorm(sum(is.na(data$MCMC_liab)),0,1)
       }
     }else{
       if(length(c(start$liab))!=length(data$MCMC_y)){stop("liabilities must have the same dimensions as the response")}
@@ -805,7 +890,7 @@
       data$MCMC_liab<-c(start$liab)
     }
 
-    if(any(data$MCMC_family.names=="cengaussian" & (data$MCMC_liab>data$MCMC_y.additional | data$MCMC_liab<data$MCMC_y))){
+    if(any(data$MCMC_family.names=="cengaussian" & (data$MCMC_liab>data$MCMC_y.additional | data$MCMC_liab<data$MCMC_y), na.rm=T)){
       outside<-which(data$MCMC_family.names=="cengaussian" & (data$MCMC_liab>data$MCMC_y.additional | data$MCMC_liab<data$MCMC_y))
        # liabilities for censored data have to lie in between censoring points.
        data$MCMC_liab[outside]<-mapply(data$MCMC_y[outside], data$MCMC_y.additional[outside], FUN=function(x,y){if(x==c(-Inf) | y==Inf){if(x==-Inf){y}else{x}}else{runif(1, x, y)}})
@@ -825,8 +910,13 @@
     }
 
     split<-unlist(lapply(GRprior, function(x){x$fix}))
-    if(any(split>nfl | (split<1 & split!=0))){stop("fix term in priorG/priorR must be at least one less than the dimension of V")}
+    if(any(split[1:nG]>nfl[1:nG] | (split[1:nG]<1 & split[1:nG]!=0))){stop("fix term in priorG must be at least one less than the dimension of V")}
+    if(split[nG+1]>nfl[nG+1] && covu==0){stop("fix term in priorR must be at least one less than the dimension of V")}
+    if(nR>1){
+     if(any(split[nG+2:nR]>nfl[nG+2:nR])){stop("fix term in priorR must be at least one less than the dimension of V")}
+    }
     if(any(split>1 & grepl("corg|corgh", update))){stop("sorry, fix terms cannot yet be used in conjunction with corg/corh structures")}
+    if(any(split>1 & grepl("ante", update))){stop("sorry, fix terms cannot yet be used in conjunction with antedependence structures")}
 
     if(diagR==2){  # need to reform priors such that the marginal distribution of us is equal to distribution of idh 
       GRprior[[nG+nR]]$V<-GRprior[[nG+nR]]$V*GRprior[[nG+nR]]$n/(GRprior[[nG+nR]]$n+(dim(GRprior[[nG+nR]]$V)[1]+1))
@@ -849,13 +939,26 @@
 	GRvpP[[i]][GRprior[[i]]$fix:nrow(GRprior[[i]]$V),GRprior[[i]]$fix:nrow(GRprior[[i]]$V)]<-diag(length(GRprior[[i]]$fix:nrow(GRprior[[i]]$V))) 	
       }
     }	
-	 
+
     GRvpP<-unlist(GRvpP)
     if(diagR==3){  # need to add aditional prior nu because of way trait:units are updated
       GRprior[[nG+nR]]$n<-GRprior[[nG+nR]]$n+(nrl[nG+nR]+1)*(dim(GRprior[[nG+nR]]$V)[1]-1)
     }
     GRnpP<-unlist(lapply(GRprior, function(x){c(x$n)}))      
- 
+
+    nanteP<-as.numeric(gsub("[a-z]", "", update))*grepl("ante", update)
+    if(any(is.na(nanteP))){
+      nanteP[which(is.na(nanteP))]<-0
+    }
+    if(any(!nanteP<nfl)){
+      stop("order of the ante-dependence structure must be less than the dimensions of the matrix")
+    }
+    nanteP<-c(nanteP, unlist(lapply(GRprior, function(x){length(x$beta.mu)})))
+    nanteP<-c(nanteP, grepl("ante.*v$", update))
+
+    anteBmupP<-unlist(lapply(GRprior, function(x){c(x$beta.mu)}))      
+    anteBvpP<-unlist(lapply(GRprior, function(x){if(!is.null(x$beta.V)){c(solve(x$beta.V))}}))      
+      
     BvpP<-c(solve(prior$B$V), sum(prior$B$V!=0)==dim(prior$B$V)[1])
     BmupP<-c(prior$B$mu)
     if(nL>0){
@@ -879,18 +982,30 @@
       AVpP<-as(diag(1), "sparseMatrix")
     }
 
-
     update[which(update=="idh" | update=="idv" | update=="us")]<-1
     update[which(update==1 & split>1)]<-2
     update[grep("corg|corgh", update)]<-3
     update[which(split==1)]<-0
     update[grep("cors", update)]<-4
+    update[grep("ante", update)]<-5
+    update[grep("sub", update)]<-6
+
+    update<-c(update, covu)
+
+    if(covu>0){
+      update<-c(update, update[nG+1])
+      update[0:1+nG]<-0
+    }else{
+      update<-c(update, 0)
+    }
 
     # update codes: 0 fixed - do not sample;
     #             : 1 unstructured 
     #             : 2 block diagonal constrained 
     #             : 3 correlation
     #             : 4 unstructured with correlation sub-matrix
+    #             : 5 ante-dependence structure
+    #             : 6 us + identity direct sum 
 
     # diagR codes:  1 normal
     #            :  2 idh(trait):units specification turned into us(trait):units to keep latent variables together
@@ -929,14 +1044,15 @@
     }else{
       PLiab<-1
     }
-    Var<-1:(length(GRinv)*nkeep)
+
+    Var<-1:((length(GRinv)-covu^2)*nkeep)
 
     if(all(Aterm==0)){
       ginverse<-list(A=as(diag(1), "sparseMatrix"))
     }
 
     if(DIC==TRUE){
-      if(nL!=0 | sum(family.names=="threshold")>1){
+      if(((sir | !is.null(path.terms)) & any(mvtype!=2)) | nordinal>1){
          DIC<-FALSE
       }
     }
@@ -1001,9 +1117,12 @@
         as.double(L@x),   
         as.double(lambda),        
         as.double(LvpP),    # prior for structural parameters
-        as.double(LmupP)
+        as.double(LmupP),
+        as.double(nanteP),    # prior antedpendence betas  
+        as.double(anteBvpP),   
+        as.double(anteBmupP)             
         )
-       
+
         Sol<-t(matrix(output[[30]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
 
         if(pr){     
@@ -1023,23 +1142,58 @@
 
        if(ncutpoints_store!=0){
          CP<-mcmc(t(matrix(output[[48]],ncutpoints_store, nkeep)), start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
-         colnames(CP)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){1:x})), sep=""))
+         colnames(CP)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){if(x!=0){1:x}})), sep=""))
          colnames(CP)<-gsub("MCMC_", "", colnames(CP))
        }else{
          CP<-NULL
        }
 
 
-        VCV<-t(matrix(output[[31]], length(GRinv), nkeep))
+       VCV<-t(matrix(output[[31]], length(GRinv)-covu^2, nkeep))
+
+       if(covu){
+         if(nG==1){
+           ustart<-0
+         }else{
+           ustart<-sum(nfl[1:(nG-1)]^2)
+         }
+         gnames<-gsub(".*MCMCsplit","", variance.names[ustart+seq(1, nfl[nG]^2, nfl[nG])])
+         rnames<-gsub(".*MCMCsplit","", variance.names[ustart+nfl[nG]^2+seq(1, nfl[nG+1]^2, nfl[nG+1])])
+         grnames<-apply(expand.grid(c(gnames, rnames), c(gnames, rnames)), 1, paste, collapse=":")
+         if(nG==1){
+           if(nR>1){
+             variance.names<-c(grnames, variance.names[(sum(nfl[1:(nG+1)]^2)+1):length(variance.names)])
+           }else{
+             variance.names<-grnames
+           }
+         }else{
+           if(nR>1){
+             variance.names<-c(variance.names[1:ustart], grnames, variance.names[(sum(nfl[1:(nG+1)]^2)+1):length(variance.names)])
+           }else{
+             variance.names<-c(variance.names[1:ustart], grnames)
+           }
+         }
+       }
+
         colnames(VCV)<-variance.names
         colnames(VCV)<-gsub("MCMC_", "", colnames(VCV))
+        colnames(VCV)<-gsub("MCMCsplit", ":", colnames(VCV))
+
+        if(covu>0){
+          nfl[nG+1]<-nfl[nG+1]+covu
+          nfl<-nfl[-nG]
+          nrl<-nrl[-nG]
+          nrt<-nrt[-ngstructures]
+          nG<-nG-1
+          ngstructures<-ngstructures-1
+        }
 
         if(diagR==2){  # idh structures that were held as us 
           VCV<-VCV[,-c(((dim(VCV)[2]-nfl[nG+1]^2+1):dim(VCV)[2])[-diag(matrix(1:(nfl[nG+1]^2),nfl[nG+1],nfl[nG+1]))]),drop=FALSE]          
           colnames(VCV)[(dim(VCV)[2]-nfl[nG+1]+1):dim(VCV)[2]]<-sapply(colnames(VCV)[(dim(VCV)[2]-nfl[nG+1]+1):dim(VCV)[2]], function(x){substr(x, gregexpr(":", x)[[1]][ceiling(length(gregexpr(":", x)[[1]])/2)]+1, nchar(x))})
           nfl<-c(nfl,rep(1,nfl[nG+1]-1))
           nrl<-c(nrl,rep(nrl[nG+1],nfl[nG+1]-1))
-          nrt[nG+1]<-nfl[nG+1]
+          nrt[ngstructures+1]<-nfl[nG+1]
           nR<-nfl[nG+1]
           nfl[nG+1]<-1        
         }
@@ -1048,7 +1202,7 @@
           colnames(VCV)[dim(VCV)[2]]<-"trait:units" 
           nrl[nG+1]<-nrl[nG+1]*nfl[nG+1]
           nfl[nG+1]<-1
-          nrt[nG+1]<-1
+          nrt[ngstructures+1]<-1
           nR<-1
         }
 
@@ -1084,7 +1238,7 @@
           }
         }
 
-        if(saveZ==FALSE | nG==0){
+        if(saveZ==FALSE | (nG==0 & covu==0)){
           Z<-NULL
         }else{
           Z<-Z[order(ordering),,drop=FALSE]
@@ -1093,17 +1247,37 @@
           }
         }
 
+        if(saveZ){
+          if(length(dummy.data)>0){
+            ZR<-ZR[-dummy.data,,drop=FALSE]
+          }
+        }
+
         if(saveXL==FALSE | nL==0){
           L<-NULL
         }else{
-           L<-L[order(ordering),,drop=FALSE]
+           if(!is.null(path.terms)){
+             L<-kronecker(as.matrix(L), Diagonal(nrl[nG+1]))
+           }
+           Lordering<-rep(order(ordering),nL)+rep(((1:nL)-1)*length(ordering),each=length(ordering))
+           L<-L[order(ordering),Lordering,drop=FALSE]
+           Ldummy.data<-rep(dummy.data,nL)+rep(((1:nL)-1)*length(dummy.data),each=length(dummy.data))
            if(length(dummy.data)>0){
-             L<-L[-dummy.data,,drop=FALSE]
+             L<-L[-dummy.data,-Ldummy.data,drop=FALSE]
            }
         }
 
-        error.term<-rep(1:sum(nfl[nG+1:nR]), rep(nrl[nG+1:nR], nfl[nG+1:nR]))[order(ordering)]
+        if(all(Aterm==0)){
+          ginverse=NULL
+        }
+
+        error.term<-data$MCMC_error.term[order(ordering)]
         family<-family.types[data$MCMC_family.names[order(ordering)]]
+        y.additional<-data$MCMC_y.additional[order(ordering)]
+
+        if(any(family=="multinomial")){
+           family[which(family=="multinomial")]<-paste("multinomial", y.additional[which(family=="multinomial")], sep="")
+        }
 
         if(length(dummy.data)>0){
           error.term<-error.term[-dummy.data]
@@ -1114,6 +1288,7 @@
         if(nG==0){
           Gnfl<-NULL
           Gnrl<-NULL
+          Gnat<-NULL
           Gnrt<-NULL
           Rnfl<-nfl
           Rnrl<-nrl
@@ -1121,6 +1296,7 @@
         }else{
           Gnfl<-nfl[1:nG]
           Gnrl<-nrl[1:nG]
+          Gnat<-Aterm[1:nG]
           Gnrt<-nrt[1:ngstructures]
           Rnfl<-nfl[nG+1:nR]
           Rnrl<-nrl[nG+1:nR]
@@ -1129,7 +1305,11 @@
 
         Tune<-as.list(1:nR)
         for(i in 1:nR){
-          Tune[[i]]<-matrix(output[[34]][sum(Rnfl[1:i]^2)-Rnfl[i]^2+1:(Rnfl[i]^2)],Rnfl[i],Rnfl[i])
+          if(covu>0 & i==1){
+            Tune[[i]]<-matrix(output[[34]][1:((Rnfl[1]-covu)^2)],Rnfl[1]-covu,Rnfl[1]-covu)
+          }else{
+            Tune[[i]]<-matrix(output[[34]][sum(Rnfl[1:i]^2)-Rnfl[i]^2+1:(Rnfl[i]^2)],Rnfl[i],Rnfl[i])
+          }
         }
 
         output<-list(
@@ -1139,13 +1319,15 @@
             CP=CP,
             Liab=Liab,
             Fixed=list(formula=original.fixed, nfl=nF, nll=nL),
-            Random=list(formula = original.random, nfl=Gnfl, nrl=Gnrl, nrt=Gnrt),
-            Residual=list(formula = original.rcov, nfl=Rnfl, nrl=Rnrl, nrt=Rnrt),
+            Random=list(formula = original.random, nfl=Gnfl, nrl=Gnrl, nat=Gnat, nrt=Gnrt),
+            Residual=list(formula = original.rcov, nfl=Rnfl, nrl=Rnrl, nrt=Rnrt, family=rterm.family, original.family=original.family),
             Deviance=deviance,
             DIC=DIC,
             X=X,
             Z=Z,
+            ZR=ZR,
             XL=L,
+            ginverse=ginverse,
             error.term=error.term,
             family=family, 
             Tune=list2bdiag(Tune)

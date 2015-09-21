@@ -2,11 +2,11 @@
 
 void cs_kroneckerAupdate(const cs *G, const cs *A, const cs *C){
 
-    int i, j, k, l, cnt, anz, gnz, cnz, *Cp, *Ap, *Gp, an, gn, cn;
+    int i, j, k, l, cnt, anz, gnz, cnz, *Ap, an, gn, cn;
     double  *Ax, *Gx;
 	
     an = A->n ; anz = A->nzmax; Ap = A->p ;  Ax = A->x ;
-    gn = G->n ; gnz = G->nzmax; Gp = G->p ;  Gx = G->x ;
+    gn = G->n ; gnz = G->nzmax; Gx = G->x ;
 
     cn = an*gn; cnz = anz*gnz;
     cnt = 0;	

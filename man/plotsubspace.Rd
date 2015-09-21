@@ -31,7 +31,7 @@ title.
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk} with code taken from the \code{rgl} package}
 \seealso{\code{\link[rgl]{rgl}}}
 \examples{
- if(require(rgl)!=FALSE){
+ if(requireNamespace("rgl")!=FALSE){
    G1<-rIW(diag(4),10)
    G2<-G1*1.2
  #  plotsubspace(G1, G2, shadeCB=FALSE)

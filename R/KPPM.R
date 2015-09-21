@@ -1,6 +1,6 @@
 KPPM<-function(m,k){
 
-  if(require(combinat, quietly = TRUE)==FALSE){stop("combinat not loaded")}
+  if(requireNamespace("combinat", quietly = TRUE)==FALSE){stop("combinat not loaded")}
 
   K<-matrix(0,m^k, m^k)
   H<-matrix(0,m,m)
@@ -8,7 +8,7 @@ KPPM<-function(m,k){
   terms<-expand.grid(lapply(1:k, function(x){(1:m)}))
   nterms<-length(terms[,1])
 
-  perms<-permn(1:k) 
+  perms<-combinat::permn(1:k) 
   nperms<-length(perms) 
 
   for(s.terms in 1:nterms){

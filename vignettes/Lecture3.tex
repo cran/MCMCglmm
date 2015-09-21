@@ -198,7 +198,8 @@ units    0.5733   0.5121   0.6322     1000
 sexMale       0.76569  0.65086  0.87339   1000.0 <0.001 ***
 sexUNK        0.20926 -0.02682  0.48502    850.7   0.11    
 ---
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+Signif. codes:  
+0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 \end{Soutput}
 \end{Schunk}
 
@@ -300,10 +301,10 @@ We can extract the marginal means for each variance and place them into a matrix
 > Vdam.3
 \end{Sinput}
 \begin{Soutput}
-      Fem.dam  Male.dam    UNK.dam
-[1,] 0.180614 0.0000000 0.00000000
-[2,] 0.000000 0.1706785 0.00000000
-[3,] 0.000000 0.0000000 0.06389235
+     sexFem.dam sexMale.dam sexUNK.dam
+[1,]   0.180614   0.0000000 0.00000000
+[2,]   0.000000   0.1706785 0.00000000
+[3,]   0.000000   0.0000000 0.06389235
 \end{Soutput}
 \end{Schunk}
 
@@ -363,10 +364,10 @@ The posterior mean (co)variances for this model show that the covariances are al
 > Vdam.4
 \end{Sinput}
 \begin{Soutput}
-     Fem:Fem.dam Male:Fem.dam UNK:Fem.dam
-[1,]   0.2327515    0.2019700   0.2015774
-[2,]   0.2019700    0.2146906   0.1937506
-[3,]   0.2015774    0.1937506   0.2419357
+     sexFem:sexFem.dam sexMale:sexFem.dam sexUNK:sexFem.dam
+[1,]         0.2284220          0.1990041         0.2093939
+[2,]         0.1990041          0.2126249         0.2030466
+[3,]         0.2093939          0.2030466         0.2563215
 \end{Soutput}
 \end{Schunk}
 
@@ -411,7 +412,7 @@ All the correlations are very close to one, and the variances all pretty equal s
 > m3a.4$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 1998.732
+[1] 1997.348
 \end{Soutput}
 \begin{Sinput}
 > m3a.1$DIC

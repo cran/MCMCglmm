@@ -26,8 +26,12 @@ cs *cs_rinvwishart(const cs *A, double nu, const css *As){
       df--;
     }
     T->p[m] = m*(m+1)/2;
-
     U = cs_chol(A, As);  
+    if(U==NULL){
+      PutRNGstate();
+      error("ill-conditioned cross-product: can't form Cholesky factor\n");
+    }
+
     C = cs_multiply(U->L,T);              // t(T)%*%chol(A)
     tC = cs_transpose(C, TRUE);            // t(CI)
     W  = cs_multiply(C,tC);   

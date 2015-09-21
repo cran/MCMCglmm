@@ -12,7 +12,7 @@ posterior.evals(x)
   posterior eigenvalues
  }
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
-\seealso{\code{\link{posterior.cor}}}
+\seealso{\code{\link{posterior.cor}}, \code{\link{posterior.inverse}}, \code{\link{posterior.ante}}}
 \examples{
 v<-rIW(diag(2),3, n=1000)
 hist(posterior.evals(mcmc(v))[,2])

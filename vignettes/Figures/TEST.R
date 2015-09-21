@@ -1,17 +1,15 @@
-#source("~/Work/AManal/MCMCglmm_2.18/vignettes/Figures/TEST.R")
+#source("~/Work/AManal/MCMCglmm_2.19/vignettes/Figures/TEST.R")
 library(MASS)
 library(MCMCglmm)
 
-vgam=TRUE
 verbose=FALSE
 plotit=FALSE
 DICtest=TRUE
 SUMtest=TRUE
-leg=TRUE
 nsim<-10
-nitt<-13000*5 #13000*5
-thin<-10*5
-burnin<-3000*5
+nitt<-13000
+thin<-10
+burnin<-3000
 
 psets<-c()
 
@@ -75,15 +73,16 @@ print(i)
 
 # categorical test J=1 test 0.9 seconds OK
 print("res3")
-res3<-matrix(NA, nsim,2)
+res3<-matrix(NA, nsim,3)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
-tapr<-c(1,1)
+tpar<-c(1,3/2, 1)
 psets<-c(psets, tpar)
 for(i in 1:nsim){
-y<-rbinom(100,1,plogis(rnorm(100,1,1)))
-data=data.frame(y1=y, y2=1-y)
+x<-rnorm(100)
+y<-rbinom(100,1,plogis(rnorm(100,1+x*1.5,1)))
+data=data.frame(y1=y, y2=1-y, x=x)
 prior<-list(R=list(V=as.matrix(1), n=1, fix=1))
-m1<-MCMCglmm(y1~1, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+m1<-MCMCglmm(y1~x, family="categorical", data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(SUMtest){
 summary(m1)
 }
@@ -218,7 +217,6 @@ res5[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 
-if(leg){
 # gauss with correlated random regression OK
 print("res5b")
 res5b<-matrix(NA, nsim,6)
@@ -233,7 +231,7 @@ x<-runif(300, -1,1)
 bv<-rbv(Ped,G)[101:400,]
 y<-mvrnorm(300, c(-1), R)+bv[,1]+bv[,2]*x
 data=data.frame(y1=y, animal=as.factor(Ped[,1][101:400]), x=x)
-m1<-MCMCglmm(y1~1, random=~us(leg(x,1,FALSE)):animal, pedigree=Ped, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+m1<-MCMCglmm(y1~1, random=~us(1+x):animal, pedigree=Ped, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(SUMtest){
 summary(m1)
 }
@@ -245,7 +243,6 @@ print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(
 }
 res5b[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
-}
 }
 
 # gauss with us random effect 3 seconds
@@ -639,19 +636,29 @@ res18[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 
 psets<-c(psets, tpar)
 
-res19<-matrix(0, nsim, 4)
+res19<-matrix(0, nsim, 6)
 res19b<-matrix(0, nsim, 6)
-if(vgam){
+
 print("res19")
 R<-diag(2)
-prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
+prior=list(R=list(V=R, n=1, fix=2))
 tune=list(diag(2))
-tpar<-c(1,-1,1,1)
+tpar<-c(1,-1,1,-1/2, 1, 1)
 for(i in 1:nsim){
-l<-mvrnorm(300,c(0,-1), R)
-y<-VGAM::rzipois(300, exp(1+l[,1]), plogis(l[,2]))
-data=data.frame(y1=y)
-m1<-MCMCglmm(y1~trait-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
+x<-rnorm(300)
+l<-mvrnorm(300,c(1, -1), R)
+l[,1]<-l[,1]+x*1
+l[,2]<-l[,2]-x*1/2
+
+y<-rbinom(300, 1, 1-plogis(l[,2]))
+y[which(y==1)]<-rpois(sum(y==1), exp(l[,1][which(y==1)]))
+
+
+
+data=data.frame(y1=y, x=x)
+m1<-MCMCglmm(y1~trait+trait:x-1, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
 if(SUMtest){
 summary(m1)
 }
@@ -677,7 +684,10 @@ tpar<-c(1, -0.5, 0.2, 1,1,1)
 	l<-mvrnorm(300,c(0,-0.5), R)
         fac<-gl(50,6)
         r<-rnorm(50)
-	y<-VGAM::rzipois(300, exp(1+l[,1]+r[fac]+0.2*x), plogis(l[,2]))
+        y<-rbinom(300, 1, 1-plogis(l[,2]))
+        y[which(y==1)]<-rpois(sum(y==1), exp(1+l[,1]+r[fac]+0.2*x)[which(y==1)])
+
+
 	data=data.frame(y1=y, x=x, fac=fac)
 	m1<-MCMCglmm(y1~trait+at.level(trait, 1):x-1, random=~us(at.level(trait,1)):fac, rcov=~idh(trait):units, data=data, family="zipoisson",prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(SUMtest){
@@ -694,10 +704,6 @@ summary(m1)
     }
 
    psets<-c(psets, tpar)
-
- }else{
-   psets<-c(psets, rep(0,10))
- }
 
 
 # bivariate gauss + categorical  residual 1.7 seconds
@@ -744,7 +750,6 @@ psets<-c(psets, tpar)
 
 # gauss random regression
 
-if(leg){
 res21<-matrix(NA, nsim,5)
 res21b<-matrix(NA, nsim,5)
 res21c<-matrix(NA, nsim,7)
@@ -768,8 +773,8 @@ time<-rnorm(900)
 y<-int.slope[,1][ind]+time*int.slope[,2][ind]
 y<-y+rnorm(900,-1,R)
 data=data.frame(y1=y, time=time, ind=ind)
-	m1<-MCMCglmm(y1~time, random=~us(leg(time,0,FALSE)):ind+us(leg(time,-1,FALSE)):ind, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
-	m2<-MCMCglmm(y1~time, random=~idh(leg(time,1,FALSE)):ind, data=data, prior=prior2,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+	m1<-MCMCglmm(y1~time, random=~ind+us(time):ind, data=data, prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+	m2<-MCMCglmm(y1~time, random=~idh(1+time):ind, data=data, prior=prior2,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
         m3<-MCMCglmm(y1~time, random=~us(1+poly(time,1, raw=TRUE)):ind, data=data, prior=prior2,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 if(SUMtest){
 summary(m1)
@@ -794,7 +799,6 @@ res21[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 res21b[i,]<-posterior.mode(mcmc(cbind(m2$Sol, m2$VCV)))
 res21c[i,]<-posterior.mode(mcmc(cbind(m3$Sol, m3$VCV)))
 print(i)
-}
 }
 psets<-c(psets, c(-1, 0, 2,1,1), c(-1, 0, 2,1,1), c(-1, 0, 2,0,0,1,1))
 
@@ -1095,20 +1099,25 @@ psets<-c(psets, tpar)
 # hurdle Poisson
 
 print("res30")
-res30<-matrix(NA, nsim,4)
+res30<-matrix(NA, nsim,6)
 
-tpar<-c(-1,log(1/2),1,1)
+tpar<-c(-1,log(1/2),1,1/2,1,1)
 
 for(i in 1:nsim){
 
-l1<-rnorm(100, -1, sqrt(1))
-l2<-rnorm(100, log(1/2), sqrt(1))
+  x<-rnorm(300)
+  l1<-rnorm(300, -1+x, sqrt(1))
+  l2<-rnorm(300, log(1/2)+x/2, sqrt(1))
+     
+  y<-rbinom(300, 1, 1-plogis(l2))
+  y[which(y==1)]<-qpois(runif(sum(y==1), dpois(0, exp(l1[which(y==1)])), 1), exp(l1[which(y==1)]))  
+  # cunning sampler from Peter Dalgaard (R-sig-mixed)
 
-y<-VGAM::rzapois(100, exp(l1), plogis(l2))
 
-data=data.frame(y=y)
+data=data.frame(y=y, x=x)
 prior=list(R=list(V=diag(2), fix=2, nu=1))
-m1<-MCMCglmm(y~trait-1, rcov=~idh(trait):units, data=data, family="hupoisson", prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+m1<-MCMCglmm(y~trait-1+trait:x, rcov=~idh(trait):units, data=data, family="hupoisson", prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
 res30[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
 if(SUMtest){
 summary(m1)
@@ -1127,36 +1136,41 @@ psets<-c(psets, tpar)
 # truncated Poisson
 
 print("res31")
-res31<-matrix(NA, nsim,2)
+res31<-matrix(NA, nsim,3)
 
-n<-200
-tpar<-c(-1,1)
+tpar<-c(-1,1/2, 1)
 for(i in 1:nsim){
-l<-rnorm(n, -1, sqrt(1))
-t<-(-log(1-runif(n)*(1-exp(-exp(l)))))
-y<-rpois(n,exp(l)-t)+1
 
-dat<-data.frame(y=y)
-m1<-MCMCglmm(y~1, family="ztpoisson", data=dat, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+ 
+ l<-rnorm(300, -1+x/2, 1)
+ y<-qpois(runif(300, dpois(0, exp(l)), 1), exp(l))  
+
+dat<-data.frame(y=y,x=x)
+m1<-MCMCglmm(y~x, family="ztpoisson", data=dat, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 
 res31[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
 
         if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)){
         print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)/length(tpar), "res31 different from expected"))
         }
+print(i)
 }
 psets<-c(psets, tpar)
 
 
 # geometric
 
-n<-200
 print("res32")
 res32<-matrix(NA, nsim,2)
 tpar<-c(-1,0.5)
 for(i in 1:nsim){
 
-y<-rgeom(n,plogis(rnorm(n,-1,sqrt(0.5))))
+
+nu<--1
+v<-0.5
+
+y<-rgeom(300,plogis(rnorm(300,nu,sqrt(v))))
+
 
 dat<-data.frame(y=y)
 m1<-MCMCglmm(y~1, family="geometric", data=dat, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
@@ -1168,24 +1182,31 @@ res32[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$VCV))
         if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)){
         print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV[,1])))[,2]<tpar)/length(tpar), "res32 different from expected"))
         }
-
+print(i)
 }
 psets<-c(psets, tpar)
 
 #zibinomial
 
 print("res33")
-if(vgam){
-res33<-matrix(0, nsim, 4)
+res33<-matrix(0, nsim, 6)
 R<-diag(2)
-prior=list(R=list(V=R, n=1, fix=2), B=list(mu=c(0,0), V=matrix(c(1000,0,0,pi^2/3),2,2)))
+prior=list(R=list(V=R, n=1, fix=2))
 tune=list(diag(2))
-tpar<-c(0, -1, 1, 1)
+tpar<-c(0, -1, 1, 1/2, 1, 1)
 for(i in 1:nsim){
+	
+x<-rnorm(300)	
 l<-mvrnorm(300,c(0,-1), R)
-y<-VGAM::rzibinom(300, 20, exp(l[,1])/(1+exp(l[,1])), plogis(l[,2]))
-data=data.frame(success=y,failure=20-y)
-m1<-MCMCglmm(cbind(success,failure)~trait-1, rcov=~idh(trait):units, data=data, family="zibinomial",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+l[,1]<-l[,1]+x
+l[,2]<-l[,2]+x/2
+y<-rbinom(300, 1, 1-plogis(l[,2]))
+y[which(y==1)]<-rbinom(sum(y==1), 20, plogis(l[,1][which(y==1)]))  
+
+
+data=data.frame(success=y,failure=20-y, x=x)
+m1<-MCMCglmm(cbind(success,failure)~trait-1+trait:x, rcov=~idh(trait):units, data=data, family="zibinomial",prior=prior,verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
 if(SUMtest){
 summary(m1)
 }
@@ -1199,15 +1220,13 @@ res33[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 psets<-c(psets, tpar)
-}else{
-psets<-c(psets, rep(0,4))
-}
 
 print("res34")
 # sir model
 res34<-matrix(0, nsim, 4)
 tpar<-c(0,0,-0.5, 1)
 for(i in 1:nsim){
+
 id <- sample(1:100, 100, replace = T)
 y <- rnorm(100)
 
@@ -1220,12 +1239,32 @@ L<-diag(100)-sir(~id1, ~id)*-0.5
 y<-solve(L,y)
 
 my.data <- data.frame(y = y, id = id, id1 = id1, x = rnorm(100))
+
+if(DICtest){
+  m1 <- MCMCglmm(y ~ x + sir(~id1, ~id), data = my.data, verbose=verbose, nitt=3, thin=1, burnin=0)
+
+  L<-Diagonal(100)-m1$XL*m1$Lambda[2]
+
+  d<-sum(dnorm((L%*%y)@x, (m1$X%*%m1$Sol[2,])@x, sqrt(m1$VCV[2]), log=TRUE))+log(det(L))
+
+  if(abs(-2*d-m1$Deviance[2])<1e-6){
+    print("Deviance OK for sir model (res34)")
+  }else{
+    stop("Deviance wrong  sir model (res34)")
+  }
+}
+
+
 m1 <- MCMCglmm(y ~ x + sir(~id1, ~id), data = my.data, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
 res34[i,]<-c(posterior.mode(m1$Sol),posterior.mode(m1$Lambda), posterior.mode(m1$VCV))
         if(any(HPDinterval(mcmc(cbind(m1$Sol,m1$Lambda, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$Lambda,m1$VCV[,1])))[,2]<tpar)){
         print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$Lambda, m1$VCV[,1])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol,m1$Lambda, m1$VCV[,1])))[,2]<tpar)/length(tpar), "res34 different from expected"))
         }
+
+
+print(i)
 }
+
 psets<-c(psets, tpar)
 
 
@@ -1305,7 +1344,7 @@ print("res37")  # Test threshold against probit
 
 res37<-matrix(0, nsim, 3)
 
-prior<-list(R=list(V=1, fix=1), G=list(G1=list(V=1, nu=0.002)))
+prior<-list(R=list(V=1, fix=1), G=list(G1=list(V=1, nu=1, alpha.mu=0, alpha.V=1000)))
 tpar<-c(0,1,1)
 
 for(i in 1:nsim){
@@ -1313,8 +1352,8 @@ tree<-rcoal(100)
 y<-rbv(tree, diag(1), nodes="TIPS")+rnorm(100)
 A<-inverseA(tree)
 
-data=data.frame(y=as.numeric(y>0), x=x, species=tree$tip.label)
-plot(data$y)
+data=data.frame(y=as.numeric(y>0), species=tree$tip.label)
+
 m1<-MCMCglmm(y~1, random=~species, rcov=~units, family="threshold", ginv=list(species=A$Ainv),verbose=verbose,  data=data, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
 if(SUMtest){
 summary(m1)
@@ -1332,23 +1371,24 @@ psets<-c(psets, tpar)
 
 res38<-matrix(0, nsim, 12)
 
-tpar<-c(1,0,0.5, -0.5, 1,-0.5,-0.5,1, 1,0.2,0.2,1)
+tpar<-c(1,0,0.5, -0.5, 1,-0.5,-0.5,1, 1,0.25,0.25,1)
 
 G<-matrix(c(1,-0.5,-0.5,1),2,2)
 R<-matrix(c(1, 0.25, 0.25,1),2,2)
 
 for(i in 1:nsim){
-id<-c(1:50, rep(51:100,2))
-x<-rnorm(150)
-y<-mvrnorm(100, c(0,0), G)[id,]+mvrnorm(150, c(0,0), R)
+id<-c(1:50, rep(51:100,4))
+x<-rnorm(250)
+y<-mvrnorm(100, c(0,0), G)[id,]+mvrnorm(250, c(0,0), R)
 y[,1]<-y[,1]+1+0.5*x
 y[,2]<-y[,2]+0-0.5*x
 
-data=data.frame(y1=as.numeric(y[,1]>0), y2=as.numeric(y[,2]>0), g1=y[,1], g2=y[,2], p1=rpois(150,exp(y[,1])), p2=rpois(150,exp(y[,2])), id=id, x=x, y1NA=rep(NA,150), y2NA=rep(NA,150))
+data=data.frame(y1=as.numeric(y[,1]>0), y2=as.numeric(y[,2]>0), id=id, x=x)
 
-prior=list(R=list(V=diag(2), nu=3), G=list(G1=list(V=G, nu=3)))
+prior=list(R=list(V=diag(2), nu=10), G=list(G1=list(V=G, nu=3)))
 
 m1<-MCMCglmm(cbind(y1, y2)~trait-1+trait:x, random=~us(trait):id, rcov=~corg(trait):units, family=c("threshold","threshold"), data=data, verbose=verbose, prior=prior, nitt=nitt, thin=thin, burnin=burnin)
+
 if(SUMtest){
 summary(m1)
 }
@@ -1363,13 +1403,11 @@ print(i)
 }
 psets<-c(psets, tpar)
 
-
-
 res39<-matrix(0, nsim, 12)
 print("res39")  # Block-diagonal R-structure with augmented animal model
 data(BTped)
 
-tpar<-c(0,0,1, 0, 0,1,1,0, 0,2,1,2)
+tpar<-c(0,0,1, 0, 0,1,1,0, 0,1,1,2)
 
 prior<-list(G=list(G1=list(V=diag(2), nu=1.002)), R=list(R1=list(V=diag(2), nu=1.002), R2=list(V=diag(2), nu=1.002)))
 
@@ -1388,6 +1426,7 @@ dat<-data.frame(y1=y1, y2=y2, fac=fac, id=BTped[,1][which(!is.na(BTped[,2]))])
 A<-inverseA(BTped)
 
 m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~us(trait):id, rcov=~us(trait:at.level(fac,1)):units+idh(trait:at.level(fac,2)):units, data=dat, family=rep("gaussian", 2), prior=prior, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+
 if(SUMtest){
 summary(m1)
 }
@@ -1401,7 +1440,6 @@ res39[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 psets<-c(psets, tpar)
-
 
 res40<-matrix(0, nsim, 2)
 print("res40")  # Reduced phylogenetic probit model
@@ -1429,8 +1467,10 @@ for(i in 1:nsim){
 
      # inverse matrix of shared phyloegnetic history
           
-     m1<-MCMCglmm(y~x, random=~mother, rcov=~idh(taxon):units, ginverse=list(mother=A$Ainv),
-     data=dat, prior=prior, verbose=FALSE, family="threshold")
+     m1<-MCMCglmm(y~x, random=~mother, rcov=~idh(units):units, ginverse=list(mother=A$Ainv),
+     data=dat, prior=prior,  verbose=verbose, nitt=nitt, thin=thin, burnin=burnin, family="threshold")
+
+
 
 if(SUMtest){
 summary(m1)
@@ -1439,7 +1479,7 @@ if(plotit){
 plot(mcmc(m1$Sol), ask=FALSE)
 }
 if(any(HPDinterval(mcmc(m1$Sol))[,1]>tpar | HPDinterval(mcmc(m1$Sol))[,2]<tpar)){
-print(paste(sum(HPDinterval(mcmc(m1$Sol))[,1]>tpar | HPDinterval(mcmc(m1$Sol))[,2]<tpar)/length(tpar), "res39 different from expected"))
+print(paste(sum(HPDinterval(mcmc(m1$Sol))[,1]>tpar | HPDinterval(mcmc(m1$Sol))[,2]<tpar)/length(tpar), "res40 different from expected"))
 }
 res40[i,]<-posterior.mode(mcmc(m1$Sol))
 print(i)
@@ -1507,7 +1547,7 @@ if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
 if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))[,2]<tpar)){
-print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))[,2]<tpar)/length(tpar), "res36 different from expected"))
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))[,2]<tpar)/length(tpar), "res41 different from expected"))
 }
 res41[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV, m1$CP)))
 print(i)
@@ -1540,6 +1580,7 @@ data=data.frame(y1=y[,1], y2=y[,2]>0, y3=y[,3]>0, x=x)
 if(DICtest){print("DIC not available for this model")}
 m1<-MCMCglmm(cbind(y1,y2, y3)~trait-1+trait:x, rcov=~cors(trait):units, family=c("gaussian", "threshold", "threshold"), data=data, prior=prior, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
 
+
 if(SUMtest){
 summary(m1)
 }
@@ -1548,19 +1589,323 @@ if(plotit){
 plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
 }
 if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
-print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res36 different from expected"))
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res42 different from expected"))
 }
 res42[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
 print(i)
 }
 psets<-c(psets, tpar)
 
+print("res43")  # 1st order ante-dependence on 4 observations
 
-est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29, res30, res31, res32, res33, res34, res35, res36, res37, res38, res39, res40, res41, res42), na.rm=T)
+res43<-matrix(0, nsim, 9)
 
-np<-c(ncol(res1), ncol(res2), ncol(res3), ncol(res3b), ncol(res4), ncol(res4c), ncol(res5),ncol(res5b),ncol(res6), ncol(res7),ncol(res7b), ncol(res8),ncol(res9), ncol(res10), ncol(res11), ncol(res12), ncol(res13), ncol(res14), ncol(res15), ncol(res17a),ncol(res17b), ncol(res18), ncol(res19), ncol(res19b), ncol(res20), ncol(res21), ncol(res21b), ncol(res21c), ncol(res22), ncol(res23), ncol(res24), ncol(res25), ncol(res26), ncol(res27), ncol(res28), ncol(res29), ncol(res30), ncol(res31), ncol(res32), ncol(res33), ncol(res34), ncol(res35), ncol(res36), ncol(res37), ncol(res38), ncol(res39), ncol(res40), ncol(res41), ncol(res42))
+R<-diag(4:1)
+beta<-c(-0.5,0,0.5)
 
-nam<-c("res1", "res2", "res3", "res3b", "res4", "res4c", "res5","res5b","res6", "res7","res7b", "res8","res9", "res10", "res11", "res12", "res13", "res14", "res15", "res17a","res17b", "res18", "res19", "res19b", "res20", "res21", "res21b", "res21c", "res22", "res23", "res24", "res25", "res26", "res27", "res28", "res29", "res30", "res31", "res32", "res33", "res34", "res35", "res36", "res37", "res38", "res39", "res40", "res41", "res42")
+tpar<-c(1,0.5, diag(R), beta)
+
+Lambda1<-Diagonal(4,1)-bandSparse(4,4,-1,list(beta))
+V<-solve(Lambda1)%*%R%*%t(solve(Lambda1))
+
+
+for(i in 1:nsim){
+
+y<-mvrnorm(100, rep(1,4), V)
+x<-rnorm(100*4)
+y<-y+x*0.5
+
+data=data.frame(y=c(y), day=as.factor(rep(1:4,each=100)), id=as.factor(rep(1:100,4)), x=x)
+
+
+if(DICtest){
+m1<-MCMCglmm(y~x, rcov=~ante1(day):id, data=data, verbose=verbose, nitt=3, thin=1, burnin=1)
+dev<-0
+for(j in 1:100){
+dev<-dev+mvtnorm::dmvnorm(data$y[which(data$id==j)], m1$Sol[1,1]+m1$Sol[1,2]*data$x[which(data$id==j)], matrix(m1$VCV[1,],4,4), log=TRUE)
+}
+if(abs(-2*dev-m1$Deviance[1])<1e-6){
+ print("Deviance OK for ante-dependence Gaussian (res43)")
+}else{
+ stop("Deviance wrong for ante-dependence Gaussian (res43)")
+}}
+
+m1<-MCMCglmm(y~x, rcov=~ante1(day):id, data=data, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+
+if(SUMtest){
+summary(m1)
+}
+
+if(plotit){
+plot(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV))), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV))))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV))))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV))))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV))))[,2]<tpar)/length(tpar), "res43 different from expected"))
+}
+res43[i,]<-posterior.mode(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV))))
+print(i)
+}
+psets<-c(psets, tpar)
+
+print("res44")  # 2nd order ante-dependence with constant innovation variance on 4 observations
+
+res44<-matrix(0, nsim, 8)
+
+R<-diag(4)
+beta<-c(-0.5,0,0.5,0,0)
+
+tpar<-c(1,0.5, 1, beta)
+
+Lambda1<-Diagonal(4,1)-bandSparse(4,4,-(1:2),list(beta[1:3], beta[4:5]))
+V<-solve(Lambda1)%*%R%*%t(solve(Lambda1))
+
+
+for(i in 1:nsim){
+
+y<-mvrnorm(100, rep(1,4), V)
+x<-rnorm(100*4)
+y<-y+x*0.5
+
+data=data.frame(y=c(y), day=as.factor(rep(1:4,each=100)), id=as.factor(rep(1:100,4)), x=x)
+
+m1<-MCMCglmm(y~x, rcov=~ante2v(day):id, data=data, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+
+if(SUMtest){
+summary(m1)
+}
+
+if(plotit){
+plot(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,2)[,-c(2:4)])), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,2)[,-c(2:4)])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,2)[,-c(2:4)])))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,2)[,-c(2:4)])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,2)[,-c(2:4)])))[,2]<tpar)/length(tpar), "res44 different from expected"))
+}
+res44[i,]<-posterior.mode(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,2)[,-c(2:4)])))
+print(i)
+}
+psets<-c(psets, tpar)
+
+print("res45")  # 3rd order ante-dependence with constant innovation variance and regressions on 4 observations
+
+res45<-matrix(0, nsim, 6)
+
+R<-diag(4)
+beta<-c(-0.5,0,0.5)
+
+tpar<-c(1,0.5, 1, beta)
+
+Lambda1<-Diagonal(4,1)-bandSparse(4,4,-(1:3),list(rep(beta[1],3), rep(beta[2],2), beta[3]))
+
+V<-solve(Lambda1)%*%R%*%t(solve(Lambda1))
+
+
+for(i in 1:nsim){
+
+y<-mvrnorm(100, rep(1,4), V)
+x<-rnorm(100*4)
+y<-y+x*0.5
+
+data=data.frame(y=c(y), day=as.factor(rep(1:4,each=100)), id=as.factor(rep(1:100,4)), x=x)
+
+m1<-MCMCglmm(y~x, rcov=~antec3v(day):id, data=data, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+
+if(SUMtest){
+summary(m1)
+}
+
+if(plotit){
+plot(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,3)[,c(1,5,8,10)])), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,3)[,c(1,5,8,10)])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,3)[,c(1,5,8,10)])))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,3)[,c(1,5,8,10)])))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,3)[,c(1,5,8,10)])))[,2]<tpar)/length(tpar), "res44 different from expected"))
+}
+res45[i,]<-posterior.mode(mcmc(cbind(m1$Sol, posterior.ante(m1$VCV,3)[,c(1,5,8,10)])))
+print(i)
+}
+psets<-c(psets, tpar)
+
+
+print("res46")  # 3-category multinomial
+
+res46<-matrix(0, nsim, 6)
+
+I<-diag(2)
+J<-matrix(1,2,2)
+R<-(I+J)/3
+
+tpar<-c(-1,-2,c(R))
+
+for(i in 1:nsim){
+
+y<-mvrnorm(300, c(-1,1), R)
+
+prob<-cbind(1,exp(y))/(1+rowSums(exp(y)))
+
+y<-t(apply(prob, 1, function(x){rmultinom(1, size=sample(1:10), prob=x)}))
+
+data=data.frame(y1=y[,1], y2=y[,2], y3=y[,3])
+
+m1<-MCMCglmm(cbind(y1,y2,y3)~trait-1, rcov=~us(trait):units, data=data, family="multinomial3", verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+
+if(SUMtest){
+summary(m1)
+}
+
+if(plotit){
+plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+}
+if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res46 different from expected"))
+}
+res46[i,]<-posterior.mode(mcmc(cbind(m1$Sol, m1$VCV)))
+print(i)
+}
+psets<-c(psets, tpar)
+
+# zero-altered Poisson
+
+print("res47")
+res47<-matrix(NA, nsim,5)
+
+tpar<-c(1,0,1, 0, 1)
+
+for(i in 1:nsim){
+
+  x<-rnorm(300)
+  l1<-rnorm(300, 1+x, sqrt(1))
+  l2<-rnorm(300, 1+x, sqrt(1))
+
+  y<-rbinom(300, 1, 1-exp(-exp(l2)))
+  y[which(y==1)]<-qpois(runif(sum(y==1), dpois(0, exp(l1[which(y==1)])), 1), exp(l1[which(y==1)]))  
+  # cunning sampler from Peter Dalgaard (R-sig-mixed)
+
+data=data.frame(y=y, x=x)
+prior=list(R=list(V=diag(1), nu=1))
+m1<-MCMCglmm(y~trait*x, rcov=~trait:units, data=data, family="zapoisson", prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+
+res47[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
+if(SUMtest){
+summary(m1)
+}
+	if(plotit){
+		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+	}
+        if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+        print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res47 different from expected"))
+        }
+print(i)
+}
+psets<-c(psets, tpar)
+
+
+# exponential
+
+print("res48")
+res48<-matrix(NA, nsim,2)
+
+tpar<-c(-1,1)
+
+for(i in 1:nsim){
+
+
+
+  l<-rnorm(300, -1, sqrt(1))
+     
+  y<-rexp(300, rate=exp(l))
+
+
+
+data=data.frame(y=y)
+prior=list(R=list(V=diag(1), nu=1))
+m1<-MCMCglmm(y~1,data=data, family="exponential", prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+res48[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
+if(SUMtest){
+summary(m1)
+}
+	if(plotit){
+		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+	}
+        if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+        print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res48 different from expected"))
+        }
+print(i)
+}
+psets<-c(psets, tpar)
+
+
+# covu
+
+print("res49")
+res49<-matrix(NA, nsim,13)
+
+tpar<-c(1,1,-1, 1,0.5, 0.25, 0.5,1, -0.25, 0.25, -0.25, 0.5,1)
+
+for(i in 1:nsim){
+
+  n<-100
+  V<-matrix(c(1,0.5, 0.25, 0.5,1, -0.25, 0.25, -0.25, 0.5),3,3)
+  Vr<-1
+
+  u<-mvrnorm(n, c(0,0,0), V)
+
+  ya<-1+u[,2]
+  yb<-1+u[,3]
+  individual<-as.factor(rep(1:n, 4))
+  type<-as.factor(c(rep("s", 2*n), rep("r",2*n)))
+  measure<-as.factor(c(rep("a", n),rep("b", n), rep("c",2*n)))
+  yc<--1+u[individual[which(measure=="c")],1]+rnorm(2*n,0,sqrt(Vr))
+
+  dat<-data.frame(y=c(ya,yb,yc), type=type, individual=individual, measure=measure)
+ 
+  prior<-list(R=list(R1=list(V=V, nu=3, covu=TRUE), R2=list(V=Vr, nu=1)))
+
+    if(DICtest){
+    m1<-MCMCglmm(y~measure-1, random=~us(at.level(type,"r")):individual, rcov=~us(at.level(type, "s"):measure):individual+us(at.level(type, "r")):units, data=dat, prior=prior, pr=TRUE, nitt=2, thin=1, burnin=1, verbose=FALSE)
+
+   Vest<-matrix(m1$VCV[1,1:9],3,3)
+
+   Vreg<-Vest[2:3,1]%*%solve(Vest[1,1])
+   Vres<-Vest[2:3,2:3]-Vest[2:3,1]%*%solve(Vest[1,1])%*%Vest[1,2:3]
+   dev<-0
+
+   for(j in 1:n){
+     dev<-dev+mvtnorm::dmvnorm(cbind(ya,yb)[j,], m1$Sol[1,1:2]+Vreg%*%m1$Sol[1,3+j], Vres, log=TRUE)
+   }
+   dev<-dev+sum(dnorm(yc, m1$Sol[1,3]+m1$Sol[1,3+1:n][individual[which(measure=="c")]], sqrt(m1$VCV[1,10]), log=TRUE))
+
+   if(abs(-2*dev-m1$Deviance[1])<1e-6){
+     print("Deviance OK for covu (res49)")
+   }else{
+     stop("Deviance wrong for covu (res49)")
+   }}
+
+   m1<-MCMCglmm(y~measure-1, random=~us(at.level(type,"r")):individual, rcov=~us(at.level(type, "s"):measure):individual+us(at.level(type, "r")):units, data=dat, prior=prior, verbose=verbose, nitt=nitt, thin=thin, burnin=burnin)
+   if(SUMtest){
+    summary(m1)
+   }
+   res49[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
+
+	if(plotit){
+		plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+	}
+        if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+        print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res49 different from expected"))
+        }
+print(i)
+
+ }
+psets<-c(psets, tpar)
+
+
+
+
+
+
+est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29, res30, res31, res32, res33, res34, res35, res36, res37, res38, res39, res40, res41, res42, res43, res44, res45, res46, res47, res48, res49), na.rm=T)
+
+np<-c(ncol(res1), ncol(res2), ncol(res3), ncol(res3b), ncol(res4), ncol(res4c), ncol(res5),ncol(res5b),ncol(res6), ncol(res7),ncol(res7b), ncol(res8),ncol(res9), ncol(res10), ncol(res11), ncol(res12), ncol(res13), ncol(res14), ncol(res15), ncol(res17a),ncol(res17b), ncol(res18), ncol(res19), ncol(res19b), ncol(res20), ncol(res21), ncol(res21b), ncol(res21c), ncol(res22), ncol(res23), ncol(res24), ncol(res25), ncol(res26), ncol(res27), ncol(res28), ncol(res29), ncol(res30), ncol(res31), ncol(res32), ncol(res33), ncol(res34), ncol(res35), ncol(res36), ncol(res37), ncol(res38), ncol(res39), ncol(res40), ncol(res41), ncol(res42), ncol(res43), ncol(res44), ncol(res45), ncol(res46), ncol(res47), ncol(res48), ncol(res49))
+
+nam<-c("res1", "res2", "res3", "res3b", "res4", "res4c", "res5","res5b","res6", "res7","res7b", "res8","res9", "res10", "res11", "res12", "res13", "res14", "res15", "res17a","res17b", "res18", "res19", "res19b", "res20", "res21", "res21b", "res21c", "res22", "res23", "res24", "res25", "res26", "res27", "res28", "res29", "res30", "res31", "res32", "res33", "res34", "res35", "res36", "res37", "res38", "res39", "res40", "res41", "res42", "res43", "res44", "res45", "res46", "res47", "res48", "res49")
 
 nam<-paste(rep(nam,np), unlist(sapply(np,function(x){1:x})), sep=".")
 

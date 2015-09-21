@@ -238,6 +238,51 @@ In some models, some elements of a parameter (co)variance matrix cannot be estim
 
 For ordinal models it is necessary to update the cutpoints which define the bin boundaries for latent variables associated with each category of the outcome.  To achieve good mixing we used the method developed by \citep{Cowles.1996} that allows the latent variables and cutpoints to be updated simultaneously using a Hastings-with-Gibbs update.
 
+\subsection{Path Analyses}
+
+Elements of the response vector can be regressed on each other using the \texttt{sir} and \texttt{path} functions. Using the matrix notation of \citet{Gianola.2004}, Equation \ref{l-Eq} can be rewritten as:
+
+\begin{equation}
+{\bm \Lambda}{\bf l}  = {\bf X}{\bm \beta}+{\bf Z}{\bf u}+{\bf e}
+\label{rs-Eq1}
+\end{equation}
+
+where ${\bm \Lambda}$ is a square matrix of the form:
+
+\begin{equation}
+\begin{array}{rl}
+{\bm \Lambda} =& {\bf I}-\sum_{l}{\bm \Psi}^{(l)}\lambda_{l}\\
+\end{array}
+\label{rs-Eq2}
+\end{equation}
+
+This sets up a regression where the $i^{th}$ element of the response vector acts as a weighted (by $\Psi^{(l)}_{i,j}$) predictor for the $j^{th}$ element of the response vector with associated regression parameter $\lambda_{l}$. Often ${\bm \Psi}^{(l)}$ is an incidence matrix with the patterns of ones determining which elements of the response are regressed on each other.\\
+
+Conditional on the vector of regression coefficients ${\bm \lambda}$, the location effects and variance structures can be updated as before by simply substituting ${\bf l}$ for ${\bm \Lambda}{\bf l}$ in the necessary equations. \citet{Gianola.2004} provide a simple scheme for updating ${\bm \lambda}$. Note that Equation \ref{rs-Eq1} can be rewritten as:
+
+\begin{equation}
+\begin{array}{rl}
+{\bf l} - {\bf X}{\bm \beta} - {\bf Z}{\bf u} =& {\bf e}+\sum_{l}{\bm \Psi}^{(l)}{\bf l}\lambda_{l}\\
+                                              =& {\bf e}+{\bf L}{\bm \lambda}\\
+\end{array}
+\end{equation}
+
+where ${\bf L}$ is the design matrix $\left[{\bm \Psi}^{(1)}{\bf l}, {\bm \Psi}^{(2)}{\bf l} \dots {\bm \Psi}^{(L)}{\bf l}\right]$ for the $L$ path coefficients. Conditional on ${\bm \beta}$ and ${\bm u}$, ${\bm \lambda}$ can then be sampled using the method of \citet{Garcia-Cortes.2001} with ${\bf l} - {\bf X}{\bm \beta} - {\bf Z}{\bf u}$ as response and ${\bf L}$ as predictor. However, only in a fully recursive system (there exists a row/column permutation by which all ${\bm \Psi}$'s are triangular) are the resulting draws from the appropriate conditional distribution, which requires multiplication by the Jacobian of the transform: $|{\bm \Lambda}|$. An extra Metropolis Hastings step is used to accept/reject the proposed draw when $|{\bm \Lambda}|\neq 1$.\\
+
+When the response vector is Gaussian and fully observed, the latent variable does not need updating. For non-Gaussian data, or with missing responses, updating the latent variable is difficult because Equation \ref{pcl-Eq} becomes:
+
+\begin{equation}
+Pr(l_{i}| {\bf y}, {\bm \theta}, {\bf R}, {\bf G}, {\bm \lambda}) \propto  f_{i}(y_{i} | l_{i})f_{N}(({\bm \Lambda}^{-1}{\bf e})_{i}|{\bf q}_{i}{\bf Q}_{/i}^{-1}{\bf e}_{/i}, q_{i}-{\bf q}_{i}{\bf Q}_{/i}^{-1}{\bf q}^{'}_{i})
+\end{equation}
+
+where ${\bf Q} = {\bm \Lambda}^{-1}{\bf R}{\bm \Lambda}^{-\top}$. In the general case ${\bf Q}$ will not have block diagonal structure like ${\bf R}$ and so the scheme for updating latent variables within residual blocks (i.e. Equation \ref{pcl2-Eq}) is not possible. However, in some cases ${\bm \Lambda}$ may have the form where all non-zero elements correspond to elements of the response vector that are in the same residual block. In such cases updating the latent variables remains relatively simple:
+
+\begin{equation}
+Pr({\bf l}_{j}|{\bf y}, {\bm \theta}, {\bf R}, {\bf G}) \propto    {p}_{i}({y}_{i} | {\bf l}_{j})({\bm \Lambda}^{-1}_{j}{\bf e}_{j}|{\bf 0}, {\bm \Lambda}^{-1}_{j}{\bf R}_{j}{\bm \Lambda}^{-\top}_{j})
+\end{equation}
+
+
+
 
 \subsection{Deviance and DIC}
 
@@ -345,8 +390,8 @@ Distribution   &    No. Data       &         No. latent        &  Density & func
    \texttt{"hupoisson"}        &  1  &   2  &     $Pr(y=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}$\\     
                                &    &       & $Pr(y | y>0) =$&$\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
 &&&&\\
-   \texttt{"zapoisson"}        &  1  &   2  &     $Pr(y=0) =$&$\textrm{exp}(-\textrm{exp}(l_{2}))$\\     
-                               &    &       & $Pr(y | y>0) =$&$ \left(1-\textrm{exp}(-\textrm{exp}(l_{2}))\right)\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
+   \texttt{"zapoisson"}        &  1  &   2  &     $Pr(y=0) =$&$1-\textrm{exp}(\textrm{exp}(l_{2}))$\\     
+                               &    &       & $Pr(y | y>0) =$&$ \textrm{exp}(\textrm{exp}(l_{2}))\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
 &&&&\\
    \texttt{"zibinomial"}        &  2  &   2  &     $Pr(y_{1}=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}+\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{B}(0, n=y_{1}+y_{2}|\frac{\textrm{exp}(l_{1})}{1+\textrm{exp}(l_{1})})$\\     
                                &    &       & $Pr(y_{1} | y_{1}>0) =$&$ \left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{B}(y_{1}, n=y_{1}+y_{2}|\frac{\textrm{exp}(l_{1})}{1+\textrm{exp}(l_{1})})$\\      

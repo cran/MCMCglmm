@@ -17,7 +17,8 @@ MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL,
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
 are passed as a matrix using cbind}
-  \item{random}{\code{\link{formula}} for the random effects. Multiple random terms can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):linking.function(random.terms)}. Currently, the only \code{variance.functions} available are \code{idv}, \code{idh}, \code{us} and \code{cor}. \code{idv} fits a constant variance across all components in \code{formula}, and \code{cor} fixes the variances to 1. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.terms} effects.  Currently, the only \code{linking.functions} available are \code{mm} and \code{str}. \code{mm} fits a multimembership model where multiple random terms are separated by the \code{+} operator. \code{str} allows covariances to exist between multiple random terms that are also separated by the \code{+} operator. In both cases the levels of all multiple random terms have to be the same.  For simpler models the \code{variance.function(formula)} and \code{linking.function(random.terms)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are two reserved variables: \code{units} which index rows of the response variable and \code{trait} which index columns of the response variable} 
+  \item{random}{\code{\link{formula}} for the random effects. Multiple random terms can be passed using the \code{+} operator, and in the most general case each random term has the form \code{variance.function(formula):linking.function(random.terms)}. Currently, the only \code{variance.functions} available are \code{idv}, \code{idh}, \code{us}, \code{cor[]} and \code{ante[]}. \code{idv} fits a constant variance across all components in \code{formula}. Both \code{idh} and \code{us} fit different variances across each component in \code{formula}, but \code{us} will also fit the covariances. \code{corg} fixes the variances along the diagonal to one and \code{corgh} fixes the variances along the diagonal to those specified in the prior.  \code{cors} allows correlation submatrices. 
+\code{ante[]} fits ante-dependence structures of different order (e.g ante1, ante2), and the number can be prefixed by a \code{c} to hold all regression coefficients of the same order equal. The number can also be suffixed by a \code{v} to hold all innovation variances equal (e.g \code{antec2v} has 3 parameters).  The \code{formula} can contain both factors and numeric terms (i.e. random regression) although it should be noted that the intercept term is suppressed.  The (co)variances are the (co)variances of the \code{random.terms} effects.  Currently, the only \code{linking.functions} available are \code{mm} and \code{str}. \code{mm} fits a multimembership model where multiple random terms are separated by the \code{+} operator. \code{str} allows covariances to exist between multiple random terms that are also separated by the \code{+} operator. In both cases the levels of all multiple random terms have to be the same.  For simpler models the \code{variance.function(formula)} and \code{linking.function(random.terms)} can be omitted and the model syntax has the simpler form \code{~random1+random2+...}.  There are two reserved variables: \code{units} which index rows of the response variable and \code{trait} which index columns of the response variable} 
   \item{rcov}{\code{\link{formula}} for residual covariance structure. This has to be set up so that each data point is associated with a unique residual. For example a multi-response model might have the R-structure defined by \code{~us(trait):units}}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
@@ -32,12 +33,12 @@ for random effect meta-analysis.}
 \code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random effect components. The fourth element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution}
   \item{prior}{optional list of prior specifications having 3 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). \code{B} is a list containing the expected value (\code{mu}) and a 
-(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=0 and \code{B$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The deafults are \code{nu}=0, \code{V}=1, \code{alpha.mu}=0, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
+(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=0 and \code{B$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The defaults are \code{nu}=0, \code{V}=1, \code{alpha.mu}=0, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
   \item{tune}{optional (co)variance matrix defining the proposal distribution 
 for the latent variables. If NULL an adaptive algorithm is used which ceases to 
 adapt once the burn-in phase has finished.}
   \item{pedigree}{ordered pedigree with 3 columns id, dam and sire or a 
-\code{phylo} object. This argument is retained for back compatability - see ginverse argument for a more general formulation.}
+\code{phylo} object. This argument is retained for back compatibility - see ginverse argument for a more general formulation.}
   \item{nodes}{pedigree/phylogeny nodes to be estimated. The default, 
 \code{"ALL"} estimates effects for all individuals in a pedigree or nodes in a 
 phylogeny (including ancestral nodes). For phylogenies \code{"TIPS"} estimates 
@@ -62,7 +63,7 @@ saved?}
   \item{saveX}{logical: save fixed effect design matrix}
   \item{saveZ}{logical: save random effect design matrix}
   \item{saveXL}{logical: save structural parameter design matrix}
-  \item{slice}{logical: should slice sampling be used? Only applicable for binary triats with indpendent residuals}
+  \item{slice}{logical: should slice sampling be used? Only applicable for binary traits with independent residuals}
   \item{ginverse}{a list of sparse inverse matrices (\eqn{{\bf A^{-1}}}{solve(A)}) that are proportional to the covariance structure of the random effects. The names of the matrices should correspond to columns in \code{data} that are associated with the random term. All levels of the random term should appear as rownames for the matrices.}
 }
 \value{
@@ -71,8 +72,8 @@ saved?}
   \item{CP}{Posterior Distribution of cut-points from an ordinal model}
   \item{Liab}{Posterior Distribution of latent variables}
   \item{Fixed}{list: fixed formula and number of fixed effects}
-  \item{Random}{list: random fromula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in random formula to which each covariance belongs}
-  \item{Residual}{list: residual fromula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in residual formula to which each covariance belongs}
+  \item{Random}{list: random formula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in random formula to which each covariance belongs}
+  \item{Residual}{list: residual formula, dimensions of each covariance matrix, number of levels per covariance matrix, and term in residual formula to which each covariance belongs}
   \item{Deviance}{deviance -2*log(p(y|...))}
   \item{DIC}{deviance information criterion}
   \item{X}{sparse fixed effect design matrix}

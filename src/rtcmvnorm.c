@@ -3,7 +3,6 @@
 
 double rtcmvnorm(const cs *predi, const cs *linki, const cs *G, int keep, double lower, double upper){
 
-
   double z, cpredi, cv;
 
   int i,

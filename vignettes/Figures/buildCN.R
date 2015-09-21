@@ -2,7 +2,7 @@
 #set.seed(32)
 set.seed(34)
 alone=FALSE
-lectures<-1:9
+lectures<-c(7,9)
 forCRAN=TRUE
 JSS<-TRUE
 LINUX=TRUE

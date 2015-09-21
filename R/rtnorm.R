@@ -1,7 +1,7 @@
 "rtnorm"<-function(n=1, mean = 0, sd = 1, lower = -Inf, upper = Inf){
  
-    if(any(lower==-Inf)){lower[which(lower==-Inf)]<-c(-1e+32)}
-    if(any(upper==Inf)){upper[which(upper==Inf)]<-1e+32}
+    if(any(lower==-Inf)){lower[which(lower==-Inf)]<-c(-1e+35)}
+    if(any(upper==Inf)){upper[which(upper==Inf)]<-1e+35}
     if(any(sd<=0)){stop("standard deviation must be positive")}
     if(length(mean)==1){
       mean<-rep(mean, n)

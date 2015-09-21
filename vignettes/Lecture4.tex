@@ -206,7 +206,7 @@ The traces look OKish for the chick (co)variance matrices (Figure \ref{RR2VCV-fi
 \end{Sinput}
 \begin{Soutput}
       var1 
--0.9829908 
+-0.9747705 
 \end{Soutput}
 \end{Schunk}
 
@@ -221,10 +221,10 @@ and shows strong autocorrelation
 
                 [,1]
 Lag 0    1.000000000
-Lag 10   0.202354220
-Lag 50  -0.003116126
-Lag 100  0.027901103
-Lag 500  0.005815598
+Lag 10   0.183766139
+Lag 50  -0.018337710
+Lag 100  0.003261446
+Lag 500  0.035687982
 \end{Soutput}
 \end{Schunk}
 
@@ -298,19 +298,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.335
+[1] 5525.806
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4544.495
+[1] 4543.793
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.885
+[1] 3932.837
 \end{Soutput}
 \end{Schunk}
 
@@ -342,7 +342,7 @@ It is worth seeing whether using an AIC measure using REML also suggests the hig
 > AIC(m5a.3.REML)
 \end{Sinput}
 \begin{Soutput}
-[1] 4267.013
+[1] 4274.606
 \end{Soutput}
 \begin{Sinput}
 > detach(package:lme4)

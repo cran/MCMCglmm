@@ -9,7 +9,7 @@
    coerce.cor<-function(x){cov2cor(matrix(x, sqrt(length(x)), sqrt(length(x))))}
 
    if(is.mcmc(x)==FALSE){
-     warning("posterior.mode expecting mcmc object")
+     warning("posterior.cor expecting mcmc object")
      t(apply(x, 1, coerce.cor))
    }else{   
      as.mcmc(t(apply(x, 1, coerce.cor)))

@@ -34,7 +34,7 @@ void MCMCglmm(
         int *AtermP,         // integer: each G is associated with kth A (-1 means A=I)
         int *GRdimP,         // GR structure dimensions
         int *levelsRP,       // number of GR levels 
-        int *updateP,
+        int *updateP,        // type of VCV update then the dimension G in a G-R VCV (0 = R and G are separable) and the update for G-R VCV.
         int *splitP, 
         int *nGP,            // number of G structures and number of R structures  
         double *GRinvP,      // GR starting values 
@@ -74,7 +74,10 @@ void MCMCglmm(
         double *xLXP,
         double *lambdaP,        
         double *LvpP,          // prior for structural parameters
-        double *LmupP
+        double *LmupP,
+        double *nanteBP,       // orders of antedependence beta's per structure then numbers of betas and then whether constant variance
+        double *anteBvpP,      // inverse prior covariance matrix for antedpendence betas     
+        double *anteBmupP      // prior mean vector for antedpendence betas
 ){         
 
 int     i, j, k,l,p,cnt,cnt2,cnt3, rterm,itt,record,dimG,nthordinal,
@@ -95,9 +98,6 @@ int     i, j, k,l,p,cnt,cnt2,cnt3, rterm,itt,record,dimG,nthordinal,
         nordinal = nordinalP[0],
         diagR = diagP[0];  // is the us R-structure diagionalised 0-no, 1-yes, 2-yes with identical variances
 
-	int *cond = new int[GRdim[nG]];
-	int *keep = new int[GRdim[nG]];
-
 // Multinomial counters 
  
 int     nthmnl = 0;  // counter for the lth level of nth multinomial
@@ -109,38 +109,61 @@ double   mndenom1 = 1.0,  // sum(exp(l_{j}) for all j) and l_old
 int     nrowX =  dimP[0], ncolX =  dimP[1],  nzmaxX = nzmaxP[0]; 
 int     nrowZ =  dimP[2], ncolZ =  dimP[3],  nzmaxZ = nzmaxP[1];
 int     nrowLX =  dimP[4], ncolLX =  dimP[5],  nzmaxLX = nzmaxP[2];
-int     nL = ncolLX/nrowLX;  // number of structural parameters
+
+int     nL;
+bool    path;
+
+  if(nrowLX!=0){
+    if(nrowLX!=nrowX){
+      path = TRUE;         // path model defined within residual blocks
+      nL = ncolLX/GRdimP[nG];
+    }else{
+      path = FALSE;        // path models cross residual blocks
+      nL = ncolLX/nrowLX;  // number of structural parameters
+    }
+  }else{
+    path = FALSE;
+    nL = 0;
+  }
 
 int 	dimAS =  ncolX+ncolZ;
-int     nMH = 0;
+int     *nMH = new int[nGR];
 int     nalpha = 0; 
  
 bool    pr = prP[0];
 bool    pl = prP[1];
 bool    cp = nordinal>0;
 bool    missing = FALSE;
+int    covu = updateP[nGR];
+
 
 double detLambda[2];   // holds old and proposed fabs(det(Lambda))
 int sign_detLambda[2];    // holds sign of fabs(det(Lambda))
 int lambda_old = 0;    // indexes freed Lambda
 int lambda_new = 1;    // indexes freed Lambda
-int *diagLambdaL = new int[ny]; // indexes diagonal elements of L and U from LU decomposition of Lambda
-int *diagLambdaU = new int[ny];
+int *diagLambdaL = new int[nrowLX]; // indexes diagonal elements of L and U from LU decomposition of Lambda
+int *diagLambdaU = new int[nrowLX];
 
 double log_alphaL;     // MH ratio for lambda
 
+        cnt=0;
         cnt2=0;
         for(k=nG; k<nGR; k++){
+          nMH[k] = 0;
+          if(GRdim[k]>cnt){cnt = GRdim[k];}
           for(i=0; i<nlGR[k]; i++){
             if(mvtype[i+cnt2]!=2){
-              missing=TRUE;
+              missing=TRUE;  // indicates whether there are any non-Gaussian data or missing observations
               if(mvtype[i+cnt2]<0){
-                nMH++; 
+                nMH[k]++; 
               }
             }
           }
           cnt2+=nlGR[k];
         }
+
+	int *cond = new int[cnt];
+	int *keep = new int[cnt];
 
         for(k=0; k<nGR; k++){           
            nalpha += PXtermsP[k]*GRdim[k];
@@ -150,8 +173,8 @@ double  densityl1,
         densityl2,
         dbar = 0.0,
         mdbar = 0.0,
-        Eaccl= 0.0,
-        alpha_star = (-double(GRdimP[nG])/(1.0-2.75*double(GRdimP[nG])))-0.133,  // optimal acceptance ratio
+        *Eaccl = new double[nGR],
+        *alpha_star = new double[nGR],
         rACCEPT = 0.9,
         qACCEPT = 2.0,
         *t = new double[nGR*2],
@@ -159,11 +182,10 @@ double  densityl1,
         *wn = new double[nGR*2],
         *zn = new double[nGR*2],
         *ldet = new double[nR+nG],
+        ldet_rr,
         interval,
         remainder;
- 
-
-	
+ 	
 //double inf = std::numeric_limits<double>::max();
 
         int *cumsum_ncutpoints = new int[nordinal+1];
@@ -205,17 +227,23 @@ double  densityl1,
 
         if(ncutpoints_store==0){cp=FALSE;}  // even if cutpoints are present they do not need to be updated if there are only 2 categories
 
-        for(k=0; k<(nGR*2); k++){
+        for(k=0; k<nGR; k++){
           t[k]=0.0;
           sd[k]=1.0;
           wn[k]=0.0;
           zn[k]=0.0;
+          t[k+nGR]=0.0;
+          sd[k+nGR]=1.0;
+          wn[k+nGR]=0.0;
+          zn[k+nGR]=0.0;
+          Eaccl[k] = 0.0;
+          alpha_star[k] = (-double(GRdimP[k])/(1.0-2.75*double(GRdimP[k])))-0.133;  // optimal acceptance ratio
         }
 
-cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl;
+cs      *X, *Z, *W,  *Wt, *KRinv, *WtmKRinv, *WtmKRinvtmp, *M, *Omega, *MME, *zstar, *astar, *astar_tmp, *location, *location_tmp, *linky, *mulinky,  *pred, *mupred, *dev, *bvA, *bvAbv, *tbv, *pvB, *pmuB, *Brv, *Xalpha, *tXalpha, *Alphainv, *muAlpha, *XtmKRinv, *XtmKRinvtmp, *alphaM, *alphaMME, *alphaastar, *alphapred, *alphazstar, *alphaastar_tmp, *alphalocation, *alphalocation_tmp, *Worig, *LambdaX, *pvL, *pmuL, *Lrv, *I, *linky_orig, *Y, *tY, *ILY, *w, *tYKrinv, *tYKrinvY, *tYKrinvw, *lambda_dev, *tl, *tlV, *tlVl, *exLambda, *exLambdaX, *mulambda, *G_rr, *Ginv_rr, *beta_rr;
 
-csn	*L, *pvBL, *alphaL, *AlphainvL, *pvLL, *LambdaLU, *tYKrinvYL;
-css     *S, *pvBS, *alphaS, *AlphainvS, *pvLS, *LambdaS, *tYKrinvYS;
+csn	*L, *pvBL, *alphaL, *AlphainvL, *pvLL, *tYKrinvYL;
+css     *S, *pvBS, *alphaS, *AlphainvS, *pvLS, *LambdaS, *tYKrinvYS, *GinvS_rr;
 
 cs*     *Ginv = new cs*[nGR];
 cs*     *muG = new cs*[nGR];	
@@ -224,6 +252,7 @@ cs*     *propCinv = new cs*[nGR*2];
 cs*     *muC = new cs*[nGR*2];
 cs*     *linki = new cs*[nGR];
 cs*     *linki_tmp = new cs*[nGR];
+cs*     *linki_tmp2 = new cs*[nGR];
 cs*     *predi = new cs*[nGR];
 cs*     *G = new cs*[nGR];
 cs*     *pG = new cs*[nGR];
@@ -240,10 +269,14 @@ css*    *KGinvS = new css*[nGR];
 cs*     *lambda = new cs*[2];
 cs*     *lambdaI = new cs*[2];
 cs*     *Lambda = new cs*[2];
+csn*    *LambdaLU = new csn*[2];
 cs*     *Lambda_tmp = new cs*[2];
 cs*     *A = new cs*[nGR];
 cs*     *bv = new cs*[nGR];
 cs*     *bv_tmp = new cs*[nGR];
+cs*     *pvAnte = new cs*[nGR];
+cs*     *pmuAnte = new cs*[nGR];
+cs*     *ivar = new cs*[nGR];
 
 // read in fixed-effects design matrix X 
 
@@ -294,14 +327,14 @@ cs*     *bv_tmp = new cs*[nGR];
          pvB->p[ncolX] = ncolX*ncolX;
        }
 
-       pvBS = cs_schol(1, pvB);                    // Symbolic factorisation of B
+       pvBS = cs_schol(0, pvB);                    // Symbolic factorisation of B
        pvBL = cs_chol(pvB, pvBS);                  // cholesky factorisation of B^{-1} for forming N(0, B)
 
 
 if(nL>0){
 
 // read in parth analytic design matrix 
-
+                                 
         LambdaX = cs_spalloc(nrowLX, ncolLX, nzmaxLX, true, false); 
                                                                    
         for (i = 0 ; i < nzmaxLX ; i++){
@@ -310,19 +343,26 @@ if(nL>0){
         }
         for (i = 0 ; i <= ncolLX ; i++){
           LambdaX->p[i] = pLXP[i];
-        }                                                         
-
-// lambda parameter vector and form kronecker(lamba, I)
+        }
+                                         
+        if(path){
+          exLambdaX = cs_kroneckerSI(LambdaX, nlGR[nG]);
+        }
 
         lambda[0] = cs_spalloc(nL, 1, nL, true, false); 
+        mulambda = cs_spalloc(nL, 1, nL, true, false); 
 
          for (i = 0 ; i < nL ; i++){
           lambda[0]->i[i] = i;
           lambda[0]->x[i] = i*0.01+0.01;
+          mulambda->i[i] = i;
+          mulambda->x[i] = 0.0;
         }
         lambda[0]->p[0] = 0;
         lambda[0]->p[1] = nL;
-        
+        mulambda->p[0] = 0;
+        mulambda->p[1] = nL;
+
 // read in prior covaraince matrix and mean vector for structural parameters.
 
        pvL = cs_spalloc(nL, nL, pow(nL, 2.0-LvpP[nL*nL]), true, false);
@@ -440,40 +480,147 @@ if(nL>0){
 /**********************************/
  
         for (k = 0 ; k < nGR; k++){
+
           dimG = GRdim[k];
-          Ginv[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
-          G[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
-          muG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
-          pG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
           Grv[k] = cs_spalloc(1, dimG, dimG, true, false);
-          cnt=0;
-           for (i = 0 ; i < dimG; i++){
-              Ginv[k]->p[i] = i*dimG;
-              G[k]->p[i] = i*dimG;
-              muG[k]->p[i] = i*dimG;
-              pG[k]->p[i] = i*dimG;
-              Grv[k]->p[i] = i;
-              Grv[k]->i[i] = 0;
+          ivar[k] = cs_spalloc(dimG, 1, dimG, true, false);
+
+          for (i = 0 ; i < dimG; i++){        
+            Grv[k]->p[i] = i;
+            Grv[k]->i[i] = 0;
+          }
+          Grv[k]->p[dimG] = dimG;
+
+          if(covu>0 && k==nG){ //Random-effect residual covariances. 
+
+            bv[k] = cs_spalloc(nlGR[k], covu, nlGR[k]*covu, true, false);
+
+            // previous random effects in matrix form
+
+            cnt=0;
+
+            for (i = 0 ; i < covu; i++){
+              bv[k]->p[i] = cnt;
+              for (j = 0 ; j < nlGR[k] ; j++){
+                bv[k]->i[cnt] = j;
+                bv[k]->x[cnt] = 0.0;
+                cnt++;
+              }
+            }
+
+            bv[k]->p[covu] = covu*nlGR[k];
+
+            beta_rr = cs_spalloc(dimG, covu, dimG*covu, true, false);
+
+            cnt=0;
+
+            for (i = 0 ; i < covu; i++){
+              beta_rr->p[i] = i*dimG;     
               for (j = 0 ; j < dimG; j++){
-                 Ginv[k]->i[cnt] = j;
-                 Ginv[k]->x[cnt] = GRinvP[cnt+tvc];
-                 G[k]->i[cnt] = j;
-                 G[k]->x[cnt] = GRinvP[cnt+tvc];
+                 beta_rr->i[cnt] = j;
+                 beta_rr->x[cnt] = 0.0;
+                 cnt++;
+              }
+            }
+            beta_rr->p[covu] = dimG*covu;
+
+            cnt = 0;
+
+            dimG += covu;
+
+            muG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+            pG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+            Ginv_rr = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+
+            for (i = 0 ; i < dimG; i++){
+              Ginv_rr->p[i] = i*dimG;
+              muG[k]->p[i] = i*dimG;
+              pG[k]->p[i] = i*dimG;           
+              for (j = 0 ; j < dimG; j++){
+                 Ginv_rr->i[cnt] = j;
+                 Ginv_rr->x[cnt] = GRinvP[cnt+tvc];
 		 muG[k]->i[cnt] = j;
 		 muG[k]->x[cnt] = 0.0;
                  pG[k]->i[cnt] = j;
                  pG[k]->x[cnt] = GRvpP[cnt+tvc];
                  cnt++;
               }
+            }
+            muG[k]->p[dimG] = dimG*dimG;
+            pG[k]->p[dimG] = dimG*dimG;
+            Ginv_rr->p[dimG] = dimG*dimG;
+            GinvS_rr = cs_schol(0, Ginv_rr);  
+            G_rr = cs_inv(Ginv_rr);
+            G[k] = cs_schur(G_rr, covu, beta_rr);
+            Ginv[k] = cs_inv(G[k]);
+            ldet[k] = log(cs_invR(Ginv[k], G[k]));
+            ldet_rr = log(cs_invR(Ginv_rr, G_rr));
+            Gtmp[k] = cs_inv(Ginv_rr);  //delete this eventually   
+
+          }else{
+
+            Ginv[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+            G[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+            muG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+            pG[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+
+            cnt = 0;
+
+            for (i = 0 ; i < dimG; i++){
+              Ginv[k]->p[i] = i*dimG;
+              G[k]->p[i] = i*dimG;
+              muG[k]->p[i] = i*dimG;
+              pG[k]->p[i] = i*dimG;           
+              ivar[k]->i[i] = i;
+              ivar[k]->x[i] = 1.0/GRinvP[cnt+tvc+i];
+              for (j = 0 ; j < dimG; j++){
+                Ginv[k]->i[cnt] = j;
+                G[k]->i[cnt] = j;
+	        muG[k]->i[cnt] = j;
+	        muG[k]->x[cnt] = 0.0;
+                pG[k]->i[cnt] = j;
+                pG[k]->x[cnt] = GRvpP[cnt+tvc];
+                Ginv[k]->x[cnt] = GRinvP[cnt+tvc];
+                G[k]->x[cnt] = GRinvP[cnt+tvc];
+                cnt++;
+              }
+            }
+            Ginv[k]->p[dimG] = dimG*dimG;
+            G[k]->p[dimG] = dimG*dimG;
+            ivar[k]->p[0] = 0;
+            ivar[k]->p[1] = dimG;
+            muG[k]->p[dimG] = dimG*dimG;
+            pG[k]->p[dimG] = dimG*dimG;
+            ldet[k] = log(cs_invR(Ginv[k], G[k]));
+            Gtmp[k] = cs_inv(Ginv[k]);  //delete this eventually   
           }
-          Ginv[k]->p[dimG] = dimG*dimG;
-          G[k]->p[dimG] = dimG*dimG;
-          muG[k]->p[dimG] = dimG*dimG;
-          pG[k]->p[dimG] = dimG*dimG;
-          Grv[k]->p[dimG] = dimG;
-          ldet[k] = log(cs_invR(Ginv[k], G[k]));
-          Gtmp[k] = cs_inv(Ginv[k]);  //delete this eventually  
-          tvc += dimG*dimG; 
+          tvc += dimG*dimG;
+        }
+        tvc -= covu*covu;
+
+        cnt2=0;
+        cnt=0;
+
+        for (k = 0 ; k < nGR; k++){  // Antedependce priors
+          dimG = nanteBP[nGR+k];
+          if(nanteBP[k]!=0){
+            pvAnte[k] = cs_spalloc(dimG, dimG, dimG*dimG, true, false);
+            pmuAnte[k] = cs_spalloc(dimG, 1, dimG, true, false);
+            for (i = 0 ; i < dimG; i++){
+              pvAnte[k]->p[i] = i*dimG;
+              pmuAnte[k]->i[i] = i;
+              pmuAnte[k]->x[i] = anteBmupP[cnt];
+              cnt++;
+              for (j = 0 ; j < dimG; j++){
+                 pvAnte[k]->i[i*dimG+j] = j;
+                 pvAnte[k]->x[i*dimG+j] = anteBvpP[cnt2];                 
+                 cnt2++;
+              }
+            }
+            pvAnte[k]->p[dimG] = dimG*dimG;
+            pmuAnte[k]->p[0] = 0;
+            pmuAnte[k]->p[1] = dimG;
+          }
         }
 
 /**************************************/	
@@ -481,23 +628,30 @@ if(nL>0){
 /**************************************/
 	
 	for (k = 0 ; k < nGR; k++){	
-           dimG = GRdim[k];
-	   if(updateP[k]!=2 & updateP[k]!=4){
-	     CM[k] = cs_spalloc(1,1,1,true, false);
-           }else{	
-	     cnt = 0;	
-	     CM[k] = cs_spalloc(dimG-splitP[k], dimG-splitP[k], (dimG-splitP[k])*(dimG-splitP[k]), true, false);
-	     for (i = splitP[k] ; i < dimG; i++){
-	        CM[k]->p[i-splitP[k]] = (i-splitP[k])*(dimG-splitP[k]);
-		for (j = splitP[k] ; j < dimG; j++){
-		   CM[k]->i[cnt] = j-splitP[k];
-		   CM[k]->x[cnt] = G[k]->x[i*dimG+j];
-		   cnt++;
-		}
-	      }
-	      CM[k]->p[dimG-splitP[k]] = (dimG-splitP[k])*(dimG-splitP[k]);
-	   }
-	 }
+          dimG = GRdim[k];
+          if(covu>0 && k==nG){
+            dimG += covu;
+          }
+	  if(((covu==0 || k!=nG) && updateP[k]!=2 && updateP[k]!=4) || (covu>0 && k==nG && updateP[nGR+1]!=2 && updateP[nGR+1]!=4)){
+	    CM[k] = cs_spalloc(1,1,1,true, false);
+          }else{	
+	    cnt = 0;	
+	    CM[k] = cs_spalloc(dimG-splitP[k], dimG-splitP[k], (dimG-splitP[k])*(dimG-splitP[k]), true, false);
+            for (i = splitP[k] ; i < dimG; i++){
+              CM[k]->p[i-splitP[k]] = (i-splitP[k])*(dimG-splitP[k]);
+   	      for (j = splitP[k] ; j < dimG; j++){
+		CM[k]->i[cnt] = j-splitP[k];
+                if(covu>0 && k==nG){
+      		  CM[k]->x[cnt] = G_rr->x[i*dimG+j];
+                }else{
+      		  CM[k]->x[cnt] = G[k]->x[i*dimG+j];
+                }
+		cnt++;
+              }
+	    }
+	    CM[k]->p[dimG-splitP[k]] = (dimG-splitP[k])*(dimG-splitP[k]);
+	  }
+        }
 
 /**********************************/ 
 /* read in alpha  prior matrices */
@@ -521,7 +675,7 @@ if(nL>0){
         Alphainv->p[nalpha] = pAVpP[nalpha];
         muAlpha->p[0] = 0;
         muAlpha->p[1] = nalpha;
-        AlphainvS = cs_schol(1, Alphainv);                    
+        AlphainvS = cs_schol(0, Alphainv);                    
         AlphainvL = cs_chol(Alphainv, AlphainvS);                
 
         Xalpha = cs_spalloc(nrowZ, nalpha, nrowZ*nalpha, true, false); 
@@ -584,6 +738,7 @@ if(nL>0){
 
           linki[k] = cs_spalloc(dimG, 1, dimG, true, false);
           linki_tmp[k] = cs_spalloc(dimG, 1, dimG, true, false);
+          linki_tmp2[k] = cs_spalloc(dimG, 1, dimG, true, false);
           predi[k] = cs_spalloc(dimG, 1, dimG, true, false);         
 
           cnt=0;
@@ -610,6 +765,8 @@ if(nL>0){
           linki[k]->p[1] = dimG;
           linki_tmp[k]->p[0] = 0;
           linki_tmp[k]->p[1] = dimG;
+          linki_tmp2[k]->p[0] = 0;
+          linki_tmp2[k]->p[1] = dimG;
           predi[k]->p[0] = 0;
           predi[k]->p[1] = dimG;
 
@@ -621,13 +778,14 @@ if(nL>0){
 
             linki[k]->i[i] = i;    
             linki_tmp[k]->i[i] = i;    
+            linki_tmp2[k]->i[i] = i;    
             predi[k]->i[i] = i;    
           }
           propCinv[k] = cs_inv(propC[k]);
-          propCinvS[k] = cs_schol(1, propCinv[k]);   
+          propCinvS[k] = cs_schol(0, propCinv[k]);   
           propCinvL[k] = cs_chol(propCinv[k], propCinvS[k]);       
           propCinv[k+nGR] = cs_inv(propC[k+nGR]);
-          propCinvS[k+nGR] = cs_schol(1, propCinv[k+nGR]);   
+          propCinvS[k+nGR] = cs_schol(0, propCinv[k+nGR]);   
           propCinvL[k+nGR] = cs_chol(propCinv[k+nGR], propCinvS[k+nGR]);
         }
 
@@ -661,7 +819,8 @@ if(nL>0){
         mulinky->p[0] = 0; 
 	mulinky->p[1] = ny;
 
-        if(nL>0){            /* for rec/sim models need to presevere non-transformed latent variable i.e. solve(Lambda, linky) - This =y (in gaussian case) */
+        if(nL>0){    
+
           linky_orig = cs_spalloc(ny, 1, ny, true, false);
           for (i = 0 ; i < ny; i++){   
             linky_orig->i[i] = i;
@@ -727,7 +886,7 @@ if(nL>0){
   
 
         for (k = 0 ; k < nGR ; k++){
-           GinvS[k] = cs_schol(1, Ginv[k]);                    // Symbolic factorisation of G
+           GinvS[k] = cs_schol(0, Ginv[k]);                    // Symbolic factorisation of G
            GinvL[k] = cs_chol(Ginv[k], GinvS[k]);              // cholesky factorisation of G^{-1} for forming N(0, G \otimes I)
         }
             
@@ -773,38 +932,42 @@ if(nL>0){
 // If sim/rec model then:
 
        if(nL>0){
-     
-         lambdaI[0] = cs_kroneckerI(lambda[0], LambdaX->m);
-         lambdaI[1] = cs_kroneckerI(lambda[0], LambdaX->m);
+         lambdaI[0] = cs_kroneckerI(lambda[0], nrowLX);
+         lambdaI[1] = cs_kroneckerI(lambda[0], nrowLX); 
 
          Lambda_tmp[0] = cs_multiply(LambdaX, lambdaI[0]);
 
-         I = cs_spalloc(ny, ny, ny, true, false); // ny by ny I matrix
+         I = cs_spalloc(nrowLX, nrowLX, nrowLX, true, false); // 
 
-         for (i = 0 ; i<ny ; i++){
+         for (i = 0 ; i<nrowLX; i++){
            I->p[i] = i;                                                               
            I->i[i] = i;
            I->x[i] = 1.0;
          }
-         I->p[ny] = ny;   
+         I->p[nrowLX] =nrowLX;   
 
          Lambda[0] = cs_add(I, Lambda_tmp[0], 1.0, -1.0);
 
-         LambdaS = cs_sqr(1, Lambda[0], true);                            // Symbolic LU factorisation of Lambda for determinant calculation
+         if(path){
+           exLambda = cs_kroneckerSI(Lambda[0],nlGR[nG]);
+         }
 
-         LambdaLU = cs_lu(Lambda[0], LambdaS, DBL_EPSILON);      
+         LambdaS = cs_sqr(1, Lambda[0], 1);                            // Symbolic LU factorisation of Lambda for determinant calculation
 
-         for (i = 0 ; i<ny ; i++){           
-           for (j = LambdaLU->L->p[i] ; j<(LambdaLU->L->p[i+1]); j++){
-              if(LambdaLU->L->i[j]==i){
+         LambdaLU[0] = cs_lu(Lambda[0], LambdaS, DBL_EPSILON);      
+
+         for (i = 0 ; i<nrowLX; i++){  
+
+           for (j = LambdaLU[0]->L->p[i] ; j<(LambdaLU[0]->L->p[i+1]); j++){
+              if(LambdaLU[0]->L->i[j]==i){
                 diagLambdaL[i]=j;
               }
            }
          }
 
-         for (i = 0 ; i<ny ; i++){           
-           for (j = LambdaLU->U->p[i] ; j<(LambdaLU->U->p[i+1]); j++){
-              if(LambdaLU->U->i[j]==i){
+         for (i = 0 ; i<nrowLX; i++){           
+           for (j = LambdaLU[0]->U->p[i] ; j<(LambdaLU[0]->U->p[i+1]); j++){
+              if(LambdaLU[0]->U->i[j]==i){
                 diagLambdaU[i]=j;
               }
            }
@@ -813,19 +976,27 @@ if(nL>0){
          detLambda[0] = 0.0;
          sign_detLambda[0] = 1;
 
-         for (i = 0 ; i<ny ; i++){ 
-            if(LambdaLU->L->x[diagLambdaL[i]]<0.0){
+         for (i = 0 ; i<nrowLX; i++){ 
+            if(LambdaLU[0]->L->x[diagLambdaL[i]]<0.0){
               sign_detLambda[0] *= -1;
             }
-            if(LambdaLU->U->x[diagLambdaU[i]]<0.0){
+            if(LambdaLU[0]->U->x[diagLambdaU[i]]<0.0){
               sign_detLambda[0] *= -1;
             }
-            detLambda[0] += log(fabs(LambdaLU->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU->U->x[diagLambdaU[i]]));
+            detLambda[0] += log(fabs(LambdaLU[0]->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU[0]->U->x[diagLambdaU[i]]));
+         }
+
+         if(path){
+             detLambda[0] *= double(nlGR[nG]);
          }
 
          cs_spfree(linky);
-         linky = cs_multiply(Lambda[0], linky_orig);   
 
+         if(path){  
+           linky = cs_multiply(exLambda, linky_orig);   
+         }else{
+           linky = cs_multiply(Lambda[0], linky_orig);  
+         }
          cs_sortdv(linky);
 
          ILY = cs_spalloc(ny*nL, nL, ny*nL, true, false); // form kronecker(I,y) where I has dimension nL
@@ -838,13 +1009,17 @@ if(nL>0){
            }
          }
          ILY->p[nL] = nL*ny;   
-         Y = cs_multiply(LambdaX, ILY);
+
+         if(path){
+           Y = cs_multiply(exLambdaX, ILY);
+         }else{
+           Y = cs_multiply(LambdaX, ILY);
+         }
 
          tY = cs_transpose(Y, true);
 
          tYKrinv = cs_multiply(tY, KRinv);
          tYKrinvY = cs_multiply(tYKrinv,Y);
-         
          tYKrinvYS = cs_schol(1, tYKrinvY);
          tYKrinvYL = cs_chol(tYKrinvY, tYKrinvYS);
        }
@@ -882,7 +1057,7 @@ if(nL>0){
 /***************************/
 						
 	  for (k = 0 ; k < nGR; k++){                             
-	    if(updateP[k]>0){
+	    if(updateP[k]>0 || (updateP[nGR+1]>0 && covu>0 && (k==nG || k==(nG-1)))){
 	      if(AtermP[k]>=0){
 	        cs_kroneckerAupdate(Ginv[k],A[k],KGinv[k]);           //  form kronecker(G^{-1}, A^{-1}) structure
 	      }else{
@@ -910,12 +1085,21 @@ if(nL>0){
               cs_nfree(alphaL);
               cs_spfree(alphaastar_tmp); 
             }
+
+            if(nL>0){
+              cs_spfree(w);
+              cs_spfree(tYKrinvw);
+            }
           }
 
           for (i = 0 ; i < nGR; i++){
             if(updateP[i]>0){
               cs_spfree(G[i]); 
             }
+          }
+          if(covu>0 && updateP[nGR+1]>0){
+            cs_spfree(G[nG]);
+            cs_spfree(G_rr);
           }
           if(missing){	
             for (i = nG ; i < nGR; i++){
@@ -937,18 +1121,20 @@ if(nL>0){
           }
 
           if(nL>0){
-  	     cs_nfree(LambdaLU);
              cs_nfree(tYKrinvYL);     
              cs_spfree(tYKrinv);
-             cs_spfree(tYKrinvY);                
-           //  cs_spfree(Y);     // for non-gaussian or missing data Y and tY need updating as linky_orig changes
-           //  cs_spfree(tY); 
+             cs_spfree(tYKrinvY);
+             if(path && missing){                
+               cs_spfree(Y);     
+               cs_spfree(tY);
+             } 
           }
 
 /******************/
 /* form equations */
 /******************/
-						
+//Rprintf("form equations\n");
+					
 	  cs_directsumupdate(KGinv, nG, nGR, KRinv);
 			
 	  WtmKRinv = cs_multiply(Wt, KRinv);   
@@ -964,8 +1150,10 @@ if(nL>0){
 /*  sample vectors from  */
 /*      their prior      */
 /*************************/
+//Rprintf("sample vectors\n");	
 
-/* beta */			
+/* beta */
+		
           cnt = 0;
 
           for(i=0; i<ncolX; i++){
@@ -981,11 +1169,13 @@ if(nL>0){
 
             dimG = GRdim[k];
 
-            if(AtermP[k]>=0){        
-
+            if(AtermP[k]>=0){        	
 /* complex random effects */
               KGinvL[k] = cs_chol(KGinv[k] , KGinvS[k]);
-
+              if(KGinvL[k]==NULL){
+	        PutRNGstate();
+                error("G-structure %i is ill-conditioned (possibly because of ginverse): use proper priors if you haven't, or rescale data if you have\n", k+1);
+              }
               for(i=0; i<(nlGR[k]*dimG); i++){
                 bv_tmp[k]->x[i] = rnorm(0.0,1.0);
               }      
@@ -997,14 +1187,12 @@ if(nL>0){
               }    
 
             }else{
-
-// blocked random effects 
-				
+// blocked random effects 			
               for(i=0; i<nlGR[k]; i++){
                 for(j=0; j<dimG; j++){
                   Grv[k]->x[j] = rnorm(0.0,1.0);
                 }
-                cs_ltsolve(GinvL[k]->L, Grv[k]->x);	 
+                cs_ltsolve(GinvL[k]->L, Grv[k]->x);	
                 for(j=0; j<dimG; j++){
                   astar->x[j*nlGR[k]+i+cnt] = Grv[k]->x[j];
                 }
@@ -1014,7 +1202,7 @@ if(nL>0){
           }
 
 /* residuals */
-			
+		
           cnt=0;
 
           for(k=nG; k<nGR; k++){
@@ -1044,13 +1232,17 @@ if(nL>0){
 
          astar_tmp = cs_multiply(WtmKRinv, zstar);              // WtmKRinv(y - z*)
 
-         for (i = 0 ; i < astar_tmp->nzmax ; i++){
+         for (i = 0 ; i < dimAS; i++){
+            location->x[i] = 0.0;
+         }
+         for (i = 0 ; i < astar_tmp->p[astar_tmp->n]; i++){
             location->x[astar_tmp->i[i]] = astar_tmp->x[i];
          }
 
 /*************/
 /* solve MME */
 /*************/
+//Rprintf("solve MME\n");
 
          L = cs_chol(MME, S); 
 
@@ -1068,22 +1260,23 @@ if(nL>0){
          cs_ltsolve (L->L, location_tmp->x);		                 // x = L'\x 
          cs_pvec (S->pinv, location_tmp->x, location->x, MME->n);        // b = P'*x 
 
-          for (i = 0 ; i < dimAS ; i++){
+         for (i = 0 ; i < dimAS ; i++){
             location->x[i] += astar->x[i];
          }
 
 /***********************/
 /* sample VCV matrices */
 /***********************/
-
+//Rprintf("sample G-VCV\n");
          pred = cs_multiply(W, location);
-         cs_sortdv(pred);
-         dev = cs_add(linky, pred, 1.0, -1.0);    
+         cs_sortdv(pred); 
+         dev = cs_add(linky, pred, 1.0, -1.0);   
+
          cnt2 = ncolX;
 
 	 for(i=0; i< nG; i++){        
+           dimG = GRdim[i];
            if(updateP[i]>0){            
-             dimG = GRdim[i];
              if(AtermP[i]>=0){        
                for(j=0; j<(dimG*nlGR[i]); j++){
                  bv[i]->x[j]=location->x[cnt2+j];
@@ -1105,7 +1298,7 @@ if(nL>0){
                    for(l=0; l<nlGR[i]; l++){
                      Gtmp[i]->x[cnt] += location->x[cnt2+nlGR[i]*j+l]*location->x[cnt2+nlGR[i]*k+l];
                    }
-                   // sum-ofsquares for random effect i
+                   // sum-of-squares for random effect i
                    Gtmp[i]->x[cnt] += pG[i]->x[cnt];
                    // add prior sum-ofsquares prior$V*prior$nu (or I for corg or Diag(V) for corgh)
                  }
@@ -1116,7 +1309,7 @@ if(nL>0){
                  }
                }
              }
-             cnt2 += nlGR[i]*dimG;
+
 	     switch(updateP[i]){					   
 		case 1:
  		  cs_invR(Gtmp[i], Ginv[i]);
@@ -1135,23 +1328,184 @@ if(nL>0){
 		case 4:  
 		  G[i] = cs_rRsubinvwishart(Gtmp[i], double(nlGR[i]), splitP[i], GRnpP[i], pG[i], CM[i]);
 		break;
+
+                case 5:
+		  G[i] = cs_rAnte(location, cnt2, dimG, nlGR[i], nanteBP[i], pmuAnte[i], pvAnte[i], A[i], AtermP[i], ivar[i]->x, nanteBP[2*nGR+i], pG[i], GRnpP[i]);
+                break;
+
+		case 6:    
+		  cs_invR(Gtmp[i], Ginv[i]);
+		  G[i] = cs_rSinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i]); 
+		break;	
 	     }
 	     ldet[i] = log(cs_invR(G[i], Ginv[i]));             
 	     cs_nfree(GinvL[i]);
-	     GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of G^{-1} for Gibbs sampling PX working parameters. 
+	     GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of G^{-1}. 
+             if(GinvL[i]==NULL){
+	       PutRNGstate();
+               error("G-structure %i is ill-conditioned: use proper priors if you haven't or rescale data if you have\n", i+1);
+             }
            }
+           cnt2 += nlGR[i]*dimG;  
          }
+
+/************************/
+/* Sample G-R Structure */
+/************************/
+//Rprintf("sample G-R-VCV\n");
+
+          if(covu>0){
+
+            cnt2 -= nlGR[nG-1]*GRdim[nG-1];
+
+            if(updateP[nGR+1]>0){ 
+              dimG = GRdim[nG]+covu;
+
+              for(j=0; j<(covu*nlGR[nG]); j++){
+                bv[nG]->x[j]=location->x[cnt2+j];
+              }
+
+              tbv = cs_transpose(beta_rr, true);
+              bvA = cs_multiply(bv[nG],tbv);
+
+              for(j=0; j<dimG; j++){
+                for(k=j; k<dimG; k++){
+                  cnt = j*dimG+k;
+                  Gtmp[nG]->x[cnt] = 0.0;
+                  for(l=0; l<nlGR[nG]; l++){
+                    if(j<covu && k<covu){
+                      Gtmp[nG]->x[cnt] += location->x[cnt2+nlGR[nG]*j+l]*location->x[cnt2+nlGR[nG]*k+l];
+                    }
+                    if(j>=covu && k>=covu){
+                      Gtmp[nG]->x[cnt] += (dev->x[nlGR[nG]*(j-covu)+l]+bvA->x[nlGR[nG]*(j-covu)+l])*(dev->x[nlGR[nG]*(k-covu)+l]+bvA->x[nlGR[nG]*(k-covu)+l]);
+                    }
+                    if(j<covu && k>=covu){
+                       Gtmp[nG]->x[cnt] += location->x[cnt2+nlGR[nG]*j+l]*(dev->x[nlGR[nG]*(k-covu)+l]+bvA->x[nlGR[nG]*(k-covu)+l]);
+                    }
+                  }
+                  Gtmp[nG]->x[cnt] += pG[nG]->x[cnt];
+                }
+              }
+
+              cs_spfree(tbv);
+              cs_spfree(bvA);
+              for(j=1; j<dimG; j++){
+                for(k=j; k<dimG; k++){
+                  Gtmp[nG]->x[j+dimG*k-1] = Gtmp[nG]->x[(j-1)*dimG+k];
+                }
+              }
+	      if(diagR>0){
+	        cnt=0;  
+	        for(j=0; j<dimG; j++){
+		  for(k=0; k<dimG; k++){
+		    if(j==k){
+                      if(diagR==2 && cnt!=0){
+                        Gtmp[nG]->x[0] += Gtmp[nG]->x[cnt] - pG[nG]->x[cnt];
+                      }
+                    }else{
+	              Gtmp[nG]->x[cnt] = 0.0;
+                    }
+		    cnt++;
+		  }
+	        }	
+	      }
+              switch(updateP[nGR+1]){
+
+	        case 1: 
+		  cs_invR(Gtmp[nG], Ginv_rr);
+		  G_rr = cs_rinvwishart(Ginv_rr, double(nlGR[nG])+GRnpP[nG], GinvS_rr);
+		break;
+						
+	        case 2: 
+		  cs_invR(Gtmp[nG], Ginv_rr);
+		  G_rr = cs_rCinvwishart(Ginv_rr, double(nlGR[nG])+GRnpP[nG], splitP[nG], CM[nG]);
+		break;	   
+			
+	        case 3:
+ 		  G_rr = cs_rR(Gtmp[nG], double(nlGR[nG]), GRnpP[nG], GinvS_rr, Ginv_rr, ldet_rr, pG[nG]);  
+	        break;
+
+		case 4:  
+		  G_rr = cs_rRsubinvwishart(Gtmp[nG], double(nlGR[nG]), splitP[nG], GRnpP[nG], pG[nG], CM[nG]);
+		break;
+
+		case 6:    
+		  cs_invR(Gtmp[nG], Ginv_rr);
+		  G_rr = cs_rSinvwishart(Ginv_rr, double(nlGR[nG])+GRnpP[nG], splitP[nG]); 
+		break;
+	      }
+		
+	      if(diagR>0){
+	        cnt=0;  
+	        for(j=0; j<dimG; j++){
+		  for(k=0; k<dimG; k++){
+		    if(j==k){
+                      if(diagR==2){
+                        G_rr->x[cnt] = G_rr->x[0];
+                      }                          
+                    }else{
+		      G_rr->x[cnt] = 0.0;
+                    }
+		    cnt++;
+		  }
+		}	
+              }
+
+              ldet_rr = log(cs_invR(G_rr, Ginv_rr));
+
+              G[nG] = cs_schur(G_rr, covu, beta_rr);
+
+//Form Z*
+              for (j = 0; j < covu; j++){                     // iterate through kr
+                 for (k = 0; k < GRdim[nG]; k++){              // iterate through first ks enteries
+                   for(l=0; l<nlGR[nG]; l++){
+                     W->x[W->p[cnt2+nlGR[nG]*j+l]+k] = beta_rr->x[j*GRdim[nG]+k];
+                   }
+                 }
+              }
+              cs_spfree(pred);
+              pred = cs_multiply(W, location);
+              cs_sortdv(pred);
+ 
+              if(updateP[nGR+1]==5){
+                cs_spfree(dev);
+                dev = cs_add(linky, pred, 1.0, -1.0); 
+              }
+
+              cs_spfree(Wt);
+              Wt = cs_transpose(W, true);   
+
+              ldet[nG] = log(cs_invR(G[nG], Ginv[nG])); 
+              cnt=0;  
+	      for(j=0; j<GRdim[nG-1]; j++){
+		for(k=0; k<GRdim[nG-1]; k++){  
+                  G[nG-1]->x[cnt] = G_rr->x[G_rr->p[j]+k];
+                  cnt++; 
+                }
+              }
+
+              ldet[nG-1] = log(cs_invR(G[nG-1], Ginv[nG-1])); 
+	      cs_nfree(GinvL[nG-1]);	
+	      GinvL[nG-1] = cs_chol(Ginv[nG-1], GinvS[nG-1]);               
+	      cs_nfree(GinvL[nG]);	
+	      GinvL[nG] = cs_chol(Ginv[nG], GinvS[nG]);    
+              if(GinvL[nG]==NULL || GinvL[nG-1]==NULL){
+	         PutRNGstate();
+                 error("G-R structure is ill-conditioned: use proper priors if you haven't or rescale data if you have\n");
+              }           
+            }
+	  }
 
 /**********************/
 /* Sample R Structure */
 /**********************/
+//Rprintf("sample R-VCV\n");
+
          cnt2=0;
 			
-
          for(i=nG; i<nGR; i++){  
-  
-            if(updateP[i]>0){ 
-              dimG = GRdim[i];
+            dimG = GRdim[i];
+            if(updateP[i]>0){               
               for(j=0; j<dimG; j++){
                 for(k=j; k<dimG; k++){
                   cnt = j*dimG+k;
@@ -1167,7 +1521,6 @@ if(nL>0){
                   Gtmp[i]->x[j+dimG*k-1] = Gtmp[i]->x[(j-1)*dimG+k];
                 }
               }
-              cnt2 += nlGR[i]*dimG;
 	      if(diagR>0){
 	        cnt=0;  
 	        for(j=0; j<dimG; j++){
@@ -1203,6 +1556,15 @@ if(nL>0){
 		case 4:  
 		  G[i] = cs_rRsubinvwishart(Gtmp[i], double(nlGR[i]), splitP[i], GRnpP[i], pG[i], CM[i]);
 		break;
+
+                case 5:
+		  G[i] = cs_rAnte(dev, cnt2, dimG, nlGR[i],nanteBP[i], pmuAnte[i], pvAnte[i], A[i], AtermP[i], ivar[i]->x, nanteBP[2*nGR+i], pG[i], GRnpP[i]);
+                break;
+
+		case 6:    
+		  cs_invR(Gtmp[i], Ginv[i]);
+		  G[i] = cs_rSinvwishart(Ginv[i], double(nlGR[i])+GRnpP[i], splitP[i]); 
+		break;
 	      }					
 	      if(diagR>0){
 	        cnt=0;  
@@ -1222,26 +1584,236 @@ if(nL>0){
               ldet[i] = log(cs_invR(G[i], Ginv[i]));
 	      cs_nfree(GinvL[i]);	
 	      GinvL[i] = cs_chol(Ginv[i], GinvS[i]);                 // cholesky factorisation of R^{-1} for Gibbs sampling fully missing data. 
+              if(GinvL[i]==NULL){
+	        PutRNGstate();
+                error("R-structure %i is ill-conditioned: use proper priors if you haven't or rescale data if you have\n", i+nG);
+              }
             }
+            cnt2 += nlGR[i]*dimG;
 	  }
+
+/********************************************************/
+/* update recusrive-simultaneous structural parameters  */   
+/********************************************************/
+
+
+    if(nL>0){     
+      if(missing){
+        if(path){     
+          // linky_orig updated when sampling liabilities, but  Y also needs to be updated. 
+          for (i = 0 ; i<nL ; i++){
+            for (j = 0 ; j < ny ; j++){
+              ILY->x[j+ny*i] = linky_orig->x[j];
+            }
+          }
+          Y = cs_multiply(exLambdaX, ILY);
+          tY = cs_transpose(Y, true);
+        }else{      
+          // sir models are tolerated if value i is missing and Lambda[i,i] = 1 and Lambda[i,\i] = 0
+          // however linky_orig needs to be updated with the sampled latent variable
+          for (i = 0 ; i<ny ; i++){            
+            if(observedP[i]==0){
+              linky_orig->x[i] = linky->x[i];
+            }
+          }
+        }
+      }
+    
+      w = cs_add(linky_orig, pred, 1.0, -1.0);
+
+      tYKrinv = cs_multiply(tY, KRinv);
+      tYKrinvY = cs_multiply(tYKrinv,Y);
+      tYKrinvw = cs_multiply(tYKrinv,w);
+
+
+// Jarrod the prior needs to be included here 
+      for(i=0; i<nL; i++){
+        Lrv->x[i] = rnorm(0.0,1.0);
+      }
+
+
+      tYKrinvYL = cs_chol(tYKrinvY, tYKrinvYS); 
+
+      cs_ltsolve(tYKrinvYL->L, Lrv->x);       // ~ N(0, V_lambda)
+
+      cs_ipvec (tYKrinvYS->pinv, tYKrinvw->x, w->x, nL);	 
+      cs_lsolve(tYKrinvYL->L,w->x);                                
+      cs_ltsolve (tYKrinvYL->L, w->x);		                 
+      cs_pvec (tYKrinvYS->pinv, w->x, tYKrinvw->x, nL);       
+
+      lambda[lambda_new] = cs_add(Lrv, lambda[lambda_old], 1.0, 1.0);
+
+      cs_kroneckerIupdate(lambda[lambda_new], nrowLX, lambdaI[lambda_new]);  
+
+      Lambda_tmp[lambda_new] = cs_multiply(LambdaX, lambdaI[lambda_new]);    
+
+      Lambda[lambda_new] = cs_add(I, Lambda_tmp[lambda_new], 1.0, -1.0);
+
+      LambdaLU[lambda_new] = cs_lu(Lambda[lambda_new], LambdaS, DBL_EPSILON);     
+
+      detLambda[lambda_new] = 0.0;
+      sign_detLambda[lambda_new] = 1;
+
+      for (i = 0 ; i<nrowLX; i++){ 
+         if(LambdaLU[lambda_new]->L->x[diagLambdaL[i]]<0.0){
+           sign_detLambda[lambda_new] *= -1;
+         }
+         if(LambdaLU[lambda_new]->U->x[diagLambdaU[i]]<0.0){
+           sign_detLambda[lambda_new] *= -1;
+         }
+
+         detLambda[lambda_new] += log(fabs(LambdaLU[lambda_new]->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU[lambda_new]->U->x[diagLambdaU[i]]));
+      }
+
+      if(path){
+        detLambda[lambda_new] *= double(nlGR[nG]);
+      }
+
+      log_alphaL = detLambda[lambda_new] - detLambda[lambda_old];
+
+      lambda_dev = cs_add(lambda[lambda_new], tYKrinvw, 1.0, -1.0);
+
+      tl = cs_transpose(lambda_dev, true);
+      tlV = cs_multiply(tl, tYKrinvY);
+      tlVl = cs_multiply(tlV, lambda_dev);
+
+      log_alphaL -= 0.5*tlVl->x[0];
+
+      cs_spfree(lambda_dev);
+      cs_spfree(tl);
+      cs_spfree(tlV);
+      cs_spfree(tlVl);
+
+      lambda_dev = cs_add(lambda[lambda_old], tYKrinvw, 1.0, -1.0);
+
+      tl = cs_transpose(lambda_dev, true);
+      tlV = cs_multiply(tl, tYKrinvY);
+      tlVl = cs_multiply(tlV, lambda_dev);
+
+      log_alphaL += 0.5*tlVl->x[0];
+
+      cs_spfree(lambda_dev);
+      cs_spfree(tl);
+      cs_spfree(tlV);
+      cs_spfree(tlVl);
+
+      if(sign_detLambda[lambda_old]==sign_detLambda[lambda_new] && log_alphaL>log(runif(0.0,1.0))){
+
+        cs_spfree(linky);  
+        if(path){
+          cs_kroneckerSIupdate(Lambda[lambda_new],nlGR[nG],exLambda);            
+          linky = cs_multiply(exLambda, linky_orig);
+        }else{
+          linky = cs_multiply(Lambda[lambda_new], linky_orig);
+        }
+        cs_sortdv(linky);                               
+
+        detLambda[0] = detLambda[lambda_new];
+        detLambda[1] = detLambda[lambda_new];
+        sign_detLambda[0] = sign_detLambda[lambda_new];
+        sign_detLambda[1] = sign_detLambda[lambda_new];
+        lambda_old =  lambda_new;
+        lambda_new -= 1.0;
+        lambda_new = abs(lambda_new);
+
+      }
+      cs_spfree(Lambda_tmp[lambda_new]);                                     
+      cs_spfree(Lambda[lambda_new]); 
+      cs_nfree(LambdaLU[lambda_new]);     
+      cs_spfree(lambda[lambda_new]);  
+    }
 
 /**********************/
 /* calculate deviance */   
 /**********************/
+//Rprintf("calculate deviance\n");
+
           dbar =0.0;
 
           if(itt>=burnin && DICP[0]==1){
             if(itt==nitt){
               for(k=nG; k<nGR; k++){
                 dimG = GRdim[k];
-                for(i=0; i<(dimG*dimG); i++){          
-                  G[k]->x[i] = muG[k]->x[i];
+                if(covu>0 && k==nG){
+
+                  dimG += covu;
+                  for(i=0; i<(dimG*dimG); i++){          
+                    G_rr->x[i] = muG[k]->x[i];
+                  }
+                  ldet_rr = log(cs_invR(G_rr, Ginv_rr));
+                  cs_spfree(G[nG]);
+                  G[nG] = cs_schur(G_rr, covu, beta_rr);
+                  ldet[nG] = log(cs_invR(G[nG], Ginv[nG]));
+                  
+                  for (i = 0; i < covu; i++){                     // iterate through kr
+                    for (j = 0; j < GRdim[nG]; j++){              // iterate through first ks enteries
+                      for(l=0; l<nlGR[nG]; l++){
+                         W->x[W->p[W->n+nlGR[nG]*(i-covu)+l]+j] = beta_rr->x[i*GRdim[nG]+j];
+                      }
+                    }
+                  }
+                    
+                  cs_spfree(Wt);
+                  Wt = cs_transpose(W, true);
+                                        
+                  cnt=0;
+	          for(i=0; i<GRdim[nG-1]; i++){
+		    for(j=0; j<GRdim[nG-1]; j++){  
+                      G[nG-1]->x[cnt] = G_rr->x[G_rr->p[i]+j];
+                      cnt++; 
+                    }
+                  }
+                  ldet[nG-1] = log(cs_invR(G[nG-1], Ginv[nG-1])); 
+                }else{
+                  for(i=0; i<(dimG*dimG); i++){          
+                    G[k]->x[i] = muG[k]->x[i];
+                  }
                 }
                 ldet[k] = log(cs_invR(G[k], Ginv[k]));  
               }
               for(i=0; i<ny; i++){          
                 linky->x[i] = mulinky->x[i];
                 pred->x[i] = mupred->x[i];
+              }
+              if(nL>0){
+
+                // Have to recalculate |L| for mean(lambda)
+
+                lambda[lambda_new] = cs_kroneckerI(mulambda, 1); 
+
+                cs_kroneckerIupdate(lambda[lambda_new], ncolLX, lambdaI[lambda_new]);   
+
+                Lambda_tmp[lambda_new] = cs_multiply(LambdaX, lambdaI[lambda_new]);    
+      
+                Lambda[lambda_new] = cs_add(I, Lambda_tmp[lambda_new], 1.0, -1.0);
+
+                LambdaLU[lambda_new] = cs_lu(Lambda[lambda_new], LambdaS, DBL_EPSILON);     
+
+                detLambda[lambda_new] = 0.0;
+                sign_detLambda[lambda_new] = 1;
+
+                for (i = 0 ; i<nrowLX; i++){ 
+                  if(LambdaLU[lambda_new]->L->x[diagLambdaL[i]]<0.0){
+                    sign_detLambda[lambda_new] *= -1;
+                  }
+                  if(LambdaLU[lambda_new]->U->x[diagLambdaU[i]]<0.0){
+                    sign_detLambda[lambda_new] *= -1;
+                  }
+
+                  detLambda[lambda_new] += log(fabs(LambdaLU[lambda_new]->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU[lambda_new]->U->x[diagLambdaU[i]]));
+                }
+
+                if(path){
+                  detLambda[lambda_new] *= double(nlGR[nG]);
+                }
+
+                lambda_old =  lambda_new;
+                lambda_new -= 1.0;
+                lambda_new = abs(lambda_new);
+                cs_spfree(Lambda_tmp[lambda_new]);                                     
+                cs_spfree(Lambda[lambda_new]); 
+                cs_nfree(LambdaLU[lambda_new]);  
+                cs_spfree(lambda[lambda_new]);    
               }
             }         
             cnt2=0;
@@ -1268,12 +1840,17 @@ if(nL>0){
                 if(nkeep>0){      // some gaussian observed traits
                   if(ncond>0 || (nkeep+ncond)!=dimG){   // some non-gaussian or non-observed traits
                     dbar += cs_dcmvnorm(linki[k], predi[k], G[k], keep, nkeep, cond, ncond);    // some gaussian observed
+// to be made campatible with path/sir models because linki is actually Lambda%*%l so linki/predi/G need to be multiplied by solve(Lambda)
                   }else{
-                    dbar += cs_dmvnorm(linki[k], predi[k], ldet[k], Ginv[k]);                            // all gaussian observed
+                    dbar += cs_dmvnorm(linki[k], predi[k], ldet[k], Ginv[k]);                    // all gaussian observed (this is OK for sir )
                   }
                 }
               }
               cnt2+=nlGR[k]*dimG;
+            }
+            if(nL>0){ // for sir/path models likelihood multiply by Jacobian 
+              dbar += detLambda[lambda_old];
+// for path models which are not fully Gaussian (or observed) this needs to be modified (determinant of the conditional matrix should be easy) 
             }
           }
 
@@ -1301,6 +1878,8 @@ if(nL>0){
              }else{
                cutpointMHR[nthordinal] = dcutpoints(pred, yP, observedP, record,record+nlGR[k], oldcutpoints, newcutpoints, cumsum_ncutpoints[nthordinal], ncutpointsP[nthordinal], sdcp[nthordinal], sqrt(G[k]->x[i*(dimG+1)]));
              }
+             // to be made campatible with path/sir models because linky is actually Lambda%*%y so linky and predy need to be premultiplied by solve(Lambda)
+
              wncp[nthordinal] *= rACCEPT;
              zncp[nthordinal] *= rACCEPT;
              wncp[nthordinal] ++;
@@ -1325,128 +1904,11 @@ if(nL>0){
        }
      }
 
-/********************************************************/
-/* update recusrive-simultaneous structural parameters  */   
-/********************************************************/
-
-
-    if(nL>0){    
-                
-      for (i = 0 ; i<ny ; i++){            // updates missing values for records i when Lambda[i,i] = 1 and Lambda[i,\i] = 0
-         if(observedP[i]==0){
-           linky_orig->x[i] = linky->x[i];
-         }
-      }
-
-              
-      w = cs_add(linky_orig, pred, 1.0, -1.0);
-      tYKrinv = cs_multiply(tY, KRinv);
-      tYKrinvY = cs_multiply(tYKrinv,Y);
-      tYKrinvw = cs_multiply(tYKrinv,w);
-
-      for(i=0; i<nL; i++){
-        Lrv->x[i] = rnorm(0.0,1.0);
-      }
-
-
-      tYKrinvYL = cs_chol(tYKrinvY, tYKrinvYS); 
-
-      cs_ltsolve(tYKrinvYL->L, Lrv->x);       // ~ N(0, V_lambda)
-
-      cs_ipvec (tYKrinvYS->pinv, tYKrinvw->x, w->x, nL);	 
-      cs_lsolve(tYKrinvYL->L,w->x);                                
-      cs_ltsolve (tYKrinvYL->L, w->x);		                 
-      cs_pvec (tYKrinvYS->pinv, w->x, tYKrinvw->x, nL);       
-
-      lambda[lambda_new] = cs_add(Lrv, lambda[lambda_old], 1.0, 1.0);
-
-      cs_kroneckerIupdate(lambda[lambda_new], LambdaX->m, lambdaI[lambda_new]);    
-      Lambda_tmp[lambda_new] = cs_multiply(LambdaX, lambdaI[lambda_new]);    
-      
-      Lambda[lambda_new] = cs_add(I, Lambda_tmp[lambda_new], 1.0, -1.0);
-
-      LambdaLU = cs_lu(Lambda[lambda_new], LambdaS, DBL_EPSILON);     
-
-      detLambda[lambda_new] = 0.0;
-      sign_detLambda[lambda_new] = 1;
-
-      for (i = 0 ; i<ny ; i++){ 
-         if(LambdaLU->L->x[diagLambdaL[i]]<0.0){
-           sign_detLambda[lambda_new] *= -1;
-         }
-         if(LambdaLU->U->x[diagLambdaU[i]]<0.0){
-           sign_detLambda[lambda_new] *= -1;
-         }
-
-         detLambda[lambda_new] += log(fabs(LambdaLU->L->x[diagLambdaL[i]]))+log(fabs(LambdaLU->U->x[diagLambdaU[i]]));
-      }
-
-        log_alphaL = detLambda[lambda_new] - detLambda[lambda_old];
-
-        lambda_dev = cs_add(lambda[lambda_new], tYKrinvw, 1.0, -1.0);
-
-        tl = cs_transpose(lambda_dev, true);
-        tlV = cs_multiply(tl, tYKrinvY);
-        tlVl = cs_multiply(tlV, lambda_dev);
-
-        log_alphaL -= 0.5*tlVl->x[0];
-
-        cs_spfree(lambda_dev);
-        cs_spfree(tl);
-        cs_spfree(tlV);
-        cs_spfree(tlVl);
-
-        lambda_dev = cs_add(lambda[lambda_old], tYKrinvw, 1.0, -1.0);
-
-        tl = cs_transpose(lambda_dev, true);
-        tlV = cs_multiply(tl, tYKrinvY);
-        tlVl = cs_multiply(tlV, lambda_dev);
-
-        log_alphaL += 0.5*tlVl->x[0];
-
-        cs_spfree(lambda_dev);
-        cs_spfree(tl);
-        cs_spfree(tlV);
-        cs_spfree(tlVl);
-
-      if(sign_detLambda[lambda_old]==sign_detLambda[lambda_new] && log_alphaL>log(runif(0.0,1.0))){
-
-        cs_spfree(linky);  
-        linky = cs_multiply(Lambda[lambda_new], linky_orig);
-        cs_sortdv(linky);                                    // re-sort latent variable (data in Gaussian case)
- 
-      // only needs upadting if latent variables exist - need to free memory for Y and tY when implemented
-
-      /*
-        for (i = 0 ; i<nL ; i++){
-          for (j = 0 ; j < ny ; j++){
-            ILY->x[j+ny*i] = linky_orig->x[j];
-          }
-        }
-        Y = cs_multiply(LambdaX, ILY);
-        tY = cs_transpose(Y, true);
-      */      
-
-        detLambda[0] = detLambda[lambda_new];
-        detLambda[1] = detLambda[lambda_new];
-        sign_detLambda[0] = sign_detLambda[lambda_new];
-        sign_detLambda[1] = sign_detLambda[lambda_new];
-        lambda_old =  lambda_new;
-        lambda_new -= 1;
-        lambda_new = abs(lambda_new);
-
-      }
-      cs_spfree(Lambda_tmp[lambda_new]);                                     
-      cs_spfree(Lambda[lambda_new]);   
-      cs_spfree(lambda[lambda_new]);   
-      cs_spfree(w);
-      cs_spfree(tYKrinvw);
-    }
-
 /***********************/
 /* sample liabilities  */   
 /***********************/
-			
+//Rprintf("sample liabilities\n");	
+	
      if(missing){
 
        cnt2=0;
@@ -1481,19 +1943,57 @@ if(nL>0){
            if(mvtype[cnt+j]==1){         // can be Gibbsed  
              cs_ltsolve(GinvL[k]->L, linki_tmp[k]->x);  
              for(i=0; i<dimG; i++){
-               linky->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i]+pred->x[nlGR[k]*i+j+cnt2];
+               linky->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i]+predi[k]->x[i];
+             }
+             if(path){
+
+               for(i=0; i<dimG; i++){
+                 linki_tmp2[k]->x[i] = 0.0;
+                 linki_tmp[k]->x[i] = linki_tmp[k]->x[i]+predi[k]->x[i];
+               }
+
+               cs_ipvec (LambdaLU[lambda_old]->pinv, linki_tmp[k]->x, linki_tmp2[k]->x, dimG);	 
+               cs_lsolve(LambdaLU[lambda_old]->L, linki_tmp2[k]->x);                              
+               cs_usolve (LambdaLU[lambda_old]->U, linki_tmp2[k]->x);		               
+               cs_ipvec (LambdaS->q, linki_tmp2[k]->x, linki_tmp[k]->x, dimG);  
+
+               for(i=0; i<dimG; i++){
+                 linky_orig->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i];
+               }
              }
            }
 			 
            if(mvtype[cnt+j]<0){         // has to be MHed
-             cs_ltsolve(propCinvL[p]->L, linki_tmp[k]->x);
+             cs_ltsolve(propCinvL[p]->L, linki_tmp[k]->x);           
+
+             if(path){ // Solve Lambda%*%l using LU factorisation to recover original latent variables 
+
+               for(i=0; i<dimG; i++){
+                 linki_tmp2[k]->x[i] = 0.0;
+               }
+
+               cs_ipvec (LambdaLU[lambda_old]->pinv, linki[k]->x, linki_tmp2[k]->x, dimG);	 
+               cs_lsolve(LambdaLU[lambda_old]->L,linki_tmp2[k]->x);                            
+               cs_usolve (LambdaLU[lambda_old]->U, linki_tmp2[k]->x);		              
+               cs_ipvec (LambdaS->q, linki_tmp2[k]->x, linki[k]->x, dimG);      
+
+               for(i=0; i<dimG; i++){
+                 linki_tmp2[k]->x[i] = 0.0;
+               }
+
+               cs_ipvec (LambdaLU[lambda_old]->pinv, linki_tmp[k]->x, linki_tmp2[k]->x, dimG);	 
+               cs_lsolve(LambdaLU[lambda_old]->L, linki_tmp2[k]->x);                              
+               cs_usolve (LambdaLU[lambda_old]->U, linki_tmp2[k]->x);		               
+               cs_ipvec (LambdaS->q, linki_tmp2[k]->x, linki_tmp[k]->x, dimG);  
+     
+             }
            }
 
            for(i=0; i<dimG; i++){       // Iterate through fixed levels
 
              record=cnt2+nlGR[k]*i+j;
 
-             if(mvtype[cnt+j]>0){break;} // has been Gibbsed, or is fully observed and Guassian and therefore knwon
+             if(mvtype[cnt+j]>0){break;} // has been Gibbsed, or is fully observed and Gaussian and therefore known
 
              linki_tmp[k]->x[i] += linki[k]->x[i];
 
@@ -1557,6 +2057,7 @@ if(nL>0){
                    case 5: /* Exponential */
                      densityl1 += dexp(yP[record], exp(-linki[k]->x[i]), true);
                      densityl2 += dexp(yP[record], exp(-linki_tmp[k]->x[i]), true);
+                     /* note in C dexp is parameterised via the mean, rather than through the rate as in R!*/
                    break;
     
                    case 6: /* Censored Gaussian */
@@ -1691,6 +2192,7 @@ if(nL>0){
 
                      densityl1 += linki[k]->x[i]-log1p(exp(linki[k]->x[i]))-yP[record]*(linki[k]->x[i]+log1p(exp(-linki[k]->x[i]))); 
                      densityl2 += linki_tmp[k]->x[i]-log1p(exp(linki_tmp[k]->x[i]))-yP[record]*(linki_tmp[k]->x[i]+log1p(exp(-linki_tmp[k]->x[i])));  
+                     /* This is the geometric with support 0 */
 
                    break;
 
@@ -1747,7 +2249,9 @@ if(nL>0){
                        }
                        linki[k]->x[i] = linky->x[record];
                        linki_tmp[k]->x[i] = linky->x[record];
-                     }else{                     // binary models can be directly Gibbsed
+                     }else{
+
+                 // binary models can be directly Gibbsed
                        if(yP[record]>1.5){
                           if(DICP[0]==1){
                            dbar += pcmvnorm(predi[k], linki[k], G[k], i,  0.0, 1e+35);    
@@ -1769,22 +2273,57 @@ if(nL>0){
            }
            dbar += densityl1;
 
+           // Jarrod: pred and G are both still refering to Lambda%*%l so anything inolving them (e.g. slice sampling (when path(1,1) is fitted) and threshold models) need to be modified.
+ 
            if(mvtype[cnt+j]<0){
+
+             if(path){  // convert l back to Lambda%*%l - shit coding sort it out!
+
+               cs_spfree(linki_tmp2[k]);
+               linki_tmp2[k] = cs_multiply(Lambda[lambda_old], linki[k]);   
+               for(i=0; i<dimG; i++){
+                  linki[k]->x[linki_tmp2[k]->i[i]] = linki_tmp2[k]->x[i];
+               }
+               cs_spfree(linki_tmp2[k]);
+               linki_tmp2[k] = cs_multiply(Lambda[lambda_old], linki_tmp[k]);   
+               for(i=0; i<dimG; i++){
+                  linki_tmp[k]->x[linki_tmp2[k]->i[i]] = linki_tmp2[k]->x[i];
+               }
+               // don't need to worry about the Jacobian below because they cancel
+             }
 
              densityl1 += cs_dmvnorm(linki[k], predi[k], ldet[k], Ginv[k]);
              densityl2 += cs_dmvnorm(linki_tmp[k], predi[k], ldet[k], Ginv[k]);
+             
 
              zn[p] *= rACCEPT; 
              wn[p] *= rACCEPT;
              wn[p] ++;
 
+
              if((densityl2-densityl1)>log(runif(0.0,1.0))){
                for(i=0; i<dimG; i++){
                  linky->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i];
                }
+               if(path){
+
+                 for(i=0; i<dimG; i++){
+                   linki_tmp2[k]->x[i] = 0.0;
+                 }
+
+                 cs_ipvec (LambdaLU[lambda_old]->pinv, linki_tmp[k]->x, linki_tmp2[k]->x, dimG);	 
+                 cs_lsolve(LambdaLU[lambda_old]->L, linki_tmp2[k]->x);                              
+                 cs_usolve (LambdaLU[lambda_old]->U, linki_tmp2[k]->x);		               
+                 cs_ipvec (LambdaS->q, linki_tmp2[k]->x, linki_tmp[k]->x, dimG);  
+
+                 for(i=0; i<dimG; i++){
+                   linky_orig->x[nlGR[k]*i+j+cnt2] = linki_tmp[k]->x[i];
+                 }
+               }
                zn[p]++;
-               Eaccl++;  
+               Eaccl[k]++;  
              }
+
 /***************/
 /* Adaptive MH */
 /***************/
@@ -1824,10 +2363,10 @@ if(nL>0){
              }
            }
 	   if(wn[k]>0.0){
-             sd[k] = pow(qACCEPT, ((zn[k]/wn[k])-alpha_star));
+             sd[k] = pow(qACCEPT, ((zn[k]/wn[k])-alpha_star[k]));
 	   }	
 	   if(wn[k+nGR]>0.0){
-             sd[k+nGR] = pow(qACCEPT, ((zn[k+nGR]/wn[k+nGR])-alpha_star));
+             sd[k+nGR] = pow(qACCEPT, ((zn[k+nGR]/wn[k+nGR])-alpha_star[k]));
 	   }	 
            zn[k] = 0.0; 
            wn[k] = 0.0;
@@ -1873,7 +2412,7 @@ if(nL>0){
 	
        alphaM = cs_multiply(XtmKRinv, Xalpha);          
 
-       alphaMME = cs_add(alphaM, Alphainv, 1.0, 1.0);                      
+       alphaMME = cs_add(alphaM, Alphainv, 1.0, 1.0); 
 
        alphaL = cs_chol(alphaMME, alphaS); 
 
@@ -1982,20 +2521,25 @@ if(nL>0){
 
      if(itt%1000 == 0){
          if(verboseP[0]){
-           Rprintf("\n                      MCMC iteration = %i\n",itt);
-           if(nMH>0){
-             Rprintf("\n  Acceptance ratio for latent scores = %f\n", Eaccl/(nMH*1000.0));
+           Rprintf("\n                       MCMC iteration = %i\n",itt);
+           for(i=nG; i<nGR; i++){
+             if(nMH[i]>0){
+                                                
+               Rprintf("\n Acceptance ratio for liability set %i = %f\n", i+1-nG, Eaccl[i]/(nMH[i]*1000.0));
+             }
            }
            if(cp){
              for(i=0; i<nordinal; i++){
-               Rprintf(" Acceptance ratio for cutpoint set %i = %f\n", i+1, accp[i]/1000.0);
+               Rprintf("\n     Acceptance ratio for cutpoint set %i = %f\n", i+1, accp[i]/1000.0);
              }
            }
            R_FlushConsole();
            R_ProcessEvents();
         }
-        if(nMH>0){
-          Eaccl = 0.0;
+        for(i=nG; i<nGR; i++){
+          if(nMH[i]>0){
+            Eaccl[i] = 0.0;
+          }
         }
         if(cp){
           for(i=0; i<nordinal; i++){
@@ -2018,13 +2562,30 @@ if(nL>0){
        }
        for(i=0; i<nGR; i++){    
 	 dimG = GRdim[i];
-	 for(j=0; j<(dimG*dimG); j++){
-	   muG[i]->x[j] *= (itt-burnin);
-     	   muG[i]->x[j] += G[i]->x[j];
-	   muG[i]->x[j] /= (itt-burnin+1.0);
+         if(covu>0 && i==nG){
+           dimG += covu;
+	   for(j=0; j<(dimG*dimG); j++){
+	     muG[i]->x[j] *= (itt-burnin);
+     	     muG[i]->x[j] += G_rr->x[j];
+	     muG[i]->x[j] /= (itt-burnin+1.0);
+           }
+         }else{
+	   for(j=0; j<(dimG*dimG); j++){
+	     muG[i]->x[j] *= (itt-burnin);
+     	     muG[i]->x[j] += G[i]->x[j];
+	     muG[i]->x[j] /= (itt-burnin+1.0);
+           }
          }				 
        }
+       if(nL>0){
+         for (i = 0 ; i < nL; i++){
+	   mulambda->x[i] *= (itt-burnin);
+           mulambda->x[i] += lambda[lambda_old]->x[i];
+	   mulambda->x[i] /= (itt-burnin+1.0);
+         }
+       }
      }
+
 
      if((itt-burnin)%thin == 0 && itt>=burnin && itt!=nitt){
        if(DICP[0]==1){
@@ -2077,8 +2638,14 @@ if(nL>0){
          }
        }
        if(pl==1){
-         for (i = 0 ; i < ny; i++){
-           PLiabP[i+post_cnt*ny]  = linky->x[i];
+         if(nL>0){
+           for (i = 0 ; i < ny; i++){
+             PLiabP[i+post_cnt*ny]  = linky_orig->x[i];
+           }
+         }else{
+           for (i = 0 ; i < ny; i++){
+             PLiabP[i+post_cnt*ny]  = linky->x[i];
+           }
          }
        }
 
@@ -2086,19 +2653,29 @@ if(nL>0){
        cnt2=0;
        for(i=0; i<nGR; i++){
          dimG = GRdim[i];
-         if(PXtermsP[i]==0){
-           for(j=0; j<(dimG*dimG); j++){
-             VarP[cnt+post_cnt*tvc] = G[i]->x[j];
-             cnt++;
-           }
-         }else{
-           for(j=0; j<dimG; j++){              
-             for(k=0; k<dimG; k++){
-               VarP[cnt+post_cnt*tvc] = G[i]->x[j*dimG+k]*alphalocation->x[cnt2+j]*alphalocation->x[cnt2+k];
+         if(covu>0 && (i==nG || i==(nG-1))){
+           if(i==nG){
+             dimG += covu;
+             for(j=0; j<(dimG*dimG); j++){
+               VarP[cnt+post_cnt*tvc] = G_rr->x[j];
                cnt++;
              }
            }
-           cnt2 += dimG;
+         }else{
+           if(PXtermsP[i]==0){
+             for(j=0; j<(dimG*dimG); j++){
+               VarP[cnt+post_cnt*tvc] = G[i]->x[j];
+               cnt++;
+             }
+           }else{
+             for(j=0; j<dimG; j++){              
+               for(k=0; k<dimG; k++){
+                 VarP[cnt+post_cnt*tvc] = G[i]->x[j*dimG+k]*alphalocation->x[cnt2+j]*alphalocation->x[cnt2+k];
+                 cnt++;
+               }
+             }
+             cnt2 += dimG;
+           }
          }
        }
        post_cnt++;
@@ -2108,8 +2685,9 @@ if(nL>0){
 /* read back proposal distribution */
 
    cnt2=0;
-   for(k=nG; k<nGR; k++){      
+   for(k=nG; k<nGR; k++){     
      cnt=0;
+     dimG = GRdim[k];
      for (j = 0 ; j < dimG*dimG; j++){
        propCP[cnt2] = propC[k]->x[cnt];
        cnt++;
@@ -2155,11 +2733,16 @@ if(nL>0){
           cs_spfree(pvL);
           cs_spfree(pmuL);
           cs_spfree(Lrv);
-          cs_spfree(Lambda_tmp[lambda_old]);                                     
+          cs_spfree(Lambda_tmp[lambda_old]);  
           cs_spfree(Lambda[lambda_old]);   
           cs_spfree(lambda[lambda_old]);   
           cs_spfree(lambdaI[0]);   
-          cs_spfree(lambdaI[1]);   
+          cs_spfree(lambdaI[1]);
+   	  cs_spfree(mulambda);
+          if(path){  
+            cs_spfree(exLambda);  
+            cs_spfree(exLambdaX);    
+          }
           cs_spfree(I);
           cs_spfree(linky_orig);
           cs_spfree(ILY);
@@ -2168,13 +2751,14 @@ if(nL>0){
           cs_nfree(pvLL);
           cs_sfree(pvLS);
 	  cs_sfree(LambdaS);
-	  cs_nfree(LambdaLU);
+	  cs_nfree(LambdaLU[lambda_old]);
           cs_sfree(tYKrinvYS);
           cs_nfree(tYKrinvYL);
           cs_spfree(tYKrinv);                                     
           cs_spfree(tYKrinvY);   
-        }
-                                                  
+          cs_spfree(tYKrinvw);   
+          cs_spfree(w);   
+        }                                                
         cs_nfree(L);
         cs_sfree(S);
         cs_nfree(pvBL);
@@ -2198,8 +2782,13 @@ if(nL>0){
               cs_spfree(bv[i]);                                                              
               cs_spfree(bv_tmp[i]);  
             }
+            if(nanteBP[i]!=0){
+	      cs_spfree(pvAnte[i]);
+	      cs_spfree(pmuAnte[i]);
+            }
+	    cs_spfree(ivar[i]);
         }
-        
+
         if(nalpha>0){
 	  cs_spfree(Alphainv);
 	  cs_spfree(muAlpha);
@@ -2221,6 +2810,14 @@ if(nL>0){
           cs_spfree(alphalocation_tmp);
         }
 
+        if(covu>0){
+          cs_sfree(GinvS_rr); 
+          cs_spfree(Ginv_rr);
+          cs_spfree(G_rr);
+          cs_spfree(beta_rr);
+          cs_spfree(bv[nG]);   
+        }
+
         for(i=nG; i<nGR; i++){
 	    cs_spfree(propC[i]);
 	    cs_spfree(propCinv[i]);
@@ -2234,11 +2831,15 @@ if(nL>0){
  	    cs_spfree(muC[i+nGR]);
             cs_spfree(linki[i]);
             cs_spfree(linki_tmp[i]);
+            cs_spfree(linki_tmp2[i]);
             cs_spfree(predi[i]);
         }
 
         delete [] cond;
         delete [] keep;
+        delete [] nMH;
+        delete [] Eaccl;
+        delete [] alpha_star;
         delete [] t;
         delete [] sd;
         delete [] wn; 
@@ -2260,6 +2861,7 @@ if(nL>0){
         delete [] muC;
         delete [] linki;
         delete [] linki_tmp;
+        delete [] linki_tmp2;
         delete [] predi;
         delete [] G;
         delete [] pG;
@@ -2282,6 +2884,11 @@ if(nL>0){
         delete [] lambdaI;
         delete [] Lambda;
         delete [] Lambda_tmp;
+        delete [] LambdaLU;
+        delete [] pvAnte;
+        delete [] pmuAnte;
+        delete [] ivar;
+
 }
 }
 

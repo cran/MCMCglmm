@@ -2,7 +2,7 @@
 
 double rtnorm(double mu, double sd, double lower, double upper)
 {
- 
+
     double z,pz,u,slower,supper,tr,alpha;
     int sample=1;
  
@@ -13,6 +13,7 @@ double rtnorm(double mu, double sd, double lower, double upper)
      
       if(lower < -1e+32 && upper > 1e+32){
          z = rnorm(mu, sd);
+         return(z);
       }else{
         if(upper > 1e+32){
           tr = (lower-mu)/sd;
@@ -27,7 +28,6 @@ double rtnorm(double mu, double sd, double lower, double upper)
             }
           }
         }else{
-
           alpha = (tr+sqrt((tr*tr)+4.0))/2.0;
           while(sample==1){
             z = rexp(1.0/alpha)+tr;

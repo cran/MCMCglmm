@@ -26,6 +26,9 @@ find.components<-function(x, data, nginverse=NULL){
   if(length(grep("^idv\\(", x))>0){
     vtype<-"idv"
   }
+  if(length(grep("^ante.*\\(", x))>0){
+    vtype<-gsub("\\(.*", "", x)
+  }
   if(length(grep("(^|:)mm\\(", x))>0){
     rtype<-"mm"
   }
@@ -34,7 +37,7 @@ find.components<-function(x, data, nginverse=NULL){
   }
 
 
-  fformula<-gsub("^(us|cor|corh|corgh|corg|cors|idh|idv)\\(", "", x)
+  fformula<-gsub("^(us|cor|corh|corgh|corg|cors|idh|idv|ante.*)\\(", "", x)
 
   if(grepl("^str\\(|^mm\\(", fformula)){
     fformula<-paste("):", fformula, sep="")

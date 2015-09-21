@@ -1,15 +1,15 @@
 ellipsoid3d<-function(rx=1,ry=1,rz=1,n=30,ctr=c(0,0,0),
                         qmesh=FALSE,
-                        trans = par3d("userMatrix"),...) {
+                        trans = rgl::par3d("userMatrix"),...) {
 							
-  if(require(rgl)==FALSE){stop("rgl not loaded")}
+  if(requireNamespace("rgl", quietly=TRUE)==FALSE){stop("rgl not loaded")}
 						
  ###################################################################
  ## This function is taken from Daniel Adlers and Duncan Murdochs ##
  ##                         rgl package                           ## 	
  ###################################################################			
  		
-  if (missing(trans) && !rgl.cur()) trans <- diag(4)
+  if (missing(trans) && !rgl::rgl.cur()) trans <- diag(4)
   degvec <- seq(0,2*pi,length=n)
   ecoord2 <- function(p) {
     c(rx*cos(p[1])*sin(p[2]),ry*sin(p[1])*sin(p[2]),rz*cos(p[2])) }
@@ -22,33 +22,33 @@ ellipsoid3d<-function(rx=1,ry=1,rz=1,n=30,ctr=c(0,0,0),
   i4 <- (i2+n-1) %% n^2 + 1
   i <- rbind(i1,i2,i4,i3)
   if (!qmesh)
-    quads3d(v[1,i],v[2,i],v[3,i],...)
-  else return(rotate3d(qmesh3d(v,i,material=...),matrix=trans))
+    rgl::quads3d(v[1,i],v[2,i],v[3,i],...)
+  else return(rgl::rotate3d(rgl::qmesh3d(v,i,material=...),matrix=trans))
 
 }
 
 
 plotsubspace<-function(CA, CB=NULL, corr=FALSE, shadeCA=TRUE, shadeCB=TRUE, axes.lab=FALSE, ...){
 
-  if(require(rgl)==FALSE){stop("rgl not loaded")}
+  if(requireNamespace("rgl", quietly=TRUE)==FALSE){stop("rgl not loaded")}
 
   Avec<-eigen(CA)$vectors[,1:3]
   Aval<-eigen(CA)$values
   propA<-round(100*sum(Aval[1:3])/sum(Aval),0)
   Aval<-2*sqrt(Aval[1:3])
   
-  clear3d()
+  rgl::clear3d()
 
   s1 <- ellipsoid3d(Aval[1], Aval[2],  Aval[3], qmesh = TRUE, trans = diag(4))
 
   if(dim(CA)[1]==3){
-    s1<-rotate3d(s1,matrix=t(Avec))
+    s1<-rgl::rotate3d(s1,matrix=t(Avec))
   }
 
   if(shadeCA==TRUE){
-    shade3d(s1, col = "red") 
+    rgl::shade3d(s1, col = "red") 
   }else{
-    wire3d(s1, col = "red")
+    rgl::wire3d(s1, col = "red")
   } 
 
 
@@ -64,12 +64,12 @@ plotsubspace<-function(CA, CB=NULL, corr=FALSE, shadeCA=TRUE, shadeCB=TRUE, axes
       Bval<-2*sqrt(Bval)
     }	
     s2 <- ellipsoid3d(Bval[1], Bval[2],  Bval[3], qmesh = TRUE, trans = diag(4))
-    s2<-rotate3d(s2, matrix=t(Bvec))
+    s2<-rgl::rotate3d(s2, matrix=t(Bvec))
 
     if(shadeCB==TRUE){
-      shade3d(s2, col = "blue")
+      rgl::shade3d(s2, col = "blue")
     }else{
-      wire3d(s2, col = "blue")
+      rgl::wire3d(s2, col = "blue")
     }
    }
 
@@ -92,12 +92,12 @@ plotsubspace<-function(CA, CB=NULL, corr=FALSE, shadeCA=TRUE, shadeCB=TRUE, axes
      nameB<-as.character(substitute(CB))
      nameB<-nameB[length(nameB)]
    }
-   axes3d()
+   rgl::axes3d()
    if(dim(CA)[1]!=3){
       mvec<-paste(paste(nameA, "=", propA , "%", sep=""), paste(nameB, "=", propB, "%",sep=""), sep="    ")
-      title3d(main=mvec)
+      rgl::title3d(main=mvec)
    }
    if(axes.lab==TRUE){
-     title3d(xlab=xvec, ylab=yvec, zlab=zvec)
+     rgl::title3d(xlab=xvec, ylab=yvec, zlab=zvec)
    }
 } 

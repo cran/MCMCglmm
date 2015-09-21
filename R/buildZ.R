@@ -1,4 +1,4 @@
-buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
+buildZ<-function(x, data, nginverse=NULL){
 
   vtype="idh"   # form of covariances for the random effets of a random term classified by some factor 
   rtype="iid"   # form of covariances between random effets of random terms
@@ -26,6 +26,12 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
   if(length(grep("^idv\\(", x))>0){
     vtype<-"idv"
   }
+  if(length(grep("^ante.*\\(", x))>0){
+    vtype<-gsub("\\(.*", "", x)
+  }
+  if(length(grep("^sub\\(", x))>0){
+    vtype<-"sub"
+  }
   if(length(grep("(^|:)mm\\(", x))>0){
     rtype<-"mm"
   }
@@ -33,7 +39,7 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
     rtype<-"str"
   }
 
-  fformula<-gsub("^(us|corg|corgh|corh|cor|cors|idh|idv)\\(", "", x)
+  fformula<-gsub("^(us|corg|corgh|corh|cor|cors|idh|idv|antec?[0-9]*v?|sub)\\(", "", x)
 
   if(grepl("^str\\(|^mm\\(", fformula)){
     fformula<-paste("):", fformula, sep="")
@@ -57,7 +63,12 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
   if(rtype!="iid" & any(grepl(":", rterms))){
     stop("interactions not permitted in str and mm structures")
   }
-  rterms<-strsplit(rterms, ":| \\+ ")[[1]]
+  if(rtype=="mm"){
+   pm.pos<-gregexpr("\\+|\\-", rterms)[[1]]
+   mm.sign<-c(1,sapply(pm.pos, function(x){if(substr(rterms, x,x)=="+"){1}else{-1}}))
+  }
+
+  rterms<-strsplit(rterms, ":| \\+ | \\- ")[[1]]
 
   if(is.null(nginverse)==FALSE){
     Aterm<-na.omit(match(rterms,nginverse))[1]
@@ -73,6 +84,8 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
 
   idv.vnames<-paste(fformula, collapse="")
 
+  if(fformula!=""){fformula.exists=TRUE}else{fformula.exists=FALSE}
+
   if(fformula!=""){fformula<-c("+", fformula)}
 
   fformula<-as.formula(paste("~", "-1",  paste(fformula, collapse=""), sep=""))
@@ -81,23 +94,27 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
   options("na.action"="na.pass")
 
   X<-model.matrix(fformula, data)
-  Xterms<-names(attr(X, "contrasts"))
-
-  X[which(is.na(X))]<-1e-64        # structural zeros needed when us() because may be things like slope terms in leg for animal
 
   options("na.action"=orig.na.action)
 
   X<-as(X, "sparseMatrix")
 
-  if(is.null(Xterms)==FALSE){
-    colnames(X)<-substr(colnames(X),nchar(Xterms)+1, nchar(colnames(X)))
+  if(any(diff(X@p)==0)){
+    X<-X[,-which(diff(X@p)==0)]
+    # sometimes X has null colmumns (e.g. for at.level(a,1):b, where b is factor and some levels are not present when a=levels(a)[1])
   }
 
   nfl<-ncol(X)
 
-  if(formZ){
+  if(nfl==0 & fformula.exists){stop("variance function formula for some random term defines predictors that are all zero")}
 
-    ZZ<-list()
+  if(nfl==0){
+    trait.ordering<-data$trait[1]
+  }else{
+    trait.ordering<-as.numeric(data$trait[X@i[X@p[1:ncol(X)]+1]+1])
+  }
+
+  ZZ<-list()
 
     for(k in 1:max(1,(1-(rtype=="iid"))*length(rterms))){  # iterate through Rterms or evalute once if iid
 
@@ -115,7 +132,7 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
         # random effects are dropped if they are not animal or part of a mm or str structure 
       }
 
-      nrl<-nlevels(rfactor)
+      nrl<-nlevels(rfactor) 
       nd<-length(rfactor)
               
       data_pos<-as.numeric(rfactor)
@@ -145,28 +162,25 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
       for(k in 1:max(1,(1-(rtype=="iid"))*length(rterms))){  # iterate through Rtrems or evalute once if iid
 
         missing<-which(diff(ZZ[[k]]@p)==0)  # non-represented random effects (or zero covariates for RR)
-
-        #################################################################################################
-        # It woule be more efficient to allow complete sparse columns in Z - but need to change C code! #
-        #################################################################################################
  
         if(length(missing)>0){        
           if(Aterm==0 & rtype=="iid"){                       # if not associated with ginv drop terms     
             ZZ[[k]]<-ZZ[[k]][,-missing,drop=FALSE]
             nrl[i]<-ncol(ZZ[k])              
-          }else{                              # if associated with ginv set arbitrary row to structural zero   
-            for(j in 1:length(missing)){
-              ZZ[[k]][j,missing[j]]<-1e-64     
-            }
-          }
+          }                           
         }
+
         if(k>1){
-          if(any(levels(data[,rterms[select.terms]])!=levels(data[,rterms[1]]))){
+          if(is.null(levels(data[,rterms[select.terms]])) | any(levels(data[,rterms[select.terms]])!=levels(data[,rterms[1]]))){
             stop("terms involved in mm/str structures must have identical levels")
           }
           if(rtype=="mm"){
             colnames(ZZ[[k]])<-colnames(ZZ[[1]])
-            ZZ[[1]]<-ZZ[[1]]+ZZ[[k]]
+            if(mm.sign[k]==1){
+              ZZ[[1]]<-ZZ[[1]]+ZZ[[k]]
+            }else{
+              ZZ[[1]]<-ZZ[[1]]-ZZ[[k]]
+            }
           }
           if(rtype=="str"){
             ZZ[[1]]<-cBind(ZZ[[1]],ZZ[[k]])
@@ -182,8 +196,8 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
         nfl<-nfl*length(rterms)
         vtype<-rep("us", length(vtype))
       }
-  
-      return(list(Z=ZZ[[1]], nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=NULL, trait.ordering=NULL))
+
+      return(list(Z=ZZ[[1]], nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, trait.ordering=trait.ordering))
 
     }else{
 
@@ -209,7 +223,7 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
           }
 
           Z[[k]]<-Xtmp%*%ZZ[[k]]
-          colnames(Z[[k]])<-paste(paste(rterms[select.terms], collapse=":"), colnames(X)[i], colnames(Z[[k]]),sep=".") 
+          colnames(Z[[k]])<-paste(colnames(X)[i], colnames(Z[[k]]),sep=".") 
 
           missing<-which(diff(Z[[k]]@p)==0)
 
@@ -222,17 +236,10 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
               if(Aterm==0 & rtype=="iid"){                     # if univariate G-structure and no Ginv term drop levels
                 Z[[k]]<-Z[[k]][,-missing,drop=FALSE]
                 nrl[i]<-ncol(Z[[k]])
-              }else{                            # if univariate G-structure but Ginv term replace with structural zeros
-                for(j in 1:length(missing)){
-                  Z[[k]][j,missing[j]]<-1e-64
-                }
-              }
-            }else{                              # if multiivariate G-structure replace with structural zeros
-              for(j in 1:length(missing)){
-                Z[[k]][j,missing[j]]<-1e-64
               }
             }
           }
+
           if(k>1){
             if(any(levels(data[,rterms[select.terms]])!=levels(data[,rterms[1]]))){
               stop("terms involved in mm/str structures must have identical levels")
@@ -254,6 +261,18 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
       }
       vnames<-colnames(X)  
 
+      if(vtype=="us" | substr(vtype,1,3)=="cor" | substr(vtype,1,4)=="ante" | vtype=="sub"){
+        if(Aterm==0 & rtype=="iid"){                     # if multivariate G-structure and no Ginv term drop levels where all effects are zero
+          missing<-matrix(diff(Zsave@p)!=0, nrl, nfl)
+          missing<-which(rowSums(missing)==0)
+          if(length(missing)>0){
+            Zsave<-Zsave[,-c(rep(missing, each=nfl)+rep((1:nfl-1)*nrl[1], length(missing))),drop=FALSE]
+            nrl<-nrl-length(missing)
+          }
+        }
+      }
+
+
       if(vtype=="idh"){
         Aterm<-rep(Aterm, nfl)
         vtype<-rep(vtype, nfl)
@@ -269,101 +288,31 @@ buildZ<-function(x, data, formZ=TRUE, nginverse=NULL, augmiss=FALSE){
         rterms<-""
       }
       if(rtype=="iid"){
-        if(vtype[1]=="us" | grepl("cor", vtype[1])){
-          vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=":")
+        if(vtype[1]=="us" | grepl("cor", vtype[1]) | substr(vtype[1],1,4)=="ante" | vtype[1]=="sub"){
+          vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep="MCMCsplit")
         }
         vnames<-paste(vnames, paste(rterms[select.terms], collapse=":"), sep=".")
       }
       if(rtype=="mm"){
-        if(vtype[1]=="us"){
-          vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep=":")
+        if(vtype[1]=="us" | grepl("cor", vtype[1]) | substr(vtype[1],1,4)=="ante" | vtype[1]=="sub"){
+          vnames<-paste(expand.grid(vnames, vnames)[,1],expand.grid(vnames, vnames)[,2], sep="MCMCsplit")
         }
         vnames<-paste(vnames, paste(rterms, collapse="+"), sep=".")
       }
       if(rtype=="str"){
         nfl<-nfl*length(rterms)
         if(vtype[1]!="idh"){
-          vnames<-paste(expand.grid(rterms, vnames)[,1],expand.grid(rterms, vnames)[,2], sep=":")
+          vnames<-paste(expand.grid(rterms, vnames)[,1],expand.grid(rterms, vnames)[,2], sep="MCMCsplit")
           vnames<-paste(expand.grid(vnames, vnames)[,1], expand.grid(vnames, vnames)[,2], sep=".")
         }else{
           vnamestmp<-vnames
           vnames<-c()
           for(i in 1:length(vnamestmp)){
-            vnames<-c(vnames, paste(expand.grid(paste(rterms, vnamestmp[i], sep=":"),paste(rterms, vnamestmp[i], sep=":"))[,1], expand.grid(paste(rterms, vnamestmp[i], sep=":"),paste(rterms, vnamestmp[i], sep=":"))[,2], sep="."))
+            vnames<-c(vnames, paste(expand.grid(paste(rterms, vnamestmp[i], sep="MCMCsplit"),paste(rterms, vnamestmp[i], sep="MCMCsplit"))[,1], expand.grid(paste(rterms, vnamestmp[i], sep="MCMCsplit"),paste(rterms, vnamestmp[i], sep=":"))[,2], sep="."))
           }
         }
         vtype<-rep("us", length(vtype))
       }
-      return(list(Z=Zsave, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=NULL, trait.ordering=NULL))
+      return(list(Z=Zsave, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, trait.ordering=trait.ordering))
     }
-
-  }else{
-
-#############################################################################
-### this is for residual structuers which currently have simple structure ###
-#############################################################################
-
-     if(length(rterms)==0){
-       rfactor<-rep(as.factor(1), dim(data)[1]) 	
-     }else{
-       if(any(rterms%in%colnames(data)==FALSE)){stop(paste("object", paste(rterms, collapse=" and "), "not found"))}
-       rfactor<-interaction(data[,rterms], drop=(Aterm==0 & rtype=="iid"))  # random effects are dropped if they are not animal 
-     }
-
-     if(nfl==0){
-
-       nfl=1
-
-       if(any(duplicated(rfactor))){stop("R-structure miss-specified: each residual must be unique to a data point")}
-       if(length(rfactor)!=dim(data)[1]){stop("R-structure miss-specified: each data point must have a residual")}
-
-       nrl<-nlevels(rfactor)
-       ordering<-order(as.numeric(rfactor))
-       trait.ordering<-data$trait[1]
-       vnames<-paste(rterms, collapse=":")
-
-     }else{
-      
-       if(any(!X@x%in%c(0,1,1e-64) | any(rowSums(X)>=2))){stop(paste("The formula for", vtype, "R-structures must generate a design matrix where each row is all zero's except for one element equal to one."))}
-
-       # With augmented data (for animal models or us structures in the random effects) the ffac term in idh(ffac):rfac may be missing. 
-       # Replace with arbitrary levels sampled from the frequency of observed levels. Only required for the first R-structure.
-
-       if(augmiss){
-         miss.ffac<-which(data$MCMC_dummy==1 & apply(X, 1, function(x){all(x==1e-64)}))
-         if(length(miss.ffac)>0){
-           X[miss.ffac,]<-diag(ncol(X))[sample(1:ncol(X), length(miss.ffac), TRUE, colMeans(X[drop=FALSE,-miss.ffac,])),]
-         }
-       }
-
-       vnames<-paste(colnames(X), paste(rterms, collapse=":"), sep=".")
-
-       trait.ordering<-as.numeric(data$trait[X@i[X@p[1:ncol(X)]+1]+1])
-       ordering<-(length(unique(rfactor))+1)*as.numeric(X%*%Matrix(1:nfl,nfl,1))+as.numeric(rfactor)
-       ordering[which(as.integer(as.numeric(X%*%Matrix(1:nfl,nfl,1)))==0)]<-NA  # records not associated with this R-structure in block-diagonals
-
-       ordering<-order(ordering, na.last=NA)
-
-       nrl<-as.integer(colSums(X))
-
-       if(vtype=="idh"){
-         nfl<-ncol(X)
-         Aterm<-rep(Aterm, nfl)
-         vtype<-rep(vtype, nfl)
-         nfl<-rep(1, nfl)
-       }else{
-         if(var(as.integer(nrl))!=0){stop("problem in buildZ.R: expecting identical random levels per ffac")}
-         nrl<-nrl[1]
-         if(vtype=="idv"){
-           nrl<-nfl*nrl[1]
-   	   nfl<-1
-           vnames<-idv.vnames          
-         }else{
-           vnames<-paste(paste(expand.grid(colnames(X), colnames(X))[,1],expand.grid(colnames(X), colnames(X))[,2], sep=":"),paste(rterms, collapse=":"), sep=".")
-         }
-       }
-     }
-
-     return(list(Z=NULL, nfl=nfl, nrl=nrl, Aterm=Aterm, vtype=vtype, vnames=vnames, ordering=ordering, trait.ordering=trait.ordering))
-  }
 }

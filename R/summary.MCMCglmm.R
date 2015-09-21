@@ -52,7 +52,7 @@
   output
 }
 
-"print.summary.MCMCglmm"<-function (x, digits = max(3, getOption("digits") - 3), has.Pvalue=TRUE, eps.Pvalue = 1/(x$cstats[4]-1), cstats=TRUE, ...) 
+"print.summary.MCMCglmm"<-function (x, digits = max(3, getOption("digits") - 3), has.Pvalue=TRUE, eps.Pvalue = 1/(x$cstats[4]-1), cstats=TRUE,  ...) 
 {
 
  if(cstats){
@@ -60,17 +60,21 @@
    cat("\n Thinning interval  =" , x$cstats[3]) 
    cat("\n Sample size  =" , x$cstats[4], "\n") 
  }
+
  cat("\n DIC:", x$DIC, "\n")
  if(is.null(x$random.formula)==FALSE){
    rcomponents<-split.direct.sum(as.character(x$random.formula)[2])
-#   rownames(x$Gcovariance)<-unlist(lapply(strsplit(rownames(x$Gcovariance), "\\..*$"), function(x){x[1]}))
    for(i in 1:length(rcomponents)){
      if(i==1){
      cat(paste("\n G-structure:  ~", rcomponents[i], "\n\n", sep=""))
      }else{
      cat(paste("\n               ~", rcomponents[i], "\n\n", sep=""))
      }
-     print(as.data.frame(x$Gcovariance[x$Gterms==i,,drop=FALSE]), digits=digits, ...)
+     if(i%in%x$Gterms){
+       print(as.data.frame(x$Gcovariance[x$Gterms==i,,drop=FALSE]), digits=digits, ...)
+     }else{
+       cat(" G-R structure below\n")
+     }
    }
  }
  rcomponents<-split.direct.sum(as.character(x$residual.formula)[2])
@@ -91,6 +95,4 @@
    print(as.data.frame(x$cutpoints), digits=digits, ...)
  }
 }
-
-
 

@@ -12,7 +12,7 @@ posterior.cor(x)
   posterior correlation matrices
  }
 \author{Jarrod Hadfield \email{j.hadfield@ed.ac.uk}}
-\seealso{\code{\link{posterior.evals}}}
+\seealso{\code{\link{posterior.evals}}, \code{\link{posterior.inverse}}, \code{\link{posterior.ante}}}
 \examples{
 v<-rIW(diag(2),3, n=1000)
 hist(posterior.cor(mcmc(v))[,2])

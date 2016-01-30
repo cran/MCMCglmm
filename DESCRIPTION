@@ -1,5 +1,5 @@
 Package: MCMCglmm
-Version: 2.22
+Version: 2.22.1
 Date: 2015-09-21
 Title: MCMC Generalised Linear Mixed Models
 Depends: Matrix, coda, ape
@@ -10,6 +10,6 @@ Maintainer: Jarrod Hadfield <j.hadfield@ed.ac.uk>
 Description: MCMC Generalised Linear Mixed Models. 
 License: GPL (>= 2)
 NeedsCompilation: yes
-Packaged: 2015-09-21 14:16:01 UTC; jhadfiel
+Packaged: 2016-01-30 12:16:26 UTC; ripley
 Repository: CRAN
-Date/Publication: 2015-09-21 17:57:49
+Date/Publication: 2016-01-30 13:41:43

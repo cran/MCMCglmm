@@ -1,9 +1,13 @@
 #define _MCMCGLMM_H
 #include "cs.h"
-#include "R.h" 
+/* #include "R.h" included by cs.h */ 
 #include "Rmath.h" 
 
 #define LPIx2 1.837877066409345339082
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 cs *cs_cbind(const cs *A, const cs *B);
 /* Returns the two matrices A and B column bound*/
@@ -75,4 +79,8 @@ cs *cs_rAnte(const cs *location, int start, int dimG, int nlGR, int nk, const cs
 /* sample an antedependnce structure */
 cs *cs_schur(const cs *A,  int split, const cs *beta);
 /* forms the Schur complement for the dense mxm matrix: A_22-A_21%*%solve(A_11)%*%A_12 where submatrices are defined by split. Also overwrites beta_rr with A_21%*%solve(A_11) */
+
+#ifdef __cplusplus
+}
+#endif
 

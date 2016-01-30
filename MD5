@@ -1,4 +1,4 @@
-ec8fc2c606a1f0a8b39ebdc39baea3ad *DESCRIPTION
+495b95487e9370a1e8029fdc12bfa7b1 *DESCRIPTION
 f0b0477047e629391e85b99113df11b7 *NAMESPACE
 d988b8a00abec2fdac657bfca44b44f8 *R/Ddivergence.R
 ec8f4fa6e17d22cd1954dbb0cb4776f7 *R/Dexpressions.R
@@ -104,9 +104,9 @@ bf77bad23979a8af34bed5458c0e1a86 *man/rIW.Rd
 95e845d4e55d9590c1b425c9cbf98b73 *man/spl.Rd
 2e3233cea201285b65f8267c6185e57c *man/summary.MCMCglmm.Rd
 79fb55b442effc93135efd033b99e7cc *src/MCMCglmm.cc
-3fbd1facfeb8444b1779876b2097770b *src/MCMCglmm.h
-505a1bfd7761b34ba01e06dded9d3946 *src/MCMCglmmcc.h
-2fb5c89205103cf36ba34f77ecaaf2cd *src/cs.h
+556884cf34fbfcf3975ca9b9373a398b *src/MCMCglmm.h
+4f0d599cbb1b448952429aa2054fe314 *src/MCMCglmmcc.h
+4c4a503e278740aab53befd0e342165b *src/cs.h
 3f1da7540687525a924c0b0b34ff3bbe *src/cs_add.c
 2ed3a63bb8982a4383e03a81070e8b9b *src/cs_addR.c
 4e7520be24615b7637fed83469558e7f *src/cs_amd.c

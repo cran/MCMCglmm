@@ -18,7 +18,7 @@
 
 
 %% almost as usual
-\author{Jarrod Hadfield\\University of Oxford}
+\author{Jarrod Hadfield\\University of Edinburgh}
 \title{MCMC Methods for Multi-response Generalized Linear Mixed Models: The \pkg{MCMCglmm}   \proglang{R} Package}
 
 %% for pretty printing and a nice hypersummary also set:
@@ -755,8 +755,8 @@ Distribution   &    No. Data       &         No. latent        &  Density & func
    \texttt{"hupoisson"}        &  1  &   2  &     $Pr(y=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}$\\     
                                &    &       & $Pr(y | y>0) =$&$\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
 &&&&\\
-   \texttt{"zapoisson"}        &  1  &   2  &     $Pr(y=0) =$&$\textrm{exp}(-\textrm{exp}(l_{2}))$\\     
-                               &    &       & $Pr(y | y>0) =$&$ \left(1-\textrm{exp}(-\textrm{exp}(l_{2}))\right)\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
+   \texttt{"zapoisson"}        &  1  &   2  &     $Pr(y=0) =$&$1-\textrm{exp}(\textrm{exp}(l_{2}))$\\     
+                               &    &       & $Pr(y | y>0) =$&$ \textrm{exp}(\textrm{exp}(l_{2}))\frac{f_{P}(y |\textrm{exp}(l_{1}))}{1-f_{P}(0 |\textrm{exp}(l_{1}))}$\\      
 &&&&\\
    \texttt{"zibinomial"}        &  2  &   2  &     $Pr(y_{1}=0) =$&$ \frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}+\left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{B}(0, n=y_{1}+y_{2}|\frac{\textrm{exp}(l_{1})}{1+\textrm{exp}(l_{1})})$\\     
                                &    &       & $Pr(y_{1} | y_{1}>0) =$&$ \left(1-\frac{\textrm{exp}(l_{2})}{1+\textrm{exp}(l_{2})}\right)f_{B}(y_{1}, n=y_{1}+y_{2}|\frac{\textrm{exp}(l_{1})}{1+\textrm{exp}(l_{1})})$\\      

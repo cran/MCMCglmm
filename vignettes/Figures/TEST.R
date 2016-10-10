@@ -6,7 +6,7 @@ verbose=FALSE
 plotit=FALSE
 DICtest=TRUE
 SUMtest=TRUE
-nsim<-10
+nsim<-50
 nitt<-13000
 thin<-10
 burnin<-3000
@@ -1344,7 +1344,7 @@ print("res37")  # Test threshold against probit
 
 res37<-matrix(0, nsim, 3)
 
-prior<-list(R=list(V=1, fix=1), G=list(G1=list(V=1, nu=1, alpha.mu=0, alpha.V=1000)))
+prior<-list(R=list(V=1, fix=1), G=list(G1=list(V=1, nu=1, alpha.mu=0, alpha.V=100)))
 tpar<-c(0,1,1)
 
 for(i in 1:nsim){
@@ -1407,9 +1407,9 @@ res39<-matrix(0, nsim, 12)
 print("res39")  # Block-diagonal R-structure with augmented animal model
 data(BTped)
 
-tpar<-c(0,0,1, 0, 0,1,1,0, 0,1,1,2)
+tpar<-c(0,0,1, 0, 0,1,1,0, 0,1,2,2)
 
-prior<-list(G=list(G1=list(V=diag(2), nu=1.002)), R=list(R1=list(V=diag(2), nu=1.002), R2=list(V=diag(2), nu=1.002)))
+prior<-list(G=list(G1=list(V=diag(2), nu=1.002)), R=list(R1=list(V=diag(2), nu=1.002), R2=list(V=diag(2), nu=0.002)))
 
 for(i in 1:nsim){
 
@@ -1425,7 +1425,7 @@ dat<-data.frame(y1=y1, y2=y2, fac=fac, id=BTped[,1][which(!is.na(BTped[,2]))])
 
 A<-inverseA(BTped)
 
-m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~us(trait):id, rcov=~us(trait:at.level(fac,1)):units+idh(trait:at.level(fac,2)):units, data=dat, family=rep("gaussian", 2), prior=prior, verbose=verbose,nitt=nitt, thin=thin, burnin=burnin)
+m1<-MCMCglmm(cbind(y1,y2)~trait-1, random=~us(trait):id, rcov=~us(trait:at.level(fac,1)):units+idh(trait:at.level(fac,2)):units, data=dat, family=rep("gaussian", 2), prior=prior, verbose=verbose,nitt=nitt*5, thin=thin*5, burnin=burnin*5)
 
 if(SUMtest){
 summary(m1)

@@ -39,7 +39,7 @@
 %\newcommand{\begin{master_document}}{\begin{document}}
 
 \title{\Large MCMCglmm Course Notes}
-\author{\Large Jarrod Hadfield (\texttt{jarrod.hadfield@zoo.ox.ac.uk})}
+\author{\Large Jarrod Hadfield (\texttt{j.hadfield@ed.ac.uk})}
 
 
 \begin{document}
@@ -95,7 +95,7 @@ These are (incomplete) course notes about generalised linear mixed models (GLMM)
 \chapter*{Acknowledgments}
 \addcontentsline{toc}{chapter}{Acknowledgments}
 
-MCMCglmm relies heavily on sparse matrix operations facilitated by the CSparse library written by Tim Davis, whom I thank. Countless people have given me feedback, suggestions and bug reports. In particular, I'd like to thank Shinichi Nakagawa, Michael Morrissey \& Laura Ross, and also Loeske Kruuk who provided funding for this work through a Leverhulme trust award. More recently this work has been funded by NERC. 
+MCMCglmm relies heavily on sparse matrix operations facilitated by the CSparse library written by Tim Davis, whom I thank. Countless people have given me feedback, suggestions and bug reports. In particular, I'd like to thank Shinichi Nakagawa, Michael Morrissey \& Laura Ross, and also Loeske Kruuk who provided funding for this work through a Leverhulme trust award. More recently this work has been funded by NERC and the Royal Society.
 
 \bibliographystyle{jss}
 \bibliography{CourseNotes}

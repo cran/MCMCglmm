@@ -1,7 +1,5 @@
 "predict.MCMCglmm"<-function(object, newdata=NULL, marginal=object$Random$formula, type="response", interval="none", level=0.95, it=NULL, posterior="all", verbose=FALSE, ...){
 
- # warning("predict.MCMCglmm is still developmental - be careful")
-
   rm.obs<-c()
 
   if(interval=="prediction"){
@@ -24,7 +22,7 @@
 
     if(!is.null(it)){
       if(length(it)>1){stop("it should be an integer")}
-      if(it>nrow(object$X) | it<1){stop("it should be less than or equal to the number of iterations")}
+      if(it>nrow(object$Sol) | it<1){stop("it should be less than or equal to the number of iterations")}
     }
 
     rcomponents<-split.direct.sum(as.character(object$Random$formula)[2])

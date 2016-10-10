@@ -31,7 +31,7 @@ priorformat<-function(prior, start, nfl, meta, diagR, vtype){
            }else{
              if(!is.logical(prior$covu)){stop("covu should be logical")}
              if(prior$covu){
-               if(grepl("ante.*v$", vtype[1]) & prior$covu){stop("covu=TRUE cannot be used with antedependence structures")}
+               if(grepl("ante", vtype[1]) & prior$covu){stop("covu=TRUE cannot be used with antedependence structures")}
              }
            }
          }

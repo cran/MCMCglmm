@@ -23,7 +23,6 @@ options(width=60)
 
 UPpath="~/Work/AManal/UP_course/Tex/"
 MCpath="~/Work/AManal/MCMCglmm_2.19/vignettes/"
-MCpath.old="~/Work/AManal/MCMCglmm_2.19/inst/doc/"
 
 library(MCMCglmm)
 library(MCMCpack)
@@ -173,13 +172,11 @@ if(forCRAN){
 	system(paste("rm -f ", MCpath, "Overview.tex", sep=""))
 	system(paste("rm -f ", MCpath, "jss.cls", sep=""))
  	system(paste("rm -f ", MCpath, "jss.bst", sep=""))
+	system(paste("rm -f ", MCpath, "Lecture[1-9]-[a-zA-z]*[.]pdf", sep=""))
         tools::compactPDF(MCpath)
-        tools::compactPDF(MCpath.old)
 	system(paste("cp ", MCpath, "CourseNotes.Rnw ", MCpath, "Figures", sep=""))
 	system(paste("cp ", MCpath, "Overview.Rnw ", MCpath, "Figures", sep=""))
-	system(paste("cp ", MCpath, "CourseNotes.pdf ", MCpath.old, sep=""))
-	system(paste("cp ", MCpath, "Overview.pdf ", MCpath.old, sep=""))
- 	system(paste("rm -f ", MCpath, "Overview.ps", sep=""))
+        system(paste("rm -f ", MCpath, "Overview.ps", sep=""))
 }
 
 

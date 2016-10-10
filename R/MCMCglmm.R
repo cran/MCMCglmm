@@ -101,12 +101,8 @@
            }
            rterm.family<-data$family[match(levels(data$trait), data$trait)]
          }           
-         if(length(unique(data$trait))==1){
-           family.names<-as.character(data$family[1])
-         }else{     
-           family.names<-as.character(data$family)   
-           MVasUV=TRUE
-         }
+         family.names<-as.character(data$family)   
+         MVasUV=TRUE
          if(length(grep("cen|multinomial|zi|hu|za", family.names))>0){ 
            stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
@@ -470,9 +466,17 @@
 
        if(r==(ngstructures+1)){nG<-nr-1}  # number of (new) G structures
        if(r<=ngstructures){
-         Zlist<-buildZ(rmodel.terms[r], data=data, nginverse=names(ginverse))
+         if(covu!=0 & r==ngstructures){
+           Zlist<-buildZ(rmodel.terms[r], data=data, nginverse=names(ginverse), covu=TRUE)
+         }else{
+           Zlist<-buildZ(rmodel.terms[r], data=data, nginverse=names(ginverse))
+         }
        }else{
-         Zlist<-buildZ(rmodel.terms[r], data=data)
+         if(covu!=0 & r==(ngstructures+1)){
+           Zlist<-buildZ(rmodel.terms[r], data=data, covu=TRUE)
+         }else{
+           Zlist<-buildZ(rmodel.terms[r], data=data)
+         }
        }
 
        update<-c(update, Zlist$vtype)
@@ -563,8 +567,8 @@
          Z<-rBind(Z, as(matrix(0,nadded,ncol(Z)), "sparseMatrix"))  
        }
      }
- 
-     ordering<-ZR@i+1
+
+    ordering<-ZR@i+1
 
     data<-data[ordering,]         
 
@@ -572,8 +576,8 @@
 
     if(ngstructures==0){
       Z<-as(matrix(0,1,0), "sparseMatrix")
-    }else{                                                     # rearrange data to match R-structure
-      Z<-Z[ordering,]                                                     
+    }else{                                                    # rearrange data to match R-structure
+      Z<-Z[ordering,,drop=FALSE]                                            
     }
 
     mfac<-mfac[trait.ordering]
@@ -774,10 +778,12 @@
     if(is.null(start$liab)){
        data$MCMC_liab<-rnorm(length(data$MCMC_y)) 
        if(QUASI==TRUE){ 
-        for(i in unique(data$MCMC_error.term)){
-          trait_set<-which(!is.na(data$MCMC_y) & data$MCMC_dummy==0 & data$MCMC_error.term==i)
-          missing_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==0 & data$MCMC_error.term==i)
-          dummy_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==1 & data$MCMC_error.term==i)
+        et.fn<-paste(data$MCMC_error.term, data$MCMC_family.names)
+
+        for(i in unique(et.fn)){
+          trait_set<-which(!is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
+          missing_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
+          dummy_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==1 & et.fn==i)
           if(length(trait_set)<2){
             if(length(trait_set)==0){
               warning(paste("all observations are missing for error term ", i, ": liabilities sampled from Norm(0,1)", sep=""))
@@ -787,7 +793,6 @@
           }else{ 
             data_tmp<-data[trait_set,]          
             family_set<-data_tmp$MCMC_family.names[1]
-
             if(family_set=="poisson" | family_set=="ztpoisson"){
               mu<-mean(data_tmp$MCMC_y)
               v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
@@ -891,6 +896,7 @@
     }
 
     if(any(data$MCMC_family.names=="cengaussian" & (data$MCMC_liab>data$MCMC_y.additional | data$MCMC_liab<data$MCMC_y), na.rm=T)){
+
       outside<-which(data$MCMC_family.names=="cengaussian" & (data$MCMC_liab>data$MCMC_y.additional | data$MCMC_liab<data$MCMC_y))
        # liabilities for censored data have to lie in between censoring points.
        data$MCMC_liab[outside]<-mapply(data$MCMC_y[outside], data$MCMC_y.additional[outside], FUN=function(x,y){if(x==c(-Inf) | y==Inf){if(x==-Inf){y}else{x}}else{runif(1, x, y)}})

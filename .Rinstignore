@@ -1,6 +1,7 @@
 doc/Lecture.*[.]pdf$
 doc/.*[.]tex$
 doc/.*[.]bib$
+vignettes/Lecture[1-9]-[a-zA-z]*[.]pdf
 doc/.*~$
 doc/Overview-.*[.]pdf$
 doc/rgl.*[.]pdf$

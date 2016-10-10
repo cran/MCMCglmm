@@ -1,4 +1,4 @@
-buildZ<-function(x, data, nginverse=NULL){
+buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
 
   vtype="idh"   # form of covariances for the random effets of a random term classified by some factor 
   rtype="iid"   # form of covariances between random effets of random terms
@@ -128,7 +128,7 @@ buildZ<-function(x, data, nginverse=NULL){
         rfactor<-rep(as.factor(1), dim(data)[1]) 	
       }else{
         if(any(rterms%in%colnames(data)==FALSE)){stop(paste("object", paste(rterms, collapse=" and "), "not found"))}
-        rfactor<-interaction(data[,rterms[select.terms]], drop=(Aterm==0 & rtype=="iid"))
+        rfactor<-interaction(data[,rterms[select.terms]], drop=(Aterm==0 & rtype=="iid" & covu==FALSE))
         # random effects are dropped if they are not animal or part of a mm or str structure 
       }
 
@@ -164,7 +164,7 @@ buildZ<-function(x, data, nginverse=NULL){
         missing<-which(diff(ZZ[[k]]@p)==0)  # non-represented random effects (or zero covariates for RR)
  
         if(length(missing)>0){        
-          if(Aterm==0 & rtype=="iid"){                       # if not associated with ginv drop terms     
+          if(Aterm==0 & rtype=="iid" & covu==FALSE){                       # if not associated with ginv drop terms     
             ZZ[[k]]<-ZZ[[k]][,-missing,drop=FALSE]
             nrl[i]<-ncol(ZZ[k])              
           }                           
@@ -233,7 +233,7 @@ buildZ<-function(x, data, nginverse=NULL){
 
           if(length(missing)>0){
             if(vtype=="idh" | vtype=="idv"){
-              if(Aterm==0 & rtype=="iid"){                     # if univariate G-structure and no Ginv term drop levels
+              if(Aterm==0 & rtype=="iid" & covu==FALSE){                     # if univariate G-structure and no Ginv term drop levels
                 Z[[k]]<-Z[[k]][,-missing,drop=FALSE]
                 nrl[i]<-ncol(Z[[k]])
               }
@@ -262,7 +262,7 @@ buildZ<-function(x, data, nginverse=NULL){
       vnames<-colnames(X)  
 
       if(vtype=="us" | substr(vtype,1,3)=="cor" | substr(vtype,1,4)=="ante" | vtype=="sub"){
-        if(Aterm==0 & rtype=="iid"){                     # if multivariate G-structure and no Ginv term drop levels where all effects are zero
+        if(Aterm==0 & rtype=="iid" & covu==FALSE){                     # if multivariate G-structure and no Ginv term drop levels where all effects are zero
           missing<-matrix(diff(Zsave@p)!=0, nrl, nfl)
           missing<-which(rowSums(missing)==0)
           if(length(missing)>0){

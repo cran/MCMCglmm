@@ -1,6 +1,5 @@
 #define _MCMCGLMM_H
 #include "cs.h"
-/* #include "R.h" included by cs.h */ 
 #include "Rmath.h" 
 
 #define LPIx2 1.837877066409345339082

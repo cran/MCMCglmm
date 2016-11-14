@@ -10,7 +10,7 @@
     if(class(random)!="formula" & class(random)!="NULL"){stop("random should be a formula")}
 
     reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names", "MCMC_error.term", "MCMC_dummy")
-    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold")
+    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit")
 
     if(any(names(data)%in%reserved.names)){
       stop(paste(names(data)[which(names(data)%in%reserved.names)], " is a reserved variable please rename it"))
@@ -331,6 +331,13 @@
              } 
 	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
              response.names<-response.names[-(nt+1)]
+           }
+           if(grepl("tobit", family[i])){
+	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+	     if(all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
+               stop("tobit data must be non-negative")
+             }
+	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
            }
            colnames(cont)<-paste(dist.preffix, response.names[nt], sep="_")
 	   data<-cbind(data, cont)
@@ -864,6 +871,16 @@
                  m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional)~1, family="quasibinomial", data=data_tmp))
                  v<-abs(((as.numeric(m1$dispersion[1])-0.5)/2)^2)
                  mu<-as.numeric(m1$coef[1])
+              }
+            }
+            if(family_set=="zitobit"){
+              if(max(data_tmp$MCMC_y)==1){
+                mu<-mean(data_tmp$MCMC_y==1)
+                mu<-log(mu/(1-mu))
+                v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
+              }else{
+                v<-var(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=T)
+                mu<-mean(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=T)
               }
             }
           }

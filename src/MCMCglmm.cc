@@ -2267,6 +2267,12 @@ if(nL>0){
                        linki_tmp[k]->x[i] = linky->x[record];
                      }
                    break;
+
+                   case 21: /* zitobit */
+ 	              PutRNGstate();
+                      error("sorry- zitobit not yet implemented\n");
+                    break;
+
                  }
                }
              }                                                                

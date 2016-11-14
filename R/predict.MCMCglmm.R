@@ -64,10 +64,12 @@
 
     if(posterior=="mean"){
       object$VCV<-matrix(colMeans(object$VCV), 1, ncol(object$VCV))
+	  object$Sol<-matrix(colMeans(object$Sol), 1, ncol(object$Sol))
       it<-1
     }
     if(posterior=="mode"){
       object$VCV<-matrix(posterior.mode(object$VCV, ...), 1, ncol(object$VCV))
+	  object$Sol<-matrix(posterior.mode(object$Sol, ...), 1, ncol(object$Sol))
       it<-1
     }
     if(is.null(it)){

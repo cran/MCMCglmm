@@ -1,10 +1,10 @@
-e338427175761747826377384aa80957 *DESCRIPTION
+4757e7013c489e19fd5bd3d5b46d9f0b *DESCRIPTION
 f0b0477047e629391e85b99113df11b7 *NAMESPACE
 d988b8a00abec2fdac657bfca44b44f8 *R/Ddivergence.R
 ec8f4fa6e17d22cd1954dbb0cb4776f7 *R/Dexpressions.R
 4709b2e3cd267a25232c401c9400e220 *R/Dtensor.R
 3b2d38a7e4060933e0d6efb3f54aade3 *R/KPPM.R
-7d67158a0ba94b99ae469fc481cc2680 *R/MCMCglmm.R
+40f72b1dc9553f415a3d23065151a533 *R/MCMCglmm.R
 f4b5c02234963c3d700a708f1f9be7b8 *R/Ptensor.R
 543ba6114d80c897717d048badf7dc7a *R/Tri2M.R
 e381e4ec86a434ae57f6aa4d8e51db35 *R/buildV.R
@@ -29,7 +29,7 @@ ac7afff630164f2208707bc788de9b1e *R/posterior.cor.R
 3a3f3817fe5fad0d33b2d814e77cf3db *R/posterior.evals.R
 bf84a242ee81daca6e335c418e379568 *R/posterior.inverse.R
 9a8742810bd48e6c9bf4631a53f1322a *R/posterior.mode.R
-195905c9c3c6e67d20ad701234653b55 *R/predict.MCMCglmm.R
+fbce4e3d0221a0dfa1edbc23a78a716f *R/predict.MCMCglmm.R
 e2a04f52b16432338f7fc884b50f0137 *R/priorformat.R
 805f1d665fe6524274b1e63dba64bfc5 *R/prunePed.R
 48ecf0b062d66c8675b92212d41565f2 *R/rIW.R
@@ -44,7 +44,7 @@ b365405e5d0a9fc79d4f5554ea96d7f5 *R/sm2asreml.R
 470441520504a533a22aa8c5dfe21070 *R/spl.R
 07936be5345203365036d299100e4fb7 *R/split.direct.sum.R
 abf0a50911b4bf9b747cc971755e134a *R/summary.MCMCglmm.R
-9268cbd041dd2957872176c8765534b7 *build/vignette.rds
+6cdfaf1018d216742d07070b2d891a2f *build/vignette.rds
 270742548a109ec82408ca6ba07cbc45 *data/BTdata.tab.gz
 31848469ce6a7b856599280fb311260c *data/BTped.tab.gz
 f9a811f7cc4a9330a34b4624936b3324 *data/PlodiaPO.tab.gz
@@ -53,9 +53,9 @@ dffc4ac7d54071b8b5b16d5d03ba9371 *data/PlodiaRB.tab.gz
 4fd5d3bdbc1c77ec4a6cac47ba515d94 *data/SShorns.tab.gz
 4ba184ff6ed52ad6f1db56d2b7f4c554 *inst/CITATION
 2cdef2fcab859cfe3059d8a0e7a5740e *inst/doc/CourseNotes.Rnw
-d1b58384d23d6ca01075e5f601441ed5 *inst/doc/CourseNotes.pdf
+23c546ebf5ce9f33222d694caab189a8 *inst/doc/CourseNotes.pdf
 b62d99abd1c36fb23db055740f6795ec *inst/doc/Overview.Rnw
-4cdfe4f89747b7b637347a0573a99f30 *inst/doc/Overview.pdf
+590e9f3c7356a5964446bf3f27fabbab *inst/doc/Overview.pdf
 782e7ae8b319023d68a77b35944029d0 *man/BTdata.Rd
 ad90769b9616f389888f03134c026940 *man/BTped.Rd
 74ac0700fe172340e9e95da886726c1e *man/Ddivergence.Rd
@@ -103,7 +103,7 @@ bf77bad23979a8af34bed5458c0e1a86 *man/rIW.Rd
 9703d003b91cbe8d087f2578e882064c *man/sm2asreml.Rd
 95e845d4e55d9590c1b425c9cbf98b73 *man/spl.Rd
 2e3233cea201285b65f8267c6185e57c *man/summary.MCMCglmm.Rd
-79fb55b442effc93135efd033b99e7cc *src/MCMCglmm.cc
+8a74903d715c72b96c472a192fa84b4e *src/MCMCglmm.cc
 d62ebf8b27aff4440f5dd7c5389d1b37 *src/MCMCglmm.h
 1337c8812f8997cda17de4436d61233c *src/MCMCglmmcc.h
 8fedbd36fdbe398ae4c96fde33e43878 *src/cs.h

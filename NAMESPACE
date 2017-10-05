@@ -1,4 +1,4 @@
-useDynLib(MCMCglmm)
+useDynLib(MCMCglmm, .registration = TRUE)
 import(Matrix)
 import(ape)
 importFrom(tensorA, to.tensor)

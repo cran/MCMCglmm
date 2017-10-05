@@ -77,7 +77,8 @@ void MCMCglmm(
         double *LmupP,
         double *nanteBP,       // orders of antedependence beta's per structure then numbers of betas and then whether constant variance
         double *anteBvpP,      // inverse prior covariance matrix for antedpendence betas     
-        double *anteBmupP      // prior mean vector for antedpendence betas
+        double *anteBmupP,      // prior mean vector for antedpendence betas
+        bool *truncP        // should latent variables be truncated tp prevent under/overflow for cat/mult/thresh/ord distributions and zero-processes in zi/za/hu?
 ){         
 
 int     i, j, k,l,p,cnt,cnt2,cnt3, rterm,itt,record,dimG,nthordinal,
@@ -184,8 +185,14 @@ double  densityl1,
         *ldet = new double[nR+nG],
         ldet_rr,
         interval,
-        remainder;
+        remainder,
+        logitt = 1e+35, // truncation limits to stop under/overflow 
+        probitt = 1e+35;
  	
+        if(truncP[0]){
+          logitt = 20.0; // truncation limits to stop under/overflow 
+          probitt = 7.0;
+        }
 //double inf = std::numeric_limits<double>::max();
 
         int *cumsum_ncutpoints = new int[nordinal+1];
@@ -217,6 +224,10 @@ double  densityl1,
             wncp[i] =1.0;
             zncp[i] =1.0;
             accp[i] =0.0;
+            if(truncP[0]){
+              stcutpointsP[cnt]=-probitt;
+              stcutpointsP[cnt+ncutpointsP[i]-1]=probitt;
+            }
             for(j=0; j<ncutpointsP[i]; j++){
               oldcutpoints[cnt] = stcutpointsP[cnt];
               newcutpoints[cnt] = stcutpointsP[cnt];
@@ -622,7 +633,7 @@ if(nL>0){
             pmuAnte[k]->p[1] = dimG;
           }
         }
-
+       
 /**************************************/	
 /* Read in any condtional submatrices */
 /**************************************/
@@ -2023,14 +2034,19 @@ if(nL>0){
                          u = linky->x[record]-log1p(exp(linky->x[record]));  // needed for the deviance calculation
                          dbar += u;
                          u -= rexp(1.0);
-                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]),u-log1p(-exp(u)), 1e+35);                          
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]),u-log1p(-exp(u)),logitt);                          
                        }else{
                          u = -log1p(exp(linky->x[record])); // needed for the deviance calculation
                          dbar += u;
                          u -= rexp(1.0);
-                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, log1p(-exp(u))-u);	
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -logitt, log1p(-exp(u))-u);	
                        }			
                      }else{
+
+                       if(truncP[0]){
+                         if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                         if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                       }
 
                        mndenom1 += exp(linki[k]->x[i]);
                        mndenom2 += exp(linki_tmp[k]->x[i]);
@@ -2105,6 +2121,10 @@ if(nL>0){
                        mndenom1 = dpois(yP[record], exp(linki[k]->x[i]), true);  
                        mndenom2 = dpois(yP[record], exp(linki_tmp[k]->x[i]), true);  
                      }else{
+                        if(truncP[0]){
+                          if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                          if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                        }
 			mndenom1 += log1p(-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
 			mndenom2 += log1p(-exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));
                         if(yP[record]>0.5){
@@ -2133,12 +2153,12 @@ if(nL>0){
 	                 u = pnorm(linky->x[record], 0.0, 1.0, true, true);
                          dbar += u;    // needed for the deviance calculation   
                          u -= rexp(1.0);
-                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), qnorm(u, 0.0, 1.0, true, true), 1e+35);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), qnorm(u, 0.0, 1.0, true, true), probitt);
                        }else{
                          u = pnorm(linky->x[record], 0.0, 1.0, false, true);
                          dbar += u;   // needed for the deviance calculation
                          u -= rexp(1.0);
-                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -1e+35, qnorm(u, 0.0, 1.0, false, true));		
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -probitt, qnorm(u, 0.0, 1.0, false, true));		
                        }
 
                      }else{
@@ -2225,6 +2245,10 @@ if(nL>0){
                        mndenom1 = dbinom(yP[record], y2P[record], exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])), true);  
                        mndenom2 = dbinom(yP[record], y2P[record], exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])), true);  
                      }else{
+                        if(truncP[0]){
+                          if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                          if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                        }
 			mndenom1 += log1p(-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
 			mndenom2 += log1p(-exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));
                         if(yP[record]>0.5){
@@ -2254,14 +2278,14 @@ if(nL>0){
                  // binary models can be directly Gibbsed
                        if(yP[record]>1.5){
                           if(DICP[0]==1){
-                           dbar += pcmvnorm(predi[k], linki[k], G[k], i,  0.0, 1e+35);    
+                           dbar += pcmvnorm(predi[k], linki[k], G[k], i,  0.0, probitt);    
                          } 
-                         linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, 0.0, 1e+35);
+                         linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, 0.0, probitt);
                        }else{ 
                          if(DICP[0]==1){
-                           dbar += pcmvnorm(predi[k], linki[k], G[k], i,  -1e+35, 0.0);    
+                           dbar += pcmvnorm(predi[k], linki[k], G[k], i,  -probitt, 0.0);    
                          } 
-                         linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, -1e+35, 0.0);	
+                         linky->x[record] = rtcmvnorm(predi[k], linki[k], G[k], i, -probitt, 0.0);	
                        }
                        linki[k]->x[i] = linky->x[record];
                        linki_tmp[k]->x[i] = linky->x[record];
@@ -2273,6 +2297,37 @@ if(nL>0){
                       error("sorry- zitobit not yet implemented\n");
                     break;
 
+                   case 22: /* nzbinom */
+                     
+                     if(mvtype[cnt+j]==0){   // univraiate binary models can be slice sampled
+                       if(yP[record]>0.5){
+                         u = log1p(-pow(1.0-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])), y2P[record])); // needed for the deviance calculation
+                         dbar += u;
+                         u -= rexp(1.0);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]), -logitt, log1p(-pow(1.0-exp(u)/(1.0+exp(u)), y2P[record])));	
+                       }else{
+                         u = y2P[record]*log1p(-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));  // needed for the deviance calculation
+                         dbar += u;
+                         u -= rexp(1.0);
+                         linky->x[record] = rtnorm(pred->x[record], sqrt(G[k]->x[0]),y2P[record]*log1p(-exp(u)/(1.0+exp(u))),logitt); 
+                      }			
+                     }else{
+                       
+                       if(truncP[0]){
+                         if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                         if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                       }
+                       
+                       if(yP[record]<0.5){
+                         densityl1 += y2P[record]*log1p(-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])));
+                         densityl2 += y2P[record]*log1p(-exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])));
+                       }else{
+                         densityl1 += log1p(-pow(1.0-exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])), y2P[record]));
+                         densityl2 += log1p(-pow(1.0-exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])), y2P[record]));
+                       }
+                     }
+                     
+                   break;
                  }
                }
              }                                                                

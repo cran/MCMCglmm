@@ -60,7 +60,9 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
   rterms<-gsub("(^|:)(str|mm|)\\(", "", rterms)
   rterms<-gsub("\\)$", "", rterms)
 
-  if(rtype!="iid" & any(grepl(":", rterms))){
+  interact<-any(grepl(":", rterms))
+
+  if(rtype!="iid" & interact){
     stop("interactions not permitted in str and mm structures")
   }
   if(rtype=="mm"){
@@ -78,6 +80,8 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
   }else{
     Aterm<-0
   }
+  if(Aterm!=0 & interact){stop("interactions not permitted between standard random effects and those associated with ginverse")}
+  if(Aterm!=0 & covu){stop("covu random effects cannot be associated with a ginverse")}
 
   fformula<-substr(fformula,1,closeB-1)
   fformula<-gsub(" ", "", fformula)

@@ -1,4 +1,4 @@
-"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE, saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL){
+"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE, saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL, trunc=FALSE){
 
     orig.na.action<-options("na.action")[[1]]
     options("na.action"="na.pass")	
@@ -10,7 +10,7 @@
     if(class(random)!="formula" & class(random)!="NULL"){stop("random should be a formula")}
 
     reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names", "MCMC_error.term", "MCMC_dummy")
-    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit")
+    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom")
 
     if(any(names(data)%in%reserved.names)){
       stop(paste(names(data)[which(names(data)%in%reserved.names)], " is a reserved variable please rename it"))
@@ -103,7 +103,7 @@
          }           
          family.names<-as.character(data$family)   
          MVasUV=TRUE
-         if(length(grep("cen|multinomial|zi|hu|za", family.names))>0){ 
+         if(length(grep("cen|multinomial|zi|hu|za|nzbinom", family.names))>0){ 
            stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
        }
@@ -200,7 +200,7 @@
 
         dist.preffix<-substr(family[i],1,2)                  
         if(nt>length(response.names)){stop("family is the wrong length")}
-        if(any(dist.preffix%in%c("ce", "mu", "ca", "tr", "zi", "hu", "za"))){
+        if(any(dist.preffix%in%c("ce", "mu", "ca", "tr", "zi", "hu", "za", "nz"))){
 
 ######################
 # categorical traits #
@@ -274,6 +274,25 @@
            ones[nt]<-nJ
            family.names<-rep(family.names, ones)
            nt<-nt+nJ
+         }
+
+#####################
+# non-zero binomial #
+#####################
+
+        if(dist.preffix=="nz"){
+           nJ<-1	 
+           mfac<-c(mfac, 0)  
+           if(!all(na.omit(data[,match(response.names[nt], names(data))]%in%c(0,1))) | !all(data[,match(response.names[1+nt], names(data))]%%1==0, na.rm=T) | !all(data[,match(response.names[1+nt], names(data))]>0.5)){
+             stop("nzbinom data must be a column of 0/1s and then a column of positive integers")
+           }
+           y.additional<-cbind(y.additional, data[,match(response.names[1+nt], names(data))])        # get number of trials
+	   if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:1+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
+             stop("both columns of nzbinom response must be either completely observed or completely missing")
+           }	 
+           data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                        # remove number of trials
+           response.names<-response.names[-(nt+1)]
+           nt<-nt+1
          }
 
 			
@@ -759,7 +778,7 @@
        mvtype_tmp<-apply(missing.pattern, 1,function(x){all(x==1 | x==0 | x==20)})-2 # -2 if observed non-gaussian non-threshold present, -1 otherwise 
 
        if(nfl[i+nG]==1 & slice){    # if univariate 
-          mvtype_tmp[which(missing.pattern==14)]<-0  # ordinal
+          mvtype_tmp[which(missing.pattern==14 || missing.pattern==22)]<-0  # ordinal/nzbinom
           if(max(mp, na.rm=T)==1){                   # binary
             mvtype_tmp[which(missing.pattern==3)]<-0
           }    
@@ -820,6 +839,10 @@
                  mu<-0
               }
             }
+            if(family_set=="nzbinom"){ 
+              v<-1
+              mu<-plogis(1-(1-mean(data_tmp$MCMC_y, na.rm=TRUE))^(1/mean(data_tmp$MCMC_y.additional, na.rm=TRUE)))
+            }
             if(family_set=="exponential" | family_set=="cenexponential"){
               if(any(data_tmp$MCMC_y==0)){
                 data_tmp$MCMC_y[which(data_tmp$MCMC_y==0)]<-1e-6
@@ -835,7 +858,10 @@
             }
             if(family_set=="ordinal" | family_set=="threshold"){
               v<-1
-              mu<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(1+(data_tmp$MCMC_family.names[1]=="ordinal")))[2]   
+              mu<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(1+(data_tmp$MCMC_family.names[1]=="ordinal")))[2]
+              if(any(abs(mu)==Inf)){
+                mu[which(abs(mu)==Inf)]<-7*sign(mu[which(abs(mu)==Inf)])
+              }  
             }
             if(family_set=="cengaussian"){ 
               v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
@@ -879,8 +905,8 @@
                 mu<-log(mu/(1-mu))
                 v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
               }else{
-                v<-var(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=T)
-                mu<-mean(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=T)
+                v<-var(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
+                mu<-mean(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
               }
             }
           }
@@ -1143,7 +1169,8 @@
         as.double(LmupP),
         as.double(nanteP),    # prior antedpendence betas  
         as.double(anteBvpP),   
-        as.double(anteBmupP)             
+        as.double(anteBmupP),
+        as.integer(trunc)             
         )
 
         Sol<-t(matrix(output[[30]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
@@ -1301,6 +1328,9 @@
         if(any(family=="multinomial")){
            family[which(family=="multinomial")]<-paste("multinomial", y.additional[which(family=="multinomial")], sep="")
         }
+        if(any(family=="nzbinom")){
+           family[which(family=="nzbinom")]<-paste("nzbinom", y.additional[which(family=="nzbinom")], sep="")
+        }
 
         if(length(dummy.data)>0){
           error.term<-error.term[-dummy.data]
@@ -1353,7 +1383,8 @@
             ginverse=ginverse,
             error.term=error.term,
             family=family, 
-            Tune=list2bdiag(Tune)
+            Tune=list2bdiag(Tune),
+            meta=!is.null(mev)
         )
 
 	class(output)<-c("MCMCglmm")

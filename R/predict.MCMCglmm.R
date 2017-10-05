@@ -1,4 +1,4 @@
-"predict.MCMCglmm"<-function(object, newdata=NULL, marginal=object$Random$formula, type="response", interval="none", level=0.95, it=NULL, posterior="all", verbose=FALSE, ...){
+"predict.MCMCglmm"<-function(object, newdata=NULL, marginal=object$Random$formula, type="response", interval="none", level=0.95, it=NULL, posterior="all", verbose=FALSE, approx="numerical", ...){
 
   rm.obs<-c()
 
@@ -27,8 +27,10 @@
 
     rcomponents<-split.direct.sum(as.character(object$Random$formula)[2])
     mcomponents<-split.direct.sum(as.character(marginal)[2])
-
-    if(length(rcomponents)!=length(object$Random$nrt)){stop("sorry - not implented for covu models")}
+    
+    if(is.null(object$meta)){object$meta<-FALSE}
+      
+    if((length(rcomponents)+object$meta)!=length(object$Random$nrt)){stop("if mev was used, add my_model$meta=TRUE and rerun. If not, the model is a covu model and predictions are not yet implented for this type of moedl")}
     if(any(mcomponents%in%rcomponents==FALSE)){stop("marginal formula does not correspond to model formula")}
 
     marginalise<-rep(as.numeric(rcomponents%in%mcomponents), object$Random$nrt)
@@ -49,7 +51,7 @@
           warning(paste("original model has fixed effects not present in newdata:", paste(missing.fixed, collapse=", ")))
         }
       }
-      object2$Sol<-object$Sol[,c(find.fixed, find.random)]
+      object2$Sol<-object$Sol[,c(find.fixed, find.random),drop=FALSE]
       find.vcv<-match(colnames(object2$VCV), colnames(object$VCV))
       if(any(is.na(find.vcv))){stop("model for newdata has (co)variance terms not in original model")}
       object2$VCV<-object$VCV[,find.vcv,drop=FALSE]
@@ -167,25 +169,71 @@
         }
       }
 
-      normal.evd<-function(mu, v){
-        int.foo<-function(x, mu, v){exp(-exp(x))*dnorm(x, mu, sqrt(v))}
-        integrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu,v)[[1]]
+      normal.evd<-function(mu, v, approx){
+        if(approx=="numerical" || approx=="taylor2"){
+          if(approx=="numerical"){ 
+            int.foo<-function(x, mu, v){exp(-exp(x))*dnorm(x, mu, sqrt(v))}
+            return(integrate(int.foo, qnorm(1e-6, mu,sqrt(v)), qnorm(1-1e-6, mu,sqrt(v)), mu,v)[[1]])
+          }else{
+            return(exp(-exp(mu))+0.5*v*exp(-exp(mu)+mu)*(exp(mu)-1))
+          }
+        }else{  
+          stop(paste(approx, "approximation not implemented for this response"))
+        }  
       }
-      normal.zt<-function(mu, v){
-        int.foo<-function(x, mu, v){exp(x)/(1-exp(-exp(x)))*dnorm(x, mu, sqrt(v))}
-        integrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu,v)[[1]]
+      normal.zt<-function(mu, v, approx){
+        if(approx=="numerical" || approx=="taylor2"){
+          if(approx=="numerical"){
+            int.foo<-function(x, mu, v){exp(x)/(1-exp(-exp(x)))*dnorm(x, mu, sqrt(v))}
+            return(integrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu,v)[[1]])
+          }else{
+            return(exp(mu)/(1-exp(-exp(mu)))+0.5*v*exp(exp(mu)+mu)*(1-2*exp(exp(mu))+exp(2*exp(mu))+3*exp(mu)+2*exp(2*mu)-3*exp(exp(mu)+mu)+exp(exp(mu)+2*mu))/(exp(exp(mu))-1)^3)
+          } 
+        }else{  
+          stop(paste(approx, "approximation not implemented for this response"))
+        }  
       }  
-      normal.logistic<-function(mu, v){
-        int.foo<-function(x, mu, v){plogis(x)*dnorm(x, mu, sqrt(v))}
-        integrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu,v)[[1]]
-      } 
-      normal.multilogistic<-function(mu, v){
-        int.foo<-function(x, mu, v, i){(exp(x[i])/(1+sum(exp(x))))*prod(dnorm(x, mu, sqrt(v)))}
-        res<-1:length(mu)
-        for(i in 1:length(mu)){
-           res[i]<-cubature::adaptIntegrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu=mu, v=v, i=i)[[1]]
+ 
+      normal.logistic<-function(mu, v, approx){
+        if(approx=="numerical"){
+          int.foo<-function(x, mu, v){plogis(x)*dnorm(x, mu, sqrt(v))}
+          return(integrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu,v)[[1]])
         }
-        res
+        if(approx=="diggle"){
+          return(plogis(mu/sqrt(1+v*(16*sqrt(3)/(15*pi))^2)))
+        }
+        if(approx=="mcculloch"){
+          return(plogis(mu-0.5*v*tanh(mu*(1+2*exp(-0.5*v))/6)))
+        }
+        if(approx=="taylor2"){
+          return(plogis(mu)-0.5*v*exp(mu)*(exp(mu)-1)/(1+exp(mu))^3)
+        }
+      }
+  
+      normal.clogistic<-function(mu, v, size, approx){
+        if(approx=="numerical" || approx=="taylor2"){
+          if(approx=="numerical"){
+            int.foo<-function(x, mu, v, size){(1-((1-plogis(mu))^size))*dnorm(x, mu, sqrt(v))}
+            return(integrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu,v, size)[[1]])
+          }else{
+            return((1-((1-plogis(mu))^size))-0.5*v*exp(mu)*size*(size*exp(mu)-1)/(1+exp(mu))^(2+size))
+          }
+        }else{
+          stop(paste(approx, "approximation not implemented for this response"))
+        }  
+      }
+      
+      normal.multilogistic<-function(mu, v, approx){
+        if(approx=="numerical"){
+          int.foo<-function(x, mu, v, i){(exp(x[i])/(1+sum(exp(x))))*prod(dnorm(x, mu, sqrt(v)))}
+          res<-1:length(mu)
+          for(i in 1:length(mu)){
+            res[i]<-cubature::adaptIntegrate(int.foo, qnorm(0.0001, mu,sqrt(v)), qnorm(0.9999, mu,sqrt(v)), mu=mu, v=v, i=i)[[1]]
+          }
+          return(res)
+        }else{
+          stop(paste(approx, "approximation not implemented for this response"))
+        }
       } 
 
       if(!is.null(object$Lambda)){
@@ -202,7 +250,7 @@
 
       if(any(object$family%in%c("ztpoisson"))){
         keep<-which(object$family%in%c("ztpoisson"))
-        post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){normal.zt(mu,v)})
+        post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){normal.zt(mu,v, approx)})
       }
 
       if(any(object$family%in%c("exponential","cenexponential","geometric","cengeometric"))){
@@ -251,6 +299,12 @@
         } 
       }
 
+      if(any(grepl("nzbinom", object$family))){
+        keep<-grep("nzbinom", object$family)
+        size<-t(matrix(as.numeric(substr(object$family[keep], 8, nchar(object$family[keep]))), length(keep),nrow(post.pred)))
+        post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], size, FUN=function(mu,v,size){normal.clogistic(mu,v,size, approx)})
+      }
+
       for(k in unique(super.trait)){
         if(any(grepl("multinomial", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
@@ -258,7 +312,7 @@
           for(j in 1:nrow(post.pred)){
             prob<-matrix(post.pred[j,keep], length(keep)/sum(super.trait==k), sum(super.trait==k))
             pvar<-matrix(post.var[j,keep], length(keep)/sum(super.trait==k), sum(super.trait==k))
-            post.pred[j,keep]<-t(sapply(1:nrow(prob), function(x){normal.multilogistic(prob[x,], pvar[x,])}))*size
+            post.pred[j,keep]<-t(sapply(1:nrow(prob), function(x){normal.multilogistic(prob[x,], pvar[x,], approx)}))*size
           }
         }
 
@@ -266,30 +320,30 @@
           keep<-which(object$error.term%in%which(super.trait==k))
           keep<-keep[-c(1:(length(keep)/2))]
           rm.obs<-c(rm.obs, keep)
-          post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v)})
-          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.zt(mu,v)})
+          post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v, approx)})
+          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.zt(mu,v, approx)})
         }
         if(any(grepl("zapoisson", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
           keep<-keep[-c(1:(length(keep)/2))]
           rm.obs<-c(rm.obs, keep)
-          post.pred[,keep]<-1-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){normal.evd(mu,v)})
-          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.zt(mu,v)})
+          post.pred[,keep]<-1-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){normal.evd(mu,v, approx)})
+          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.zt(mu,v, approx)})
         }
 
         if(any(grepl("zipoisson", object$Residual$family[which(super.trait==k)]))){
           keep<-which(object$error.term%in%which(super.trait==k))
           keep<-keep[-c(1:(length(keep)/2))]
           rm.obs<-c(rm.obs, keep)
-          post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v)})
+          post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v, approx)})
           post.pred[,keep-length(keep)]<-post.pred[,keep]*exp(post.pred[,keep-length(keep)]+post.var[,keep-length(keep)]/2)
         }
         if(any(grepl("zibinomial", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
           keep<-keep[-c(1:(length(keep)/2))]
           rm.obs<-c(rm.obs, keep)
-          post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v)})
-          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.logistic(mu,v)})
+          post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v, approx)})
+          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.logistic(mu,v, approx)})
         }
       }
     }

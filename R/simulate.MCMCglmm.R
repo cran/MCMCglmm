@@ -34,8 +34,10 @@
 
   rcomponents<-split.direct.sum(as.character(object$Random$formula)[2])
   mcomponents<-split.direct.sum(as.character(marginal)[2])
-
-  if(length(rcomponents)!=length(object$Random$nrt)){stop("sorry - not implented for covu models")}
+  
+  if(is.null(object$meta)){object$meta<-FALSE}
+  
+  if((length(rcomponents)+object$meta)!=length(object$Random$nrt)){stop("if mev was used, add my_model$meta=TRUE and rerun. If not, the model is a covu model and simulations are not yet implented for this type of moedl")}
   if(any(mcomponents%in%rcomponents==FALSE)){stop("marginal formula does not correspond to model formula")}
 
   marginalise<-rep(as.numeric(rcomponents%in%mcomponents), object$Random$nrt)
@@ -262,6 +264,12 @@
           trans<-which(object$family=="threshold" & object$error.term==nord[k])
           ynew[trans,i]<-as.numeric(cut(ynew[trans,i], c(-Inf, 0, object$CP[it[i],which(cp.names==k), drop=FALSE], Inf)))-1         
         }
+      }
+
+      if(any(grepl("nzbinom", object$family))){
+        trans<-grep("nzbinom", object$family)
+        size<-as.numeric(substr(object$family[trans], 8, nchar(object$family[trans])))
+        ynew[trans,i]<-as.numeric(rbinom(length(trans), size, plogis(ynew[trans,i]))>0)
       }
 
       for(k in unique(super.trait)){

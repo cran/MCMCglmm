@@ -12,7 +12,7 @@ MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL,
     data,start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",
     scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
     pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE,
-    saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL)
+    saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL, trunc=FALSE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
@@ -23,8 +23,7 @@ are passed as a matrix using cbind}
   \item{family}{optional character vector of trait distributions. Currently, 
 \code{"gaussian"}, \code{"poisson"},  \code{"categorical"},  
 \code{"multinomial"},  \code{"ordinal"}, \code{"threshold"}, \code{"exponential"}, \code{"geometric"}, \code{"cengaussian"},  
-\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"}, \code{"hupoisson"}, \code{"zibinomial"} and \code{"threshold"} are 
-supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, the prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL}, \code{data} needs to contain a 
+\code{"cenpoisson"},  \code{"cenexponential"},  \code{"zipoisson"}, \code{"zapoisson"}, \code{"ztpoisson"}, \code{"hupoisson"}, \code{"zibinomial"}, \code{"threshold"} and \code{nzbinom} are supported, where the prefix \code{"cen"} means censored, the prefix \code{"zi"} means zero inflated, the prefix \code{"za"} means zero altered, the prefix \code{"zt"} means zero truncated and the prefix \code{"hu"} means hurdle. If \code{NULL}, \code{data} needs to contain a 
 \code{family} column.}
   \item{mev}{optional vector of measurement error variances for each data point 
 for random effect meta-analysis.}
@@ -65,6 +64,7 @@ saved?}
   \item{saveXL}{logical: save structural parameter design matrix}
   \item{slice}{logical: should slice sampling be used? Only applicable for binary traits with independent residuals}
   \item{ginverse}{a list of sparse inverse matrices (\eqn{{\bf A^{-1}}}{solve(A)}) that are proportional to the covariance structure of the random effects. The names of the matrices should correspond to columns in \code{data} that are associated with the random term. All levels of the random term should appear as rownames for the matrices.}
+    \item{trunc}{logical: should latent variables in binary models be truncated to prevent under/overflow (+/-20 for categorical/multinomial models and +/-7 for threshold/probit models)? }
 }
 \value{
   \item{Sol}{Posterior Distribution of MME solutions, including fixed effects}
@@ -82,6 +82,7 @@ saved?}
   \item{error.term}{residual term for each datum}
   \item{family}{distribution of each datum}
   \item{Tune}{(co)variance matrix of the proposal distribution for the latent variables}
+  \item{meta}{logical; was \code{mev} passed?}
 }
 \references{
 	General analyses: Hadfield, J.D. (2010) Journal of Statistical Software 33 2 1-22
@@ -97,7 +98,8 @@ saved?}
 # Example 1: univariate Gaussian model with standard random effect
  
 data(PlodiaPO)  
-model1<-MCMCglmm(PO~1, random=~FSfamily, data=PlodiaPO, verbose=FALSE)
+model1<-MCMCglmm(PO~1, random=~FSfamily, data=PlodiaPO, verbose=FALSE,
+ nitt=1300, burnin=300, thin=1)
 summary(model1)
 
 # Example 2: univariate Gaussian model with phylogenetically correlated
@@ -119,7 +121,7 @@ Ainv<-inverseA(bird.families)$Ainv
 prior<-list(R=list(V=1, nu=0.002), G=list(G1=list(V=1, nu=0.002)))
 
 model2<-MCMCglmm(phenotype~1, random=~taxon, ginverse=list(taxon=Ainv),
-data=test.data, prior=prior, verbose=FALSE)
+ data=test.data, prior=prior, verbose=FALSE, nitt=1300, burnin=300, thin=1)
 
 plot(model2$VCV)
 

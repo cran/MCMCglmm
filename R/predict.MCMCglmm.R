@@ -309,10 +309,15 @@
         if(any(grepl("multinomial", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
           size<-as.numeric(substr(object$family[keep], 12, nchar(object$family[keep])))
+          ncat<-sum(super.trait==k)
           for(j in 1:nrow(post.pred)){
-            prob<-matrix(post.pred[j,keep], length(keep)/sum(super.trait==k), sum(super.trait==k))
-            pvar<-matrix(post.var[j,keep], length(keep)/sum(super.trait==k), sum(super.trait==k))
-            post.pred[j,keep]<-t(sapply(1:nrow(prob), function(x){normal.multilogistic(prob[x,], pvar[x,], approx)}))*size
+            prob<-matrix(post.pred[j,keep], length(keep)/sum(super.trait==k), ncat)
+            pvar<-matrix(post.var[j,keep], length(keep)/sum(super.trait==k), ncat)
+            if(ncat==1){
+              post.pred[j,keep]<-t(sapply(1:nrow(prob), function(x){normal.logistic(prob[x,], pvar[x,], approx)}))*size
+            }else{
+              post.pred[j,keep]<-t(sapply(1:nrow(prob), function(x){normal.multilogistic(prob[x,], pvar[x,], approx)}))*size
+            }
           }
         }
 
@@ -340,10 +345,11 @@
         }
         if(any(grepl("zibinomial", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
+          size<-as.numeric(substr(object$family[keep[1:(length(keep)/2)]], 11, nchar(object$family[keep[1:(length(keep)/2)]])))
           keep<-keep[-c(1:(length(keep)/2))]
           rm.obs<-c(rm.obs, keep)
           post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v, approx)})
-          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.logistic(mu,v, approx)})
+          post.pred[,keep-length(keep)]<-post.pred[,keep]*mapply(post.pred[,keep-length(keep)], post.var[,keep-length(keep)], FUN=function(mu,v){normal.logistic(mu,v, approx)})*size
         }
       }
     }

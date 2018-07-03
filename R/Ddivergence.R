@@ -10,7 +10,9 @@ Ddivergence<-function(CA=NULL, CB=NULL, n=10000){
   fx<-mvtnorm::dmvnorm(xi, rep(0,dim(CA)[1]), CA)
   gx<-mvtnorm::dmvnorm(xi, rep(0,dim(CA)[1]), CB)
 
-  mean(sqrt(0.5*((fx-gx)^2)/(fx+gx)))
+  return(sqrt(1-2*mean(gx/(fx+gx))))
 
+  
+  
 }
 

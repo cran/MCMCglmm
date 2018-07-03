@@ -972,7 +972,7 @@
       GRprior[[nG+nR]]$n<-GRprior[[nG+nR]]$n+(dim(GRprior[[nG+nR]]$V)[1]+1)
     }	
     GRinv<-unlist(lapply(GR, function(x){c(solve(x))}))
-    GRvpP<-lapply(GRprior, function(x){(x$V)*(x$n)})
+    GRvpP<-lapply(GRprior, function(x){x$V*x$n})
     if(any(update=="corg")){  # correlation matrices get I which is removed from Gtmp.
       for(i in which(update=="corg")){
 	GRvpP[[i]]<-diag(nrow(GRprior[[i]]$V))  	
@@ -1330,6 +1330,9 @@
         }
         if(any(family=="nzbinom")){
            family[which(family=="nzbinom")]<-paste("nzbinom", y.additional[which(family=="nzbinom")], sep="")
+        }
+        if(any(family=="zibinomial")){
+           family[which(family=="zibinomial")]<-paste("zibinomial", y.additional[which(family=="zibinomial")], sep="")
         }
 
         if(length(dummy.data)>0){

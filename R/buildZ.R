@@ -97,6 +97,12 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
   orig.na.action<-options("na.action")[[1]]
   options("na.action"="na.pass")
 
+  ffterms<-names(get_all_vars(fformula, data=data))
+  
+  if(any(!ffterms%in%names(data))){
+    stop(paste(ffterms[which(!ffterms%in%names(data))], "not in data"))
+  }
+  
   X<-model.matrix(fformula, data)
 
   options("na.action"=orig.na.action)
@@ -284,8 +290,8 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
       }else{
         if(vtype[1]=="idv"){
           nrl<-nfl*nrl[1]
-	  nfl<-1
-	  vnames<-idv.vnames
+      	  nfl<-1
+      	  vnames<-idv.vnames
         }
       }
       if(length(rterms)==0){

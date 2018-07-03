@@ -1,5 +1,5 @@
 inverseA<-
-function (pedigree = NULL, nodes = "ALL", scale = TRUE, reduced=FALSE) 
+function (pedigree = NULL, nodes = "ALL", scale = TRUE, reduced=FALSE, tol=.Machine$double.eps^0.5) 
 {
     ped = TRUE
     if (length(attr(pedigree, "class")) != 0) {
@@ -122,7 +122,7 @@ function (pedigree = NULL, nodes = "ALL", scale = TRUE, reduced=FALSE)
             pedigree$edge.length <- compute.brlen(pedigree)$edge.length
             scale = TRUE
         }
-        if (is.ultrametric(pedigree) == FALSE & scale == TRUE) {
+        if (is.ultrametric(pedigree, tol=tol) == FALSE & scale == TRUE) {
             stop("can't scale non-ultrametric trees")
         }
         if (is.null(pedigree$node.label)) {

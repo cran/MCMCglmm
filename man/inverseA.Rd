@@ -7,7 +7,8 @@ relatedness matrices, and Hadfield and Nakagawa (2010) algorithm for inverting
 phylogenetic covariance matrices. 
 }
 \usage{
-  inverseA(pedigree=NULL, nodes="ALL", scale=TRUE, reduced=FALSE)
+  inverseA(pedigree=NULL, nodes="ALL", scale=TRUE, reduced=FALSE,
+     tol = .Machine$double.eps^0.5)
 }
 \arguments{
   \item{pedigree}{ordered pedigree with 3 columns: id, dam and sire, or a 
@@ -19,6 +20,7 @@ matrix for that subset.}
   \item{scale}{logical: should a phylogeny (needs to be ultrametric) be scaled 
 to unit length (distance from root to tip)?}
   \item{reduced}{logical: should childless nodes be dropped from the inverse and the pedigree/phylogeny representation be reduced?}
+  \item{tol}{numeric: differences in branch length smaller than this are ignored when assessing whether a tree is ultrametric.}
 }
 \value{
   \item{Ainv}{inverse as \code{sparseMatrix}}

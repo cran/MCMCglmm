@@ -124,12 +124,18 @@ priorformat<-function(prior, start, nfl, meta, diagR, vtype){
              if(is.null(prior$n)){
                stop("nu not specified for some prior$G/prior$R elements")
              }
+             if(length(prior$n)!=1){
+               stop("nu in prior should be a scalar")
+             }
            }else{
              prior$nu=1
            }
          }else{
            if(is.null(prior$n)){
              stop("nu not specified for some prior$G/prior$R elements")
+           }
+           if(length(prior$n)!=1){
+             stop("nu in prior should be a scalar")
            }
          }
        }

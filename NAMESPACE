@@ -56,9 +56,10 @@ export(
   residuals.MCMCglmm,
   plot.MCMCglmm,
   buildV,
-  path
-# rante
-# close.bracket
+  path,
+# rante,
+# close.bracket,
+   me
 ) 
 S3method(summary, MCMCglmm)
 S3method(print, summary.MCMCglmm)

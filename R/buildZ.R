@@ -146,20 +146,14 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
       nd<-length(rfactor)
               
       data_pos<-as.numeric(rfactor)
-      ZZ[[k]]<-Matrix(0,nd,nrl)
-      ZZ[[k]][,1][2]<-1              # force it out of vbeing upper triangle!!!!
-      ZZ[[k]]@p<-as.integer(c(0,cumsum(table(rfactor))))    
-      cnt<-0
-      for(j in 1:nrl){
-        hit<-which(data_pos==j)
-        hit<-hit-nd*(ceiling(hit/nd)-1)
-        if(length(hit)>0){
-          ZZ[[k]]@i[cnt+1:length(hit)]<-as.integer(hit-1)
-          cnt<-cnt+length(hit)
-        }
-      }
+      
+      ZZ[[k]]<-Matrix(0,nrl,nd)
+      ZZ[[k]][,1][2]<-1              # force it out of being upper triangle!!!!
+      ZZ[[k]]@p<-as.integer(0:nd)    
+      ZZ[[k]]@i<-as.integer(data_pos-1)
       ZZ[[k]]@x<-rep(1,length(ZZ[[k]]@i))
-
+      ZZ[[k]]<-t(ZZ[[k]])
+      
       colnames(ZZ[[k]])<-paste(paste(rterms[select.terms], collapse=":"),levels(rfactor), sep=".")
       if(any(data$MCMC_dummy==0 & is.na(rfactor))){warning("missing values in random predictors")}
 
@@ -193,7 +187,7 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
             }
           }
           if(rtype=="str"){
-            ZZ[[1]]<-cBind(ZZ[[1]],ZZ[[k]])
+            ZZ[[1]]<-cbind(ZZ[[1]],ZZ[[k]])
           }
         }
       }
@@ -259,14 +253,14 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
               Z[[1]]<-Z[[1]]+Z[[k]]
             }
             if(rtype=="str"){
-              Z[[1]]<-cBind(Z[[1]],Z[[k]])
+              Z[[1]]<-cbind(Z[[1]],Z[[k]])
             }
           }
         }
         if(i==1){
           Zsave<-Z[[1]]
         }else{
-          Zsave<-cBind(Zsave,Z[[1]])
+          Zsave<-cbind(Zsave,Z[[1]])
         }
       }
       vnames<-colnames(X)  

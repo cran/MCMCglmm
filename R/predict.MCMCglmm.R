@@ -135,7 +135,7 @@
 
     object$Sol<-object$Sol[,c(1:object$Fixed$nfl, object$Fixed$nfl+keep),drop=FALSE]
 
-    W<-cBind(object$X, object$Z)
+    W<-cbind(object$X, object$Z)
     W<-W[,c(1:object$Fixed$nfl, object$Fixed$nfl+keep), drop=FALSE]
   
     post.pred<-t(apply(object$Sol,1, function(x){(W%*%x)@x}))

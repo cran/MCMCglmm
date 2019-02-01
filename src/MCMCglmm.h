@@ -78,7 +78,10 @@ cs *cs_rAnte(const cs *location, int start, int dimG, int nlGR, int nk, const cs
 /* sample an antedependnce structure */
 cs *cs_schur(const cs *A,  int split, const cs *beta);
 /* forms the Schur complement for the dense mxm matrix: A_22-A_21%*%solve(A_11)%*%A_12 where submatrices are defined by split. Also overwrites beta_rr with A_21%*%solve(A_11) */
-
+cs *cs_dense(double *x, int n, int m, int start);
+/* creates an n x m dense 'sparse' matrix with entries (organised column-wise) x */
+cs *cs_dense0(int n, int m);
+/* creates an n x m dense 'sparse' matrix of zeros */
 #ifdef __cplusplus
 }
 #endif

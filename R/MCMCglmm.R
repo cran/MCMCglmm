@@ -138,7 +138,11 @@
       if(length(grep("idh\\(", rcov))>0){
         diagR<-2
         rcov=as.formula(paste(gsub("idh\\(", "us\\(", rcov), collapse=""))
-      } 
+      }
+      if(length(grep("trait:units|units:trait", rcov))>0){
+        diagR<-3
+        rcov=~us(trait):units
+      }
     }
 
 	
@@ -305,7 +309,7 @@
            if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
            y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                               # get upper interval
            if(family.names[nt]=="cenpoisson"){
-	     if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be positive integers")}
+	     if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
              data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]<-data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]-1
              }
 	   if(family.names[nt]=="cenexponential"){
@@ -487,7 +491,7 @@
     if(!NOstartG){
       if(length(start$G)!=ngstructures){stop("start$G has the wrong number of structures")}
     }
-
+    
     for(r in 1:length(rmodel.terms)){
 
        if(r==(ngstructures+1)){nG<-nr-1}  # number of (new) G structures
@@ -533,7 +537,7 @@
          if(r==1){
            Z<-Zlist$Z
          }else{
-           Z<-cBind(Z, Zlist$Z)     
+           Z<-cbind(Z, Zlist$Z)     
          }
        }else{
          trait.ordering<-c(trait.ordering, Zlist$trait.ordering)
@@ -541,7 +545,7 @@
            ZR<-Zlist$Z
            Zlist$nfl<-Zlist$nfl+covu             
          }else{
-           ZR<-cBind(ZR, Zlist$Z)     
+           ZR<-cbind(ZR, Zlist$Z)     
          }
 
          GRtmp<-priorformat(if(NOpriorG){NULL}else{prior$R[[r-ngstructures]]},if(NOstartG){NULL}else{start$R[[r-ngstructures]]}, Zlist$nfl, meta=any(grepl("MCMC_meta", rmodel.terms[r])), diagR=diagR, vtype=Zlist$vtype)
@@ -566,7 +570,7 @@
          nr<-nr+1
        }
      }
-
+    
    nR<-nr-nG-1  # number of R structures
 
    if(nR>1 & diagR!=1){stop("sorry - block-diagonal R structures not yet implemented for responses involving multinomial data with more than 2 categories or zero-infalted/altered/hurdle models")}
@@ -576,7 +580,7 @@
 
      if(nadded>0){
        ZRaug<-Diagonal(ncol(ZR),as.numeric(colSums(ZR)==0))[missing,]
-       ZR<-rBind(ZR, ZRaug)
+       ZR<-rbind(ZR, ZRaug)
      }
 
      if(any(colSums(ZR)>1)){stop("R-structure miss-specified: each residual must be unique to a data point")}
@@ -590,10 +594,10 @@
        data$MCMC_dummy[dim(data)[1]-(nadded-1):0]<-1 
        data$MCMC_family.names[dim(data)[1]-(nadded-1):0]<-"gaussian"  
        if(ngstructures!=0){
-         Z<-rBind(Z, as(matrix(0,nadded,ncol(Z)), "sparseMatrix"))  
+         Z<-rbind(Z, as(matrix(0,nadded,ncol(Z)), "sparseMatrix"))  
        }
      }
-
+     
     ordering<-ZR@i+1
 
     data<-data[ordering,]         
@@ -650,7 +654,7 @@
         if(is.positive.definite(tune[[i]])==FALSE){stop(paste("proposal distribution ", i, " is not positive definite"))}
       }
     }	
-
+    
 ############################
 # Build Fixed Effect Model #
 ############################
@@ -702,6 +706,7 @@
        if(any(family.names=="threshold")){stop("path models are not implemented for threshold responses")}
        if(sum(ncutpoints)>0){stop("path models are not implemented for ordinal responses with >2 categories")}
        L<-as(model.matrix(path.terms), "sparseMatrix")
+       if(nrow(L)!=nfl[nG+1]){stop("path design matrix is the wrong dimension; perhaps k is wrong")}
        Lnames<-attr(terms(path.terms), "term.labels")
      }
      nL<-dim(L)[2]/dim(L)[1]  # number of structural parameters
@@ -712,23 +717,111 @@
      nL<-0
      Lnames=NULL
    }
+   
+   me<-any(grepl("me\\(", dimnames(X)[[2]]))
+   if(me){
+     if(any(grepl(":me\\(", as.character(fixed)[2]))){
+      stop("interactions with me terms must be of the form me():, rather than :me()")
+     }
+     if(any(grepl("\\* me\\(", as.character(fixed)[2]))){
+       stop("*me() not allowed - use me():")
+     }  
+     me_sf<-close.bracket("me\\(~", as.character(fixed)[2])
+     # get start and end of the me terms
+     meo_terms<-mapply(me_sf[,1], me_sf[,2], FUN=substr, x=as.character(fixed)[2])
+     # get me() formula
+     mei_terms<-rep(NA, length(meo_terms))
+     # see if they're interacted with anything
+     me_extras<-mapply(me_sf[,2]+1, nchar(as.character(fixed)[2]), FUN=substr, x=as.character(fixed)[2])
+     if(any(grepl("^ \\*", me_extras))){stop("me()* not allowed - use me():")}
+     me_extras_pos<-which(substr(me_extras, 1, 2)!=":(" & substr(me_extras, 1,1)==":")
+     if(length(me_extras_pos)>0){
+       for(i in 1:length(me_extras_pos)){
+         mei_terms[i]<-substr(me_extras[i], 2, gregexpr(" |$", me_extras[i])[[1]][1])
+       }
+     }
+     me_extras_pos<-which(substr(me_extras, 1, 2)==":(")
+     if(length(me_extras_pos)>0){
+       for(i in 1:length(me_extras_pos)){
+        mei_terms[i]<-substr(me_extras[i], 2, close.bracket(":\\(", me_extras[i])[1,2])
+       }  
+     }
 
+     if(any(grepl("me\\(", mei_terms))){
+       stop("interactions between me() terms are not allowed - sorry")
+     } 
+     
+     me_prior_prob<-sapply(meo_terms, function(x){attr(eval(parse(text=x), data), "me_prior_prob")}, simplify=FALSE)
+     nmeo<-unlist(lapply(me_prior_prob, nrow))
+     nmec<-unlist(lapply(me_prior_prob, ncol))
+     me_type<-lapply(me_prior_prob, function(x){attr(x,"type")})
+     me_group<-lapply(me_prior_prob, function(x){attr(x,"group")})
+     me_rterm<-paste(unlist(mapply(function(x,y){rep(x, each=y)}, 1:length(nrl[nG+1:nR]), nrl[nG+1:nR]*nfl[nG+1:nR])), unlist(mapply(function(x,y){rep(1:x, y)}, nrl[nG+1:nR], nfl[nG+1:nR])))
+
+     if(any(unlist(lapply(me_group, function(x){tapply(x, me_rterm, function(y){length(unique(y))})}))>1)){
+       stop("observations in the same residual structure must belong to the same me group")
+     }
+
+     me_rterm<-unlist(lapply(me_group, function(x){x[match(unique(me_rterm),me_rterm)]}))
+     me_Xi<-sapply(mei_terms, function(x){if(!is.na(x)){model.matrix(as.formula(paste0("~", x, "-1")), data)}else{model.matrix(~1, data)}}, simplify=FALSE)
+     nmei<-unlist(lapply(me_Xi, ncol))
+
+     stme<-1:ncol(X)
+
+     for(i in 1:ncol(X)){
+       stme[i]<-substr(colnames(X)[i], close.bracket("me\\(~", colnames(X)[i])[1], close.bracket("me\\(~", colnames(X)[i])[2])
+     }
+     stme<-match(meo_terms, stme)
+     
+     for(i in 1:length(meo_terms)){
+       # reorder terms so categories vary slowest
+       me_order<-1:(nmei[i]*(nmec[i]-1))
+       for(j in 2:nmec[i]){
+          facname<-paste0("me\\(.*\\)", colnames(me_prior_prob[[i]])[j])
+          if(nmei[i]!=sum(grepl(facname, colnames(X)))){
+            stop("levels dropped in terms intercated with 'me' term; try fitting terms in the interaction in a different order")
+          }
+          me_order[nmei[i]*(j-2)+1:nmei[i]]<-which(grepl(facname, colnames(X)))
+       }
+       X[,stme[i]-1+1:(nmei[i]*(nmec[i]-1))]<-X[,me_order]
+       colnames(X)[stme[i]-1+1:(nmei[i]*(nmec[i]-1))]<-colnames(X)[me_order]
+     }   
+     nme<-length(meo_terms)
+     # need to reorder columns of X
+     X[,grep("me\\(", colnames(X))][which(X[,grep("me\\(", colnames(X))]==0)]<-1e-18
+   }else{
+      me_prior_prob<-0
+      me_Xi<-0
+      me_group<-0
+      me_rterm<-0
+      nme<-0
+      stme<-0
+      nmec<-0
+      nmei<-0
+      nmeo<-0
+   }   
+   
    if(any(is.na(X))){stop("missing values in the fixed predictors")}
 
    if(singular.ok==FALSE){
      if(all(is.na(data$MCMC_y))){stop("all data are missing. Use singular.ok=TRUE to sample these effects, but use an informative prior!")}
      sing.rm<-lm(replace(data$MCMC_y, which(data$MCMC_y%in%c(-Inf, Inf)), 0)~X-1, subset=(is.na(data$MCMC_y)==FALSE))
      sing.rm<-which(is.na(sing.rm$coef))
-     if(length(sing.rm)){
+     if(length(sing.rm)>0){
        warning("some fixed effects are not estimable and have been removed. Use singular.ok=TRUE to sample these effects, but use an informative prior!")
+       if(me){
+         if(any(sing.rm%in%unlist(mapply(function(x,y){x-1+1:y}, stme, nmei*nmec)))){stop("me terms must be identifiable")}
+         stme<-stme-sapply(stme, function(x){sum(sing.rm<x)})
+       } 
        X<-X[,-sing.rm]
      }
-   }	
+   }
    X<-as(X, "sparseMatrix")
+
    if(any(apply(X,1, function(x){all(x==0)}))){
      X[,1][which(apply(X,1, function(x){all(x==0)}))]<-1e-18 
    }
-
+   
 #####################################
 # Check prior for the fixed effects #
 #####################################
@@ -798,7 +891,7 @@
        #                    -2 partial or fully observed with non-gaussian (MH)  currently -1 & -2 are both MHed. 
 
     }
-
+    
     if(any(mvtype==0) & !is.null(path.terms)){stop("slice samlping not possible with path/sir models")}
 
     if(is.null(start$liab)){
@@ -1123,7 +1216,7 @@
         as.integer(unlist(lapply(ginverse, function(x){x@i}))),         
         as.integer(unlist(lapply(ginverse, function(x){x@p}))),       
         as.double(unlist(lapply(ginverse, function(x){x@x}))),                 
-    	as.integer(Aterm-1),	  	  	  	  
+      	as.integer(Aterm-1),	  	  	  	  
         as.integer(nfl),
         as.integer(nrl),
         as.integer(update),
@@ -1132,10 +1225,7 @@
         as.double(GRinv), 
         as.double(GRvpP),            
         as.double(GRnpP),            
-        as.integer(nitt),
-        as.integer(thin),
-        as.integer(burnin),
-        as.integer(c(pr, pl)),
+        as.integer(c(nitt, thin, burnin, pr, pl)),
         as.double(Loc),
         as.double(Var),
         as.double(PLiab),
@@ -1145,10 +1235,10 @@
         as.double(BvpP),
         as.double(BmupP),
         as.integer(mfac), 
-	as.integer(observed),
+      	as.integer(observed),
         as.integer(diagR-1),
         as.integer(AMtune),
-	as.integer(DIC),
+      	as.integer(DIC),
         as.double(dbar),	  
         as.integer(proposal),
         as.integer(ncutpoints),
@@ -1170,10 +1260,14 @@
         as.double(nanteP),    # prior antedpendence betas  
         as.double(anteBvpP),   
         as.double(anteBmupP),
-        as.integer(trunc)             
+        as.integer(trunc),
+        as.integer(unlist(me_rterm)-1),                  
+        as.double(unlist(lapply(me_prior_prob, c))),   
+        as.double(unlist(lapply(me_Xi, c))),     
+      	as.integer(c(nme, stme-1, nmec, nmei, nmeo))        
         )
 
-        Sol<-t(matrix(output[[30]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
+        Sol<-t(matrix(output[[27]], sum((nfl*nrl)[1:nG])*pr+dim(X)[2], nkeep))
 
         if(pr){     
           colnames(Sol)<-c(colnames(X), colnames(Z))
@@ -1183,7 +1277,7 @@
         colnames(Sol)<-gsub("MCMC_", "", colnames(Sol))
 
         if(nL>0){       
-           lambda<-t(matrix(output[[58]], nL, nkeep))  
+           lambda<-t(matrix(output[[55]], nL, nkeep))  
            colnames(lambda)<-Lnames     
            lambda<-mcmc(lambda, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
         }else{
@@ -1191,7 +1285,7 @@
         }
 
        if(ncutpoints_store!=0){
-         CP<-mcmc(t(matrix(output[[48]],ncutpoints_store, nkeep)), start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
+         CP<-mcmc(t(matrix(output[[45]],ncutpoints_store, nkeep)), start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
          colnames(CP)<-c(paste("cutpoint.trait", rep(ordinal.names, ncutpoints-3), ".", unlist(sapply(ncutpoints-3, function(x){if(x!=0){1:x}})), sep=""))
          colnames(CP)<-gsub("MCMC_", "", colnames(CP))
        }else{
@@ -1199,7 +1293,7 @@
        }
 
 
-       VCV<-t(matrix(output[[31]], length(GRinv)-covu^2, nkeep))
+       VCV<-t(matrix(output[[28]], length(GRinv)-covu^2, nkeep))
 
        if(covu){
          if(nG==1){
@@ -1257,8 +1351,8 @@
         }
 
         if(DIC){
-         deviance<-mcmc(-2*output[[43]][1:nkeep], start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
-         DIC<--4*output[[43]][nkeep+1]+2*output[[43]][nkeep+2]
+         deviance<-mcmc(-2*output[[40]][1:nkeep], start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
+         DIC<--4*output[[40]][nkeep+1]+2*output[[40]][nkeep+2]
         }else{
          deviance<-NULL
          DIC<-NULL
@@ -1267,7 +1361,7 @@
         dummy.data<-which(data$MCMC_dummy[order(ordering)]==1)
 
         if(pl==TRUE){
-          Liab<-t(matrix(output[[32]], length(data$MCMC_y), nkeep))
+          Liab<-t(matrix(output[[29]], length(data$MCMC_y), nkeep))
           Liab<-Liab[,order(ordering),drop=FALSE]
           if(length(dummy.data)>0){
             Liab<-Liab[,-dummy.data,drop=FALSE]
@@ -1362,9 +1456,9 @@
         Tune<-as.list(1:nR)
         for(i in 1:nR){
           if(covu>0 & i==1){
-            Tune[[i]]<-matrix(output[[34]][1:((Rnfl[1]-covu)^2)],Rnfl[1]-covu,Rnfl[1]-covu)
+            Tune[[i]]<-matrix(output[[31]][1:((Rnfl[1]-covu)^2)],Rnfl[1]-covu,Rnfl[1]-covu)
           }else{
-            Tune[[i]]<-matrix(output[[34]][sum(Rnfl[1:i]^2)-Rnfl[i]^2+1:(Rnfl[i]^2)],Rnfl[i],Rnfl[i])
+            Tune[[i]]<-matrix(output[[31]][sum(Rnfl[1:i]^2)-Rnfl[i]^2+1:(Rnfl[i]^2)],Rnfl[i],Rnfl[i])
           }
         }
 

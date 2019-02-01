@@ -13,8 +13,11 @@
   }
 
   if(!is.null(it)){
-    if(length(it)>1){stop("'it' should be an integer")}
-    if(it>nrow(object$Sol) | it<1){stop("'it' should be less than or equal to the number of iterations")}
+    if(length(it)!=1 & length(it)!=nsim){stop("'it' should be an integer or of length nsim")}
+    if(length(it)==1){
+      it<-rep(it, nsim)
+    }
+    if(any(it>nrow(object$Sol) | it<1)){stop("'it' should be less than or equal to the number of iterations")}
   }
 
   if(!is.null(marginal)){

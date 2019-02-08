@@ -27,8 +27,8 @@ dat<-data.frame(y=y, x=x)
 m1<-MCMCglmm(y~x, random=~idv(spl(x)), data=dat, pr=TRUE, verbose=FALSE) # penalised smoother
 m2<-MCMCglmm(y~x+spl(x),data=dat,  verbose=FALSE)                        # non-penalised
 
-pred1<-(cBind(m1$X,m1$Z)\%*\%colMeans(m1$Sol))@x
-pred2<-(cBind(m2$X)\%*\%colMeans(m2$Sol))@x
+pred1<-(cbind(m1$X,m1$Z)\%*\%colMeans(m1$Sol))@x
+pred2<-(cbind(m2$X)\%*\%colMeans(m2$Sol))@x
 
 lines(pred1[order(x)]~sort(x), col="red")
 lines(pred2[order(x)]~sort(x), col="green")

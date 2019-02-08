@@ -144,7 +144,7 @@ y<-mvrnorm(300, c(-1), R)+mvrnorm(50, c(0), G)[fac]
 data=data.frame(y1=y, fac=fac, ffac=ffac)
 if(DICtest){
 m1<-MCMCglmm(y1~1,random=~fac, data=data, prior=prior, verbose=verbose, nitt=3, thin=1, burnin=1, pr=T)
-if(abs(-2*sum(dnorm(data$y1, (cBind(m1$X, m1$Z)%*%m1$Sol[2,])@x, sqrt(m1$VCV[2,2]), log=TRUE))-m1$Deviance[2])<1e-6){
+if(abs(-2*sum(dnorm(data$y1, (cbind(m1$X, m1$Z)%*%m1$Sol[2,])@x, sqrt(m1$VCV[2,2]), log=TRUE))-m1$Deviance[2])<1e-6){
  print("Deviance OK for univariate Gaussian (res4)")
 }else{
  stop("Deviance wrong for univariate Gaussian (res4)")
@@ -1897,15 +1897,91 @@ print(i)
 psets<-c(psets, tpar)
 
 
+# non-central t
+
+print("res50")
+res50<-matrix(NA, nsim,2)
+
+tpar<-c(-1,1)
+
+for(i in 1:nsim){
+  
+
+  n<-rgeom(200, 0.05)+5
+
+  y<-sapply(n, function(x){rnorm(x, mean=tpar[1]+rnorm(1,0, sqrt(tpar[2])), sd=1)}, simplify=FALSE)
+
+  sd.hat<-unlist(lapply(y,sd))
+  mu.hat<-unlist(lapply(y, mean))
+
+  y.sd<-mu.hat/sd.hat
+  df<-n-1
+  
+  scale<-1/sqrt(n)
+ 
+  dat<-data.frame(y.sd=y.sd, df=df, scale=scale)
+  
+  m1<-MCMCglmm(cbind(y.sd, scale, df)~1, data=dat, family="ncst", nitt=nitt, thin=thin, burnin=burnin)
+  
+  res50[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
+  if(SUMtest){
+    summary(m1)
+  }
+  if(plotit){
+    plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+  }
+  if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+    print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res50 different from expected"))
+  }
+  print(i)
+}
+psets<-c(psets, tpar)
+
+
+# mean-shifted t
+
+print("res51")
+res51<-matrix(NA, nsim,2)
+
+tpar<-c(-1,1)
+
+for(i in 1:nsim){
+  
+  
+  n<-rgeom(200, 0.05)+5
+  
+  y<-sapply(n, function(x){rnorm(x, mean=tpar[1]+rnorm(1,0, sqrt(tpar[2])), sd=1)}, simplify=FALSE)
+  
+  mu.hat<-unlist(lapply(y, mean))
+  sd.hat<-unlist(lapply(y,sd))
+  se<-sd.hat/sqrt(n)
+  df<-n-1
+
+  dat<-data.frame(mu.hat=mu.hat, se=se, df=df)
+  
+  m1<-MCMCglmm(cbind(mu.hat, se, df)~1, data=dat, family="msst")
+  
+  res51[i,]<-c(posterior.mode(m1$Sol), posterior.mode(m1$VCV))
+  if(SUMtest){
+    summary(m1)
+  }
+  if(plotit){
+    plot(mcmc(cbind(m1$Sol, m1$VCV)), ask=FALSE)
+  }
+  if(any(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)){
+    print(paste(sum(HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,1]>tpar | HPDinterval(mcmc(cbind(m1$Sol, m1$VCV)))[,2]<tpar)/length(tpar), "res51 different from expected"))
+  }
+  print(i)
+}
+psets<-c(psets, tpar)
 
 
 
+est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29, res30, res31, res32, res33, res34, res35, res36, res37, res38, res39, res40, res41, res42, res43, res44, res45, res46, res47, res48, res49, res50, res51), na.rm=T)
 
-est<-colMeans(cbind(res1, res2, res3, res3b, res4, res4c, res5,res5b,res6, res7,res7b, res8,res9, res10, res11, res12, res13, res14, res15, res17a,res17b, res18, res19, res19b, res20, res21, res21b, res21c, res22, res23, res24, res25, res26, res27, res28, res29, res30, res31, res32, res33, res34, res35, res36, res37, res38, res39, res40, res41, res42, res43, res44, res45, res46, res47, res48, res49), na.rm=T)
+np<-c(ncol(res1), ncol(res2), ncol(res3), ncol(res3b), ncol(res4), ncol(res4c), ncol(res5),ncol(res5b),ncol(res6), ncol(res7),ncol(res7b), ncol(res8),ncol(res9), ncol(res10), ncol(res11), ncol(res12), ncol(res13), ncol(res14), ncol(res15), ncol(res17a),ncol(res17b), ncol(res18), ncol(res19), ncol(res19b), ncol(res20), ncol(res21), ncol(res21b), ncol(res21c), ncol(res22), ncol(res23), ncol(res24), ncol(res25), ncol(res26), ncol(res27), ncol(res28), ncol(res29), ncol(res30), ncol(res31), ncol(res32), ncol(res33), ncol(res34), ncol(res35), ncol(res36), ncol(res37), ncol(res38), ncol(res39), ncol(res40), ncol(res41), ncol(res42), ncol(res43), ncol(res44), ncol(res45), ncol(res46), ncol(res47), ncol(res48), ncol(res49), ncol(res50), ncol(res51))
 
-np<-c(ncol(res1), ncol(res2), ncol(res3), ncol(res3b), ncol(res4), ncol(res4c), ncol(res5),ncol(res5b),ncol(res6), ncol(res7),ncol(res7b), ncol(res8),ncol(res9), ncol(res10), ncol(res11), ncol(res12), ncol(res13), ncol(res14), ncol(res15), ncol(res17a),ncol(res17b), ncol(res18), ncol(res19), ncol(res19b), ncol(res20), ncol(res21), ncol(res21b), ncol(res21c), ncol(res22), ncol(res23), ncol(res24), ncol(res25), ncol(res26), ncol(res27), ncol(res28), ncol(res29), ncol(res30), ncol(res31), ncol(res32), ncol(res33), ncol(res34), ncol(res35), ncol(res36), ncol(res37), ncol(res38), ncol(res39), ncol(res40), ncol(res41), ncol(res42), ncol(res43), ncol(res44), ncol(res45), ncol(res46), ncol(res47), ncol(res48), ncol(res49))
-
-nam<-c("res1", "res2", "res3", "res3b", "res4", "res4c", "res5","res5b","res6", "res7","res7b", "res8","res9", "res10", "res11", "res12", "res13", "res14", "res15", "res17a","res17b", "res18", "res19", "res19b", "res20", "res21", "res21b", "res21c", "res22", "res23", "res24", "res25", "res26", "res27", "res28", "res29", "res30", "res31", "res32", "res33", "res34", "res35", "res36", "res37", "res38", "res39", "res40", "res41", "res42", "res43", "res44", "res45", "res46", "res47", "res48", "res49")
+nam<-c("res1", "res2", "res3", "res3b", "res4", "res4c", "res5","res5b","res6", "res7","res7b", "res8","res9", "res10", "res11", "res12", "res13", "res14", "res15", "res17a","res17b", "res18", "res19", "res19b", "res20", "res21", "res21b", "res21c", "res22", "res23", "res24", "res25", "res26", "res27", "res28", "res29", "res30", "res31", "res32", "res33", "res34", "res35", "res36", "res37", "res38", "res39", "res40", "res41", "res42", "res43", "res44", "res45", "res46", "res47", "res48", "res49", "res50", "res51")
 
 nam<-paste(rep(nam,np), unlist(sapply(np,function(x){1:x})), sep=".")
 

@@ -43,7 +43,7 @@ f_{P}\left(y_{i} | \lambda = \textrm{exp}(l_{i})\right)
 \label{pyl2-Eq}
 \end{equation}
 
-where $\lambda$ is the canonical parameter of the Poisson denisty function $p_{F}$. Table \ref{dist-tab} has a full list of supported distributions and link functions.\\
+where $\lambda$ is the canonical parameter of the Poisson denisty function $f_{P}$. Table \ref{dist-tab} has a full list of supported distributions and link functions.\\
 
 The vector of latent variables follow the linear model
 
@@ -131,7 +131,7 @@ Pr({\bf l}_{j}|{\bf y}, {\bm \theta}, {\bf R}, {\bf G}) \propto   \prod_{i \in j
 \label{pcl2-Eq}
 \end{equation}
 
-where $j$ indexes blocks of latent variables that have non-zero residual covariances. For response variables that are neither Gaussian nor threshold, the density in equation \ref{pcl2-Eq} is in non-standard form and so Metropolis-Hastings updates are employed. We use adaptive methods during the burn-in phase to determine an efficient multivariate normal proposal distribution entered at the previous value of ${\bf l}_{j}$ with covariance matrix $m{\bf M}$. For computational efficiency we use the same ${\bf M}$ for each block $j$, where ${\bf M}$ is the average posterior (co)variance of ${\bf l}_{j}$ within blocks and is updated each iteration of the burn-in period  \citet{Haario.2001}. The scalar $m$ is chosen using the method of \citet{Ovaskainen.2008} so that the proportion of successful jumps is optimal, with a rate of 0.44 when ${\bf l}_{j}$ is a scalar declining to 0.23 when ${\bf l}_{j}$ is high dimensional \citep{Gelman.2004}.\\
+where $j$ indexes blocks of latent variables that have non-zero residual covariances. For response variables that are neither Gaussian nor threshold, the density in equation \ref{pcl2-Eq} is in non-standard form and so Metropolis-Hastings updates are employed. We use adaptive methods during the burn-in phase to determine an efficient multivariate normal proposal distribution centered at the previous value of ${\bf l}_{j}$ with covariance matrix $m{\bf M}$. For computational efficiency we use the same ${\bf M}$ for each block $j$, where ${\bf M}$ is the average posterior (co)variance of ${\bf l}_{j}$ within blocks and is updated each iteration of the burn-in period  \citet{Haario.2001}. The scalar $m$ is chosen using the method of \citet{Ovaskainen.2008} so that the proportion of successful jumps is optimal, with a rate of 0.44 when ${\bf l}_{j}$ is a scalar declining to 0.23 when ${\bf l}_{j}$ is high dimensional \citep{Gelman.2004}.\\
 
  A special case arises for multi-parameter distributions in which each parameter is  associated with a linear predictor. For example, in the zero-inflated Poisson two linear predictors are used to model the same data point, one to predict zero-inflation, and one to predict the Poisson variable. In this case the two linear predictors are updated in a single block even when the residual covariance between them is set to zero, because the first probability in Equation \ref{pcl2-Eq} cannot be factored:
 

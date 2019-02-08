@@ -142,7 +142,7 @@
 
     if(type=="response"){
  
-      if(any(object$family!="gaussian" & object$family!="cengaussian")){
+      if(any(object$family!="gaussian" & object$family!="cengaussian" & object$family!="ncst")){
          post.var<-buildV(object, marginal=marginal, diag=TRUE, it=NULL, posterior="all", ...)
       }
 
@@ -301,14 +301,21 @@
 
       if(any(grepl("nzbinom", object$family))){
         keep<-grep("nzbinom", object$family)
-        size<-t(matrix(as.numeric(substr(object$family[keep], 8, nchar(object$family[keep]))), length(keep),nrow(post.pred)))
+        size<-t(matrix(as.numeric(substr(object$y.additional[keep,1], 8, nchar(object$y.additional[keep,1]))), length(keep),nrow(post.pred)))
         post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], size, FUN=function(mu,v,size){normal.clogistic(mu,v,size, approx)})
+      }
+      
+      if(any(grepl("ncst", object$family))){
+        keep<-grep("ncst", object$family)
+        scale<-t(matrix(object$y.additional[keep,1], length(keep),nrow(post.pred)))
+        df<-t(matrix(object$y.additional[keep,2], length(keep),nrow(post.pred)))
+        post.pred[,keep]<-exp(0.5*log(df/2)+lgamma(df/2-1/2)-lgamma(df/2))*post.pred[,keep]
       }
 
       for(k in unique(super.trait)){
         if(any(grepl("multinomial", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
-          size<-as.numeric(substr(object$family[keep], 12, nchar(object$family[keep])))
+          size<-object$y.additional[keep,1]
           ncat<-sum(super.trait==k)
           for(j in 1:nrow(post.pred)){
             prob<-matrix(post.pred[j,keep], length(keep)/sum(super.trait==k), ncat)
@@ -345,7 +352,7 @@
         }
         if(any(grepl("zibinomial", object$Residual$family))){
           keep<-which(object$error.term%in%which(super.trait==k))
-          size<-as.numeric(substr(object$family[keep[1:(length(keep)/2)]], 11, nchar(object$family[keep[1:(length(keep)/2)]])))
+          size<-object$y.additional[keep[1:(length(keep)/2)],1]
           keep<-keep[-c(1:(length(keep)/2))]
           rm.obs<-c(rm.obs, keep)
           post.pred[,keep]<-mapply(post.pred[,keep], post.var[,keep], FUN=function(mu,v){1-normal.logistic(mu,v, approx)})

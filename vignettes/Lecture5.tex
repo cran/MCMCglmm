@@ -54,7 +54,7 @@ In practice does this matter? Lets imagine there was only one unmeasured variabl
 \end{Sinput}
 \end{Schunk}
 
-A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.015.
+A simple regression suggests the two types of spending are negatively related but the association is weak with the $R^{2}=$ 0.012.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -66,19 +66,19 @@ lm(formula = y.car ~ y.hol, data = Spending)
 
 Residuals:
      Min       1Q   Median       3Q      Max 
--0.77487 -0.18958 -0.01541  0.19108  1.17871 
+-0.88552 -0.19737 -0.00205  0.18858  1.26133 
 
 Coefficients:
             Estimate Std. Error t value Pr(>|t|)    
-(Intercept)  1.13694    0.03688  30.826  < 2e-16 ***
-y.hol       -0.12026    0.03449  -3.487 0.000516 ***
+(Intercept)  1.11702    0.03873   28.84  < 2e-16 ***
+y.hol       -0.11453    0.03731   -3.07  0.00221 ** 
 ---
 Signif. codes:  
 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Residual standard error: 0.2964 on 798 degrees of freedom
-Multiple R-squared:  0.01501,	Adjusted R-squared:  0.01377 
-F-statistic: 12.16 on 1 and 798 DF,  p-value: 0.0005158
+Residual standard error: 0.2967 on 798 degrees of freedom
+Multiple R-squared:  0.01167,	Adjusted R-squared:  0.01043 
+F-statistic: 9.425 on 1 and 798 DF,  p-value: 0.002213
 \end{Soutput}
 \end{Schunk}
 
@@ -104,12 +104,12 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
           Mean             SD       Naive SE Time-series SE 
-     -0.220226       0.033804       0.001069       0.001069 
+     -0.198854       0.037917       0.001199       0.001199 
 
 2. Quantiles for each variable:
 
    2.5%     25%     50%     75%   97.5% 
--0.2875 -0.2439 -0.2195 -0.1975 -0.1540 
+-0.2772 -0.2236 -0.1986 -0.1757 -0.1268 
 \end{Soutput}
 \end{Schunk}
 
@@ -121,22 +121,22 @@ It is useful to think of a new data frame where the response variables have been
 \begin{array}{cc}
 \begin{array}{cccc}
 &{\color{blue} \texttt{y.hol}}&{\color{blue} \texttt{y.car}}&\texttt{id}\\
-{\color{red} \texttt{1}}&\texttt{0.753510}&\texttt{1.036808}&\texttt{1}\\
-{\color{red} \texttt{2}}&\texttt{0.622868}&\texttt{1.150577}&\texttt{1}\\
+{\color{red} \texttt{1}}&\texttt{1.063890}&\texttt{0.191558}&\texttt{1}\\
+{\color{red} \texttt{2}}&\texttt{1.135753}&\texttt{0.724603}&\texttt{1}\\
 \vdots&\vdots&\vdots\\
-{\color{red} \texttt{800}}&\texttt{0.644915}&\texttt{0.776350}&\texttt{200}\\
+{\color{red} \texttt{800}}&\texttt{0.983501}&\texttt{1.310201}&\texttt{200}\\
 \end{array}&
 \Longrightarrow
 \begin{array}{ccccc}
 &\texttt{y}&{\color{blue} \texttt{trait}}&\texttt{id}&{\color{red} \texttt{units}}\\
-1&\texttt{0.753510}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
-2&\texttt{0.622868}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
+1&\texttt{1.063890}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{1}}\\
+2&\texttt{1.135753}&{\color{blue} \texttt{y.hol}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-800&\texttt{0.644915}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
-801&\texttt{1.036808}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
-802&\texttt{1.150577}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
+800&\texttt{0.983501}&{\color{blue} \texttt{y.hol}}&\texttt{200}&{\color{red} \texttt{800}}\\
+801&\texttt{0.191558}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{1}}\\
+802&\texttt{0.724603}&{\color{blue} \texttt{y.car}}&\texttt{1}&{\color{red} \texttt{2}}\\
 \vdots&\vdots&\vdots&\vdots\\
-1600&\texttt{0.776350}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
+1600&\texttt{1.310201}&{\color{blue} \texttt{y.car}}&\texttt{200}&{\color{red} \texttt{800}}\\
 \end{array}
 \end{array}
 \end{displaymath}
@@ -288,7 +288,7 @@ and we'll see if the frequencies of the three \texttt{horn} types differ, and if
 	Chi-squared test for given probabilities
 
 data:  rowSums(Ctable)
-X-squared = 329.5225, df = 2, p-value < 2.2e-16
+X-squared = 329.52, df = 2, p-value < 2.2e-16
 \end{Soutput}
 \end{Schunk}
 
@@ -302,7 +302,7 @@ which strongly suggests the three morphs differ in frequency. We could then ask 
 	Pearson's Chi-squared test
 
 data:  Ctable
-X-squared = 202.2962, df = 2, p-value < 2.2e-16
+X-squared = 202.3, df = 2, p-value < 2.2e-16
 \end{Soutput}
 \end{Schunk}
 
@@ -407,16 +407,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-[1,] 0.6533 0.01924 0.0006085       0.001684
-[2,] 0.1003 0.01156 0.0003656       0.001764
-[3,] 0.2464 0.01541 0.0004873       0.001204
+[1,] 0.6515 0.01797 0.0005683       0.001566
+[2,] 0.1007 0.01246 0.0003941       0.001880
+[3,] 0.2478 0.01654 0.0005229       0.001633
 
 2. Quantiles for each variable:
 
-        2.5%     25%     50%    75%  97.5%
-var1 0.61363 0.64011 0.65402 0.6663 0.6892
-var2 0.08011 0.09211 0.09949 0.1073 0.1266
-var3 0.21590 0.23632 0.24629 0.2569 0.2767
+        2.5%    25%    50%    75%  97.5%
+var1 0.61605 0.6396 0.6521 0.6640 0.6862
+var2 0.07762 0.0921 0.1002 0.1083 0.1289
+var3 0.21775 0.2363 0.2473 0.2588 0.2803
 \end{Soutput}
 \end{Schunk}
 
@@ -485,16 +485,16 @@ Sample size per chain = 1000
    plus standard error of the mean:
 
        Mean      SD  Naive SE Time-series SE
-[1,] 0.3491 0.02911 0.0009205       0.002549
-[2,] 0.2582 0.02662 0.0008419       0.002368
-[3,] 0.3927 0.03062 0.0009681       0.003606
+[1,] 0.3480 0.02921 0.0009237       0.002742
+[2,] 0.2594 0.02759 0.0008724       0.002239
+[3,] 0.3926 0.02952 0.0009334       0.003481
 
 2. Quantiles for each variable:
 
        2.5%    25%    50%    75%  97.5%
-var1 0.2901 0.3298 0.3479 0.3683 0.4100
-var2 0.2122 0.2384 0.2578 0.2753 0.3155
-var3 0.3349 0.3726 0.3925 0.4119 0.4585
+var1 0.2897 0.3279 0.3477 0.3677 0.4084
+var2 0.2099 0.2403 0.2584 0.2775 0.3159
+var3 0.3365 0.3731 0.3930 0.4126 0.4488
 \end{Soutput}
 \end{Schunk}
 
@@ -528,17 +528,17 @@ Sample size per chain = 1000
 1. Empirical mean and standard deviation for each variable,
    plus standard error of the mean:
 
-         Mean       SD  Naive SE Time-series SE
-[1,] 0.830316 0.017875 5.653e-04      0.0020421
-[2,] 0.004023 0.002139 6.763e-05      0.0009465
-[3,] 0.165661 0.017488 5.530e-04      0.0019834
+        Mean       SD  Naive SE Time-series SE
+[1,] 0.82402 0.017006 0.0005378       0.001926
+[2,] 0.00596 0.002979 0.0000942       0.001080
+[3,] 0.17002 0.016710 0.0005284       0.001913
 
 2. Quantiles for each variable:
 
-         2.5%      25%      50%      75%    97.5%
-var1 0.793932 0.818761 0.831505 0.842267 0.864393
-var2 0.001204 0.002023 0.004062 0.005305 0.008846
-var3 0.131791 0.154249 0.165058 0.176834 0.202121
+         2.5%      25%     50%      75%  97.5%
+var1 0.790824 0.813142 0.82304 0.834855 0.8598
+var2 0.001774 0.003841 0.00575 0.007553 0.0138
+var3 0.135724 0.158641 0.17109 0.181380 0.2021
 \end{Soutput}
 \end{Schunk}
 
@@ -637,7 +637,7 @@ The model would have to be run for (much) longer to say something concrete about
 \end{Sinput}
 \begin{Soutput}
          0%         25%         50%         75%        100% 
-0.003993191 0.009857258 0.014823942 0.018763906 0.045964705 
+0.008547321 0.021516547 0.030095780 0.041048332 0.101711517 
 \end{Soutput}
 \end{Schunk}
 
@@ -717,7 +717,7 @@ The interpretation of the model is slightly different. Fitting just an intercept
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.2682074 0.3273234
+var1 0.2682566 0.3260789
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -732,7 +732,7 @@ and we can compare this to the predicted number of zero's from the Poisson proce
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.1502656 0.3613609
+var1 0.1504119 0.3605811
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -746,8 +746,8 @@ The credible intervals largely overlap, strongly suggesting a standard Poisson m
 +     3] + 0.5 * m5d.3$VCV[, 1])))
 \end{Sinput}
 \begin{Soutput}
-          lower     upper
-var1 0.08519671 0.2790875
+         lower    upper
+var1 0.0903996 0.289349
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -776,7 +776,7 @@ which reveals that although this proportion is expected to be (slightly) smaller
 \end{Sinput}
 \begin{Soutput}
          lower     upper
-var1 0.2312297 0.3076177
+var1 0.2300976 0.3060856
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -791,8 +791,8 @@ the proportion of zeros expected for men is probably still less than what we exp
 +     3] + 0.5 * m5d.4$VCV[, 1])))
 \end{Sinput}
 \begin{Soutput}
-          lower    upper
-var1 0.07512364 0.234677
+          lower     upper
+var1 0.07802243 0.2463355
 attr(,"Probability")
 [1] 0.95
 \end{Soutput}
@@ -840,41 +840,41 @@ We can then test for zero-flation by constraining the over-dispersion to be the 
  Thinning interval  = 10
  Sample size  = 1000 
 
- DIC: 3038.985 
+ DIC: 3039.935 
 
  R-structure:  ~trait:units
 
             post.mean l-95% CI u-95% CI eff.samp
-trait:units    0.3676    0.264   0.4679    69.91
+trait:units     0.369   0.2641   0.4736    49.25
 
  Location effects: art ~ trait * (fem + mar + kid5 + phd + ment) 
 
                        post.mean  l-95% CI  u-95% CI
-(Intercept)             0.337375  0.002442  0.695491
-traitza_art            -0.519749 -1.018896 -0.036429
-femWomen               -0.198270 -0.358699 -0.011774
-marMarried              0.095383 -0.084935  0.281600
-kid5                   -0.132657 -0.280237 -0.016842
-phd                     0.014129 -0.067734  0.103169
-ment                    0.019319  0.012408  0.026249
-traitza_art:femWomen    0.022893 -0.245961  0.291428
-traitza_art:marMarried  0.132676 -0.188995  0.424590
-traitza_art:kid5       -0.078987 -0.280276  0.124829
-traitza_art:phd         0.010543 -0.115298  0.142560
-traitza_art:ment        0.027880  0.012239  0.042283
+(Intercept)             0.320876 -0.023992  0.647538
+traitza_art            -0.534159 -1.052208 -0.040673
+femWomen               -0.196701 -0.371203 -0.035722
+marMarried              0.097212 -0.112003  0.293646
+kid5                   -0.128691 -0.240225 -0.005758
+phd                     0.017548 -0.064325  0.099296
+ment                    0.019478  0.012636  0.026614
+traitza_art:femWomen    0.027842 -0.243108  0.302421
+traitza_art:marMarried  0.138033 -0.188627  0.408963
+traitza_art:kid5       -0.077758 -0.285256  0.122673
+traitza_art:phd         0.013288 -0.121300  0.152226
+traitza_art:ment        0.028583  0.012840  0.044232
                        eff.samp  pMCMC    
-(Intercept)               220.5  0.064 .  
-traitza_art               291.6  0.034 *  
-femWomen                  312.6  0.020 *  
-marMarried                349.1  0.352    
-kid5                      262.6  0.054 .  
-phd                       283.5  0.750    
-ment                      426.0 <0.001 ***
-traitza_art:femWomen      254.2  0.880    
-traitza_art:marMarried    207.5  0.422    
-traitza_art:kid5          206.5  0.488    
-traitza_art:phd           171.6  0.896    
-traitza_art:ment          152.5 <0.001 ***
+(Intercept)               174.4  0.072 .  
+traitza_art               165.1  0.046 *  
+femWomen                  279.6  0.030 *  
+marMarried                325.4  0.340    
+kid5                      342.9  0.028 *  
+phd                       235.1  0.726    
+ment                      390.9 <0.001 ***
+traitza_art:femWomen      199.7  0.874    
+traitza_art:marMarried    249.9  0.360    
+traitza_art:kid5          239.1  0.430    
+traitza_art:phd           207.9  0.842    
+traitza_art:ment          128.5 <0.001 ***
 ---
 Signif. codes:  
 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

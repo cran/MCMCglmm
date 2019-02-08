@@ -2,7 +2,7 @@
 #set.seed(32)
 set.seed(34)
 alone=FALSE
-lectures<-c(7,9)
+lectures<-1
 forCRAN=TRUE
 JSS<-TRUE
 LINUX=TRUE
@@ -29,6 +29,7 @@ library(MCMCpack)
 library(R2WinBUGS)
 library(kinship2)
 library(tools)
+library(lattice)
 
 data(BTdata)
 
@@ -144,7 +145,7 @@ if(JSS){
 	system("pdflatex Overview.tex")
         system("xdg-open Overview.pdf&")
       }else{
-	setwd("~/Desktop/Work/Tex")
+        setwd(MCpath)
 	Sweave("article.Rnw")
 	system("~/Library/TexShop/bin/pdflatexc article.tex")
 	system("~/Library/TexShop/bin/bibtexc article")

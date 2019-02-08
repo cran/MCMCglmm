@@ -135,7 +135,7 @@ The population growth curve is slightly convex because of the quadratic term, an
 
 \begin{Schunk}
 \begin{Sinput}
-> W.1<-cBind(m4a.1$X, m4a.1$Z)  # note X and Z are sparse so use cBind
+> W.1<-cbind(m4a.1$X, m4a.1$Z)  
 > prediction.1<-W.1%*%posterior.mode(m4a.1$Sol)
 > xyplot(weight+prediction.1@x~Time|Chick, data=ChickWeight)
 \end{Sinput}
@@ -206,7 +206,7 @@ The traces look OKish for the chick (co)variance matrices (Figure \ref{RR2VCV-fi
 \end{Sinput}
 \begin{Soutput}
       var1 
--0.9747705 
+-0.9817454 
 \end{Soutput}
 \end{Schunk}
 
@@ -221,10 +221,10 @@ and shows strong autocorrelation
 
                 [,1]
 Lag 0    1.000000000
-Lag 10   0.183766139
-Lag 50  -0.018337710
-Lag 100  0.003261446
-Lag 500  0.035687982
+Lag 10   0.198725570
+Lag 50   0.002783530
+Lag 100  0.005720720
+Lag 500 -0.001004745
 \end{Soutput}
 \end{Schunk}
 
@@ -298,19 +298,19 @@ and the DIC has gone down, suggesting that the model is better:
 > m4a.1$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 5525.806
+[1] 5525.147
 \end{Soutput}
 \begin{Sinput}
 > m4a.2$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 4543.793
+[1] 4544.509
 \end{Soutput}
 \begin{Sinput}
 > m4a.3$DIC
 \end{Sinput}
 \begin{Soutput}
-[1] 3932.837
+[1] 3932.327
 \end{Soutput}
 \end{Schunk}
 

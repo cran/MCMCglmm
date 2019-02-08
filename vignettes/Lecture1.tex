@@ -411,11 +411,11 @@ Now, if we wanted to know the probability that the parameters lay in the region 
 \end{Sinput}
 \begin{Soutput}
  FALSE   TRUE 
-0.0234 0.9766 
+0.0225 0.9775 
 \end{Soutput}
 \end{Schunk}
 
-There is Monte Carlo error in the answer (0.977) but if we collect a large number of samples then this can be minimised.\\ 
+There is Monte Carlo error in the answer (0.978) but if we collect a large number of samples then this can be minimised.\\ 
 
 Using a similar logic we can obtain the marginal distribution of the variance by simply evaluating the draws in \texttt{VCV} ignoring (averaging over) the draws in \texttt{Sol}:
 
@@ -500,12 +500,12 @@ When fitting a model using \texttt{MCMCglmm} the parameter values through which 
 \begin{Soutput}
 , , (Intercept)
 
-       (Intercept)
-Lag 0   1.00000000
-Lag 1   0.01810394
-Lag 5   0.02595298
-Lag 10  0.01067286
-Lag 50  0.01322622
+         (Intercept)
+Lag 0   1.0000000000
+Lag 1  -0.0157652146
+Lag 5   0.0094886774
+Lag 10  0.0093923394
+Lag 50  0.0002389178
 \end{Soutput}
 \begin{Sinput}
 > autocorr(m1a.2$VCV)
@@ -515,14 +515,14 @@ Lag 50  0.01322622
 
               units
 Lag 0   1.000000000
-Lag 1   0.241931348
-Lag 5   0.005446279
-Lag 10 -0.010763741
-Lag 50  0.007109837
+Lag 1   0.175580402
+Lag 5  -0.007972959
+Lag 10 -0.011741307
+Lag 50  0.003373268
 \end{Soutput}
 \end{Schunk}
 
- The correlation between successive samples is low for the mean (0.018) but a bit high for the variance (0.242).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
+ The correlation between successive samples is low for the mean (-0.016) but a bit high for the variance (0.176).  When auto-correlation is high the chain needs to be run for longer, and this can lead to storage problems for high dimensional problems. The argument \texttt{thin} can be passed to \texttt{MCMCglmm} specifying the intervals at which the Markov chain is stored. In model \texttt{m1a.2} we specified \texttt{thin=1} meaning we stored every iteration (the default is \texttt{thin=10}). I usually aim to store 1,000-2,000 iterations and have the autocorrelation between successive \emph{stored} iterations less than 0.1.\\
 
 The approximation obtained from the Markov chain is conditional on the set of parameter values that were used to initialise the chain.  In many cases the first iterations show a strong dependence on the starting parametrisation, but as the chain progresses this dependence may be lost.  As the dependence on the starting parametrisation diminishes the chain is said to converge and the argument \texttt{burnin} can be passed to \texttt{MCMCped} specifying the number of iterations which must pass before samples are stored. The default burn-in period is 3,000 iterations. Assessing convergence of the chain is notoriously difficult, but visual inspection and diagnostic tools such as \texttt{gelman.diag} often suffice.
 

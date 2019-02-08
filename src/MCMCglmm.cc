@@ -2543,6 +2543,21 @@ if(itt>0){
                    }
                    
                  break;
+                   
+                 case 23:  /* noncentral scaled t */
+                   
+                 densityl1 += dnt(yP[record], y2P[record+ny], linki[k]->x[i]/y2P[record], true)-log(y2P[record]);
+                 densityl2 += dnt(yP[record], y2P[record+ny], linki_tmp[k]->x[i]/y2P[record], true)-log(y2P[record]);
+                   
+                 break;
+                 
+                 case 24:  /* mean-shifted scaled t */
+                   
+                  densityl1 += dt(yP[record]-linki[k]->x[i]/y2P[record], y2P[record+ny], true)-log(y2P[record]);
+                  densityl2 += dt(yP[record]-linki_tmp[k]->x[i]/y2P[record], y2P[record+ny], true)-log(y2P[record]);
+                 
+                 break;
+                 
                }
              }
            }                                                                

@@ -271,15 +271,22 @@
 
       if(any(grepl("nzbinom", object$family))){
         trans<-grep("nzbinom", object$family)
-        size<-as.numeric(substr(object$family[trans], 8, nchar(object$family[trans])))
+        size<-object$y.additional[trans,1]
         ynew[trans,i]<-as.numeric(rbinom(length(trans), size, plogis(ynew[trans,i]))>0)
       }
 
+      if(any(grepl("ncst", object$family))){
+        trans<-grep("ncst", object$family)
+        scale<-object$y.additional[trans,1]
+        df<-object$y.additional[trans,2]
+        ynew[trans,i]<-rt(length(trans), df,  ynew[trans,i]/scale)*scale
+      }
+      
       for(k in unique(super.trait)){
         if(any(grepl("multinomial", object$Residual$family[which(super.trait==k)]))){
           trans<-which(object$error.term%in%which(super.trait==k))
           prob<-matrix(ynew[trans,i], length(trans)/sum(super.trait==k), sum(super.trait==k))
-          size<-as.numeric(substr(object$family[trans], 12, nchar(object$family[trans])))
+          size<-object$y.additional[trans,1]
           ynew[trans,i]<-t(sapply(1:nrow(prob), function(x){rmultinom(1, size=size[x], prob= c(1,exp(prob[x,]))/(1+sum(exp(prob[x,]))))}))[,-1]
         }
         if(any(grepl("hupoisson", object$Residual$family[which(super.trait==k)]))){
@@ -317,7 +324,7 @@
           if(i==1){
             rm.obs<-c(rm.obs, trans[-c(1:(length(trans)/sum(super.trait==k)))])
           }
-          size<-as.numeric(substr(object$family[trans[1:(length(trans)/2)]], 11, nchar(object$family[trans[1:(length(trans)/2)]])))
+          size<-object$y.additional[trans[1:(length(trans)/2)],1]
           prob<-matrix(ynew[trans,i], length(trans)/sum(super.trait==k), sum(super.trait==k))
           prob[,2]<-rbinom(nrow(prob), 1, 1-plogis(prob[,2]))
           prob[,2][which(prob[,2]==1)]<-rbinom(sum(prob[,2]==1), size, plogis(prob[,1][which(prob[,2]==1)]))

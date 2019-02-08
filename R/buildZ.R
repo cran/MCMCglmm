@@ -125,7 +125,7 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
   }
 
   ZZ<-list()
-
+  
     for(k in 1:max(1,(1-(rtype=="iid"))*length(rterms))){  # iterate through Rterms or evalute once if iid
 
       if(rtype=="iid"){
@@ -144,19 +144,19 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
 
       nrl<-nlevels(rfactor) 
       nd<-length(rfactor)
-              
       data_pos<-as.numeric(rfactor)
+
+      if(any(data$MCMC_dummy==0 & is.na(rfactor))){stop("missing values in random predictors")}
       
       ZZ[[k]]<-Matrix(0,nrl,nd)
-      ZZ[[k]][,1][2]<-1              # force it out of being upper triangle!!!!
+      ZZ[[k]][,2][1]<-1              # force it out of being upper triangle!!!!
       ZZ[[k]]@p<-as.integer(0:nd)    
       ZZ[[k]]@i<-as.integer(data_pos-1)
       ZZ[[k]]@x<-rep(1,length(ZZ[[k]]@i))
       ZZ[[k]]<-t(ZZ[[k]])
       
       colnames(ZZ[[k]])<-paste(paste(rterms[select.terms], collapse=":"),levels(rfactor), sep=".")
-      if(any(data$MCMC_dummy==0 & is.na(rfactor))){warning("missing values in random predictors")}
-
+ 
     }
 
     if(nfl==0){

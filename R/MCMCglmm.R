@@ -9,8 +9,8 @@
     if(class(rcov)!="formula"){stop("rcov should be a formula")}
     if(class(random)!="formula" & class(random)!="NULL"){stop("random should be a formula")}
 
-    reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names", "MCMC_error.term", "MCMC_dummy")
-    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom")
+    reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_y.additional2", "MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names", "MCMC_error.term", "MCMC_dummy")
+    family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom", "ncst", "msst")
 
     if(any(names(data)%in%reserved.names)){
       stop(paste(names(data)[which(names(data)%in%reserved.names)], " is a reserved variable please rename it"))
@@ -103,7 +103,7 @@
          }           
          family.names<-as.character(data$family)   
          MVasUV=TRUE
-         if(length(grep("cen|multinomial|zi|hu|za|nzbinom", family.names))>0){ 
+         if(length(grep("cen|multinomial|zi|hu|za|nzbinom|noncent", family.names))>0){ 
            stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
        }
@@ -115,13 +115,13 @@
        }                                                                            # response distribution
     }
 
-    # zero-infalted and multinomial>2 need to be preserved in the same R-structure even if idh 
+    # zero-inflated and multinomial>2 need to be preserved in the same R-structure even if idh 
 
     diagR<-1  # should the residual structure be diagonal even if us is used?
 
     if(length(grep("hu|zi|za|multinomial[3-9]|[1-9][0-9]", family.names))>0){ 
       if(length(grep("idh\\(trait|us\\(trait|trait:units|units:trait|corg\\(trait|corgh\\(trait|cors\\(trait|idv\\(trait|ante.*\\(trait|sub\\(trait", rcov))==0){
-        stop("For error structures involving multinomial data with more than 2 categories, or zero-infalted/altered/hurdle models")
+        stop("Mutivariate error structures (i.e. using the term 'trait') are required for multinomial data with more than 2 categories, or zero-infalted/altered/hurdle models.")
       }else{
         if(length(grep("idh\\(", rcov))>0){
           diagR<-2
@@ -148,11 +148,11 @@
 	
     nS<-dim(data)[1]                               # number of subjects
     y.additional<-matrix(NA, nS,0)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
+    y.additional2<-matrix(NA, nS,0)
     nt<-1                                          # number of traits (to be iterated because y may change dimension with multinomial/categorical/censored distributions)
 
     if(MVasUV){
       mfac<-rep(0, nlevels(data$trait))
-      y.additional<-matrix(NA, nS,1)      # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
       if(any(family.names=="categorical")){
         ncat<-tapply(data[,response.names][which(family.names=="categorical")], as.character(data$trait[which(family.names=="categorical")]), function(x){length(unique(x))})
         for(i in 1:length(ncat)){
@@ -204,7 +204,7 @@
 
         dist.preffix<-substr(family[i],1,2)                  
         if(nt>length(response.names)){stop("family is the wrong length")}
-        if(any(dist.preffix%in%c("ce", "mu", "ca", "tr", "zi", "hu", "za", "nz"))){
+        if(any(dist.preffix%in%c("ce", "mu", "ca", "tr", "zi", "hu", "za", "nz", "nc", "ms"))){
 
 ######################
 # categorical traits #
@@ -249,6 +249,7 @@
             response.names[which(response.names==response.names[nt])]<-new.names
             nt<-nt+nJ
             y.additional<-cbind(y.additional, matrix(1,nS,nJ))
+            y.additional2<-cbind(y.additional2, matrix(0,nS,nJ))
           }
 
 ######################
@@ -267,6 +268,8 @@
              stop("multinomial data must be positive integers")
            }
            y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
+           y.additional2<-cbind(y.additional2, matrix(0, nS,nJ))             # get n of the multinomial
+           
            if(any(na.omit(y.additional)>1)){slice<-FALSE}                                                                           # number of J-1 categories
 	   if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:nJ+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
              stop("multinomial responses must be either completely observed or completely missing")
@@ -290,7 +293,9 @@
            if(!all(na.omit(data[,match(response.names[nt], names(data))]%in%c(0,1))) | !all(data[,match(response.names[1+nt], names(data))]%%1==0, na.rm=T) | !all(data[,match(response.names[1+nt], names(data))]>0.5)){
              stop("nzbinom data must be a column of 0/1s and then a column of positive integers")
            }
-           y.additional<-cbind(y.additional, data[,match(response.names[1+nt], names(data))])        # get number of trials
+           y.additional<-cbind(y.additional, data[,match(response.names[1+nt], names(data))]) 
+           y.additional2<-cbind(y.additional2, matrix(0, nS,1)) 
+           
 	   if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:1+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
              stop("both columns of nzbinom response must be either completely observed or completely missing")
            }	 
@@ -307,7 +312,8 @@
          if(dist.preffix=="ce"){       
            mfac<-c(mfac, 0)  
            if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
-           y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                               # get upper interval
+           y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
+           y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
            if(family.names[nt]=="cenpoisson"){
 	     if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
              data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]<-data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]-1
@@ -320,20 +326,21 @@
            nt<-nt+1
          }
 
-###################
+####################
 # truncated traits #
-###################
+####################
 		  
 	 if(dist.preffix=="tr"){   
            mfac<-c(mfac, 0)  
-	   y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])                     # get upper interval
+	   y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
+	   y.additional2<-cbind(y.additional2, matrix(0,nS, 1))# get upper interval
 	   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                      # remove upper interval from the response
 	   response.names<-response.names[-(nt+1)]
 	   nt<-nt+1
 	 }
 
 ########################
-# zero-infalted traits #
+# zero-inflated traits #
 ########################
 
 	 if(dist.preffix=="zi" || dist.preffix=="hu" || dist.preffix=="za"){
@@ -342,6 +349,7 @@
  
            if(grepl("poisson", family[i])){
 	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+	     y.additional2<-cbind(y.additional2, matrix(0,nS,2))
 	     if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
                stop("Poisson data must be non-negative integers")
              }
@@ -349,6 +357,7 @@
            }
            if(grepl("binomial", family[i])){
 	     y.additional<-cbind(y.additional, rowSums(data[,match(response.names[0:1+nt], names(data))]), rep(0,nS))
+	     y.additional2<-cbind(y.additional2, matrix(0,nS,2))
              if(all(data[,match(response.names[0:1+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:1+nt], names(data))]>=0, na.rm=T)==FALSE){
                stop("binomial data must be non-negative integers")
              } 
@@ -357,6 +366,7 @@
            }
            if(grepl("tobit", family[i])){
 	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+	     y.additional2<-cbind(y.additional2, matrix(0,nS, 2))
 	     if(all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
                stop("tobit data must be non-negative")
              }
@@ -374,6 +384,22 @@
 	   nt<-nt+2			  
 	 }
 
+          #############################
+          # noncentral t distribution #
+          #############################
+          
+    if(dist.preffix=="nc" | dist.preffix=="ms"){       
+       mfac<-c(mfac, 0)  
+       data[,which(names(data)==response.names[nt])]<-data[,which(names(data)==response.names[nt])]/data[,which(names(data)==response.names[nt+1])]
+      if(any(data[,which(names(data)==response.names[nt+1])]<=0, na.rm=T)){stop("for noncentral or mean-shifted t distribution scale must be positive")}
+      if(any(data[,which(names(data)==response.names[nt+2])]<=0, na.rm=T)){stop("for noncentral or mean-shifted t distribution degree of freedom must be positive")}
+            y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])
+            y.additional2<-cbind(y.additional2, data[,which(names(data)==response.names[nt+2])])# get upper interval
+            data<-data[,-which(names(data)%in%response.names[c(nt+1, nt+2)]),drop=FALSE]                                                # remove upper interval from the response
+            response.names<-response.names[-c(nt+1, nt+2)]
+            nt<-nt+1
+          }
+          
 ###############################################
 # gaussian/poisson/exponential/ordinal traits #
 ###############################################
@@ -405,7 +431,8 @@
               ordinal.names<-c(ordinal.names, response.names[nt]) 	
             }    
 	  }
-          y.additional<-cbind(y.additional,matrix(NA,nS,1))     
+          y.additional<-cbind(y.additional,matrix(NA,nS,1))
+          y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
           nt<-nt+1
         }
       }	
@@ -427,7 +454,7 @@
     }
     data$units<-as.factor(data$units)
     data$MCMC_y.additional<-c(y.additional) 
-
+    data$MCMC_y.additional2<-c(y.additional2) 
 ######################################################
 # for (random) meta-analysis add weights/model terms #
 ###################################################### 	
@@ -1002,6 +1029,10 @@
                 mu<-mean(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
               }
             }
+            if(family_set=="ncst" | family_set=="msst"){
+              mu<-mean(data_tmp$MCMC_y*data_tmp$MCMC_y.additional, na.rm=TRUE)
+              v<-var(data_tmp$MCMC_y*data_tmp$MCMC_y.additional, na.rm=TRUE)
+            }
           }
           if(is.na(v) | is.na(mu)){
             warning(paste("good starting values not obtained for error term", i, "liabilities: using Norm(0,1)"))
@@ -1044,13 +1075,17 @@
     observed<-as.numeric(is.na(data$MCMC_y)==FALSE)
     data$MCMC_y[is.na(data$MCMC_y)]<-0
     data$MCMC_y.additional[is.na(data$MCMC_y.additional)]<-0
+    data$MCMC_y.additional2[is.na(data$MCMC_y.additional2)]<-0
     data$MCMC_y[which(data$MCMC_y==-Inf | data$MCMC_y==Inf)]<-sign(data$MCMC_y[which(data$MCMC_y==-Inf | data$MCMC_y==Inf)])*1e+32
     data$MCMC_y.additional[which(data$MCMC_y.additional==-Inf | data$MCMC_y.additional==Inf)]<-sign(data$MCMC_y.additional[which(data$MCMC_y.additional==-Inf | data$MCMC_y.additional==Inf)])*1e+32
 	
     if(any(data$MCMC_family.names=="gaussian")){                                       # replace liabilities of ovserved gaussian data with data                                    
       data$MCMC_liab[which(data$MCMC_family.names=="gaussian" & observed)]<-data$MCMC_y[which(data$MCMC_family.names=="gaussian" & observed)]
     }
-
+    if(any(data$MCMC_family.names%in%c("ncst", "msst"))){        # replace liabilities of ovserved gaussian data with data                                    
+      data$MCMC_liab[which(data$MCMC_family.names%in%c("ncst", "msst") & observed)]<-data$MCMC_y[which(data$MCMC_family.name%in%c("ncst", "msst") & observed)]*data$MCMC_y.additional[which(data$MCMC_family.names%in%c("ncst", "msst") & observed)]
+    }
+    
     split<-unlist(lapply(GRprior, function(x){x$fix}))
     if(any(split[1:nG]>nfl[1:nG] | (split[1:nG]<1 & split[1:nG]!=0))){stop("fix term in priorG must be at least one less than the dimension of V")}
     if(split[nG+1]>nfl[nG+1] && covu==0){stop("fix term in priorR must be at least one less than the dimension of V")}
@@ -1201,7 +1236,7 @@
 
 	output<-.C("MCMCglmm",
         as.double(data$MCMC_y),   
-        as.double(data$MCMC_y.additional),
+        as.double(c(data$MCMC_y.additional, data$MCMC_y.additional2)),
         as.double(data$MCMC_liab), 
         as.integer(mvtype),   
         as.integer(length(data$MCMC_y)),
@@ -1410,6 +1445,11 @@
              L<-L[-dummy.data,-Ldummy.data,drop=FALSE]
            }
         }
+        
+        y.additional<-cbind(data$MCMC_y.additional, data$MCMC_y.additional2)[order(ordering),]
+        if(length(dummy.data)>0){
+          y.additional<-y.additional[-dummy.data,]
+        }
 
         if(all(Aterm==0)){
           ginverse=NULL
@@ -1417,17 +1457,6 @@
 
         error.term<-data$MCMC_error.term[order(ordering)]
         family<-family.types[data$MCMC_family.names[order(ordering)]]
-        y.additional<-data$MCMC_y.additional[order(ordering)]
-
-        if(any(family=="multinomial")){
-           family[which(family=="multinomial")]<-paste("multinomial", y.additional[which(family=="multinomial")], sep="")
-        }
-        if(any(family=="nzbinom")){
-           family[which(family=="nzbinom")]<-paste("nzbinom", y.additional[which(family=="nzbinom")], sep="")
-        }
-        if(any(family=="zibinomial")){
-           family[which(family=="zibinomial")]<-paste("zibinomial", y.additional[which(family=="zibinomial")], sep="")
-        }
 
         if(length(dummy.data)>0){
           error.term<-error.term[-dummy.data]
@@ -1481,7 +1510,8 @@
             error.term=error.term,
             family=family, 
             Tune=list2bdiag(Tune),
-            meta=!is.null(mev)
+            meta=!is.null(mev),
+            y.additional=y.additional
         )
 
 	class(output)<-c("MCMCglmm")

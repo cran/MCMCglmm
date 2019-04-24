@@ -40,6 +40,8 @@
       find.fixed<-match(colnames(object2$Sol)[1:object2$Fixed$nfl], colnames(object$Sol))
       find.random<-match(colnames(object2$Sol)[-c(1:object2$Fixed$nfl)], colnames(object$Sol))
       if(any(is.na(find.fixed))){stop("model for newdata has fixed effects not present in original model")}
+      if(any(!colnames(object$Sol)[1:object$Fixed$nfl]%in%colnames(object2$Sol)[1:object2$Fixed$nfl])){stop("model for newdata has fixed effects absent from the original model")}
+      # Jarrod; previously this error catching was not implemented, but a waraning was issued if verbose=TRUE (L53).
       if(verbose){
         if(any(is.na(find.random))){
           missing.random<-colnames(object2$Sol)[which(is.na(find.random))+object2$Fixed$nfl]

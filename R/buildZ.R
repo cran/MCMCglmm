@@ -146,12 +146,12 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
       nd<-length(rfactor)
       data_pos<-as.numeric(rfactor)
 
-      if(any(data$MCMC_dummy==0 & is.na(rfactor))){stop("missing values in random predictors")}
+      if(any(is.na(rfactor))){warning("missing values in random predictors")}
       
       ZZ[[k]]<-Matrix(0,nrl,nd)
       ZZ[[k]][,2][1]<-1              # force it out of being upper triangle!!!!
-      ZZ[[k]]@p<-as.integer(0:nd)    
-      ZZ[[k]]@i<-as.integer(data_pos-1)
+      ZZ[[k]]@p<-as.integer(c(0, cumsum(!is.na(rfactor))))
+      ZZ[[k]]@i<-as.integer(na.omit(data_pos)-1)
       ZZ[[k]]@x<-rep(1,length(ZZ[[k]]@i))
       ZZ[[k]]<-t(ZZ[[k]])
       
@@ -230,10 +230,6 @@ buildZ<-function(x, data, nginverse=NULL, covu=FALSE){
           colnames(Z[[k]])<-paste(colnames(X)[i], colnames(Z[[k]]),sep=".") 
 
           missing<-which(diff(Z[[k]]@p)==0)
-
-          #################################################################################################
-          # It woule be more efficient to allow complete sparse columns in Z - but need to change C code! #
-          #################################################################################################
 
           if(length(missing)>0){
             if(vtype=="idh" | vtype=="idv"){

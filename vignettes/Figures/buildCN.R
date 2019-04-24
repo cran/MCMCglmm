@@ -2,7 +2,7 @@
 #set.seed(32)
 set.seed(34)
 alone=FALSE
-lectures<-1
+lectures<-1:9
 forCRAN=TRUE
 JSS<-TRUE
 LINUX=TRUE
@@ -122,7 +122,7 @@ if(length(lectures)>0){
       system("bibtex CourseNotes")
       system("pdflatex CourseNotes.tex")
       system("pdflatex CourseNotes.tex")
-      system("xdg-open CourseNotes.pdf&")
+      system("open -a Preview CourseNotes.pdf")
     }else{
       system("~/Library/TeXShop/bin/pdflatexc CourseNotes.tex")
       system("~/Library/TeXShop/bin/bibtexc CourseNotes")
@@ -143,7 +143,7 @@ if(JSS){
 	system("bibtex Overview")
 	system("pdflatex Overview.tex")
 	system("pdflatex Overview.tex")
-        system("xdg-open Overview.pdf&")
+        system("open -a Preview Overview.pdf&")
       }else{
         setwd(MCpath)
 	Sweave("article.Rnw")

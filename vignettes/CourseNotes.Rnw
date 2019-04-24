@@ -8,7 +8,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{bm}
-\usepackage{Sweave}
+\usepackage[noae]{Sweave}
 \usepackage{lscape}
 \usepackage{tocbibind}
 \usepackage{makeidx}

@@ -103,7 +103,7 @@
          }           
          family.names<-as.character(data$family)   
          MVasUV=TRUE
-         if(length(grep("cen|multinomial|zi|hu|za|nzbinom|noncent", family.names))>0){ 
+         if(length(grep("cen|multinomial|zi|hu|za|nzbinom|ncst|msst", family.names))>0){ 
            stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
        }
@@ -147,11 +147,11 @@
 
 	
     nS<-dim(data)[1]                               # number of subjects
-    y.additional<-matrix(NA, nS,0)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
-    y.additional2<-matrix(NA, nS,0)
     nt<-1                                          # number of traits (to be iterated because y may change dimension with multinomial/categorical/censored distributions)
-
+ 
     if(MVasUV){
+      y.additional<-matrix(NA, nS,1)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
+      y.additional2<-matrix(NA, nS,1)
       mfac<-rep(0, nlevels(data$trait))
       if(any(family.names=="categorical")){
         ncat<-tapply(data[,response.names][which(family.names=="categorical")], as.character(data$trait[which(family.names=="categorical")]), function(x){length(unique(x))})
@@ -162,7 +162,7 @@
         if(any(ncat>2)){
            stop("For setting up multi-trait models as univariate the responses cannot come from distributions that require more than one data column or have more than one liability (i.e. censored, multinomial, zero-inflated, categorical with k>2): set it up as multivariate using cbind(...)")
          }
-        y.additional[which(family.names=="categorical")]<-1
+        y.additional[which(family.names=="categorical"),]<-1
         family.names[which(family.names=="categorical")]<-"multinomial"
       }
       if(any(family.names=="ordinal" |  family.names=="threshold")){
@@ -198,6 +198,9 @@
       ordinal.names<-c()
       rterm.family<-c()
 
+      y.additional<-matrix(NA, nS,0)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
+      y.additional2<-matrix(NA, nS,0)
+      
       for(i in 1:length(family)){
 
         rterm.family<-c(rterm.family, family[i])
@@ -239,7 +242,7 @@
             }	  
             mfac<-c(mfac, rep(nJ-1,nJ))           
             data<-data[,-which(names(data)==response.names[nt]), drop=FALSE]    # remove original variable
-	    row.names(data)<-row.names(cont)
+	          row.names(data)<-row.names(cont)
             data<-cbind(data, cont)     # add new variables to data.frame
             ones<-rep(1, length(response.names))
             ones[which(response.names==response.names[nt])]<-nJ
@@ -256,7 +259,7 @@
 # multinomial traits #
 ######################
 
-         if(dist.preffix=="mu"){
+          if(dist.preffix=="mu"){
            nJ<-as.numeric(substr(family[i],12,nchar(family[i])))-1
            if(nJ>1){
              slice<-FALSE
@@ -287,7 +290,7 @@
 # non-zero binomial #
 #####################
 
-        if(dist.preffix=="nz"){
+          if(dist.preffix=="nz"){
            nJ<-1	 
            mfac<-c(mfac, 0)  
            if(!all(na.omit(data[,match(response.names[nt], names(data))]%in%c(0,1))) | !all(data[,match(response.names[1+nt], names(data))]%%1==0, na.rm=T) | !all(data[,match(response.names[1+nt], names(data))]>0.5)){
@@ -296,7 +299,7 @@
            y.additional<-cbind(y.additional, data[,match(response.names[1+nt], names(data))]) 
            y.additional2<-cbind(y.additional2, matrix(0, nS,1)) 
            
-	   if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:1+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
+	        if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:1+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
              stop("both columns of nzbinom response must be either completely observed or completely missing")
            }	 
            data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                        # remove number of trials
@@ -309,152 +312,160 @@
 # censored traits #
 ###################
 
-         if(dist.preffix=="ce"){       
-           mfac<-c(mfac, 0)  
-           if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
-           y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
-           y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
-           if(family.names[nt]=="cenpoisson"){
-	     if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
-             data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]<-data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]-1
-             }
+          if(dist.preffix=="ce"){       
+     mfac<-c(mfac, 0)  
+     if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
+     y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
+     y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
+     if(family.names[nt]=="cenpoisson"){
+     if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
+       data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]<-data[[response.names[nt]]][which(data[[response.names[nt]]]!=data[[response.names[nt+1]]])]-1
+     }
 	   if(family.names[nt]=="cenexponential"){
 	     if(any(data[,response.names[0:1+nt]]<0, na.rm=T)){stop("Exponential data must be positive")}  
 	   }
 	   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                                # remove upper interval from the response
-           response.names<-response.names[-(nt+1)]
-           nt<-nt+1
-         }
+     response.names<-response.names[-(nt+1)]
+     nt<-nt+1
+   }
 
 ####################
 # truncated traits #
 ####################
 		  
-	 if(dist.preffix=="tr"){   
-           mfac<-c(mfac, 0)  
-	   y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
-	   y.additional2<-cbind(y.additional2, matrix(0,nS, 1))# get upper interval
-	   data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                      # remove upper interval from the response
-	   response.names<-response.names[-(nt+1)]
-	   nt<-nt+1
-	 }
-
+          if(dist.preffix=="tr"){   
+    mfac<-c(mfac, 0)  
+    y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
+    y.additional2<-cbind(y.additional2, matrix(0,nS, 1))# get upper interval
+    data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                      # remove upper interval from the response
+    response.names<-response.names[-(nt+1)]
+    nt<-nt+1
+  }
+  
 ########################
 # zero-inflated traits #
 ########################
+  
+          if(dist.preffix=="zi" || dist.preffix=="hu" || dist.preffix=="za"){
+  
+   rterm.family<-c(rterm.family, rterm.family[length(rterm.family)])
+  
+   if(grepl("poisson", family[i])){
+     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+     y.additional2<-cbind(y.additional2, matrix(0,nS,2))
+     if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
+         stop("Poisson data must be non-negative integers")
+     }
+     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
+    }
+     
+    if(grepl("binomial", family[i])){
+    
+      y.additional<-cbind(y.additional, rowSums(data[,match(response.names[0:1+nt], names(data))]), rep(0,nS))
+      y.additional2<-cbind(y.additional2, matrix(0,nS,2))
+    
+      if(all(data[,match(response.names[0:1+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:1+nt], names(data))]>=0, na.rm=T)==FALSE){
+       stop("binomial data must be non-negative integers")
+      } 
+      cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
+      response.names<-response.names[-(nt+1)]
+    }
+     
+    if(grepl("tobit", family[i])){
+      y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
+      y.additional2<-cbind(y.additional2, matrix(0,nS, 2))
+      if(all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
+         stop("tobit data must be non-negative")
+      }
+      cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
+    }
+     
+    colnames(cont)<-paste(dist.preffix, response.names[nt], sep="_")
+    data<-cbind(data, cont)
+    mfac<-c(mfac, c(0,1))
+    ones<-rep(1, length(response.names))
+    ones[which(response.names==response.names[nt])]<-2
+    response.names<-rep(response.names, ones)
+    family.names<-rep(family.names, ones)
+    family.names[which(response.names==response.names[nt])]<-family.names[nt]
+    response.names[which(response.names==response.names[nt])]<-c(response.names[nt], paste(dist.preffix, response.names[nt], sep="_"))
+    nt<-nt+2			  
+  }
 
-	 if(dist.preffix=="zi" || dist.preffix=="hu" || dist.preffix=="za"){
-
-           rterm.family<-c(rterm.family, rterm.family[length(rterm.family)])
- 
-           if(grepl("poisson", family[i])){
-	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
-	     y.additional2<-cbind(y.additional2, matrix(0,nS,2))
-	     if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
-               stop("Poisson data must be non-negative integers")
-             }
-	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
-           }
-           if(grepl("binomial", family[i])){
-	     y.additional<-cbind(y.additional, rowSums(data[,match(response.names[0:1+nt], names(data))]), rep(0,nS))
-	     y.additional2<-cbind(y.additional2, matrix(0,nS,2))
-             if(all(data[,match(response.names[0:1+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:1+nt], names(data))]>=0, na.rm=T)==FALSE){
-               stop("binomial data must be non-negative integers")
-             } 
-	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
-             response.names<-response.names[-(nt+1)]
-           }
-           if(grepl("tobit", family[i])){
-	     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
-	     y.additional2<-cbind(y.additional2, matrix(0,nS, 2))
-	     if(all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
-               stop("tobit data must be non-negative")
-             }
-	     cont<-as.matrix(as.numeric(data[,which(names(data)==response.names[nt])]==0))
-           }
-           colnames(cont)<-paste(dist.preffix, response.names[nt], sep="_")
-	   data<-cbind(data, cont)
-	   mfac<-c(mfac, c(0,1))
-	   ones<-rep(1, length(response.names))
-	   ones[which(response.names==response.names[nt])]<-2
-	   response.names<-rep(response.names, ones)
-	   family.names<-rep(family.names, ones)
-	   family.names[which(response.names==response.names[nt])]<-family.names[nt]
-	   response.names[which(response.names==response.names[nt])]<-c(response.names[nt], paste(dist.preffix, response.names[nt], sep="_"))
-	   nt<-nt+2			  
-	 }
-
-          #############################
-          # noncentral t distribution #
-          #############################
-          
-    if(dist.preffix=="nc" | dist.preffix=="ms"){       
-       mfac<-c(mfac, 0)  
-       data[,which(names(data)==response.names[nt])]<-data[,which(names(data)==response.names[nt])]/data[,which(names(data)==response.names[nt+1])]
-      if(any(data[,which(names(data)==response.names[nt+1])]<=0, na.rm=T)){stop("for noncentral or mean-shifted t distribution scale must be positive")}
-      if(any(data[,which(names(data)==response.names[nt+2])]<=0, na.rm=T)){stop("for noncentral or mean-shifted t distribution degree of freedom must be positive")}
-            y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])
-            y.additional2<-cbind(y.additional2, data[,which(names(data)==response.names[nt+2])])# get upper interval
-            data<-data[,-which(names(data)%in%response.names[c(nt+1, nt+2)]),drop=FALSE]                                                # remove upper interval from the response
-            response.names<-response.names[-c(nt+1, nt+2)]
-            nt<-nt+1
-          }
+#############################
+# noncentral t distribution #
+#############################
+  
+         if(dist.preffix=="nc" | dist.preffix=="ms"){       
+    mfac<-c(mfac, 0)  
+    data[,which(names(data)==response.names[nt])]<-data[,which(names(data)==response.names[nt])]/data[,which(names(data)==response.names[nt+1])]
+    
+    if(any(data[,which(names(data)==response.names[nt+1])]<=0, na.rm=T)){stop("for noncentral or mean-shifted t distribution scale must be positive")}
+    if(any(data[,which(names(data)==response.names[nt+2])]<=0, na.rm=T)){stop("for noncentral or mean-shifted t distribution degree of freedom must be positive")}
+    
+    y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])
+    y.additional2<-cbind(y.additional2, data[,which(names(data)==response.names[nt+2])])# get upper interval
+    data<-data[,-which(names(data)%in%response.names[c(nt+1, nt+2)]),drop=FALSE]                                                # remove upper interval from the response
+    response.names<-response.names[-c(nt+1, nt+2)]
+    nt<-nt+1
+  }
           
 ###############################################
 # gaussian/poisson/exponential/ordinal traits #
 ###############################################
 
-        }else{
-          mfac<-c(mfac, 0)  
-          if(family.names[nt]=="poisson"){ 
-	    if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
-          }
-          if(family.names[nt]=="ztpoisson"){ 
-	    if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=1, na.rm=T)==FALSE){stop("Zero-truncated Poisson data must be positive integers")}
-          }
-	  if(family.names[nt]=="exponential"){ 
-	    if(any(data[,response.names[nt]]<0, na.rm=T)){stop("Exponential data must be positive")}
-	  }	
-	  if(family.names[nt]=="geometric"){ 
-	    if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Geometric data must be non-negative integers")}
-	  }	
-	  if(family.names[nt]=="ordinal" | family.names[nt]=="threshold"){
-            mfac[length(mfac)]<-length(ncutpoints)  
-            data[,response.names[nt]]<-as.numeric(as.factor(data[,response.names[nt]]))
-            if(all(is.na(data[,response.names[nt]]))){ 
-              ncutpoints<-c(ncutpoints, 3)
-              stcutpoints[[length(stcutpoints)+1]]<-c(-Inf, 0, Inf)
-            }else{
-              if(max(data[,response.names[nt]], na.rm=T)>2){slice<-FALSE}  
-              ncutpoints<-c(ncutpoints, max(data[,response.names[nt]], na.rm=T)+1)
-              stcutpoints[[length(stcutpoints)+1]]<-qnorm(cumsum(c(0, prop.table(table(data[,response.names[nt]])))))
-              ordinal.names<-c(ordinal.names, response.names[nt]) 	
-            }    
-	  }
-          y.additional<-cbind(y.additional,matrix(NA,nS,1))
-          y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
-          nt<-nt+1
+      }else{
+        mfac<-c(mfac, 0)  
+        if(family.names[nt]=="poisson"){ 
+          if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
         }
-      }	
+        if(family.names[nt]=="ztpoisson"){ 
+          if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=1, na.rm=T)==FALSE){stop("Zero-truncated Poisson data must be positive integers")}
+        }
+    	  if(family.names[nt]=="exponential"){ 
+    	    if(any(data[,response.names[nt]]<0, na.rm=T)){stop("Exponential data must be positive")}
+    	  }	
+    	  if(family.names[nt]=="geometric"){ 
+    	    if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){stop("Geometric data must be non-negative integers")}
+    	  }	
+    	  if(family.names[nt]=="ordinal" | family.names[nt]=="threshold"){
+          mfac[length(mfac)]<-length(ncutpoints)  
+          data[,response.names[nt]]<-as.numeric(as.factor(data[,response.names[nt]]))
+          if(all(is.na(data[,response.names[nt]]))){ 
+            ncutpoints<-c(ncutpoints, 3)
+            stcutpoints[[length(stcutpoints)+1]]<-c(-Inf, 0, Inf)
+          }else{
+            if(max(data[,response.names[nt]], na.rm=T)>2){slice<-FALSE}  
+            ncutpoints<-c(ncutpoints, max(data[,response.names[nt]], na.rm=T)+1)
+            stcutpoints[[length(stcutpoints)+1]]<-qnorm(cumsum(c(0, prop.table(table(data[,response.names[nt]])))))
+            ordinal.names<-c(ordinal.names, response.names[nt]) 	
+          }    
+        }
+        y.additional<-cbind(y.additional,matrix(NA,nS,1))
+        y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
+        nt<-nt+1
+      }
+    }	
       nt<-nt-1
     }
 
     if(sum((family.names%in%family.types)==FALSE)!=0){stop(paste(unique(family.names[which((family.names%in%family.types)==FALSE)]), "not a supported distribution"))}
 
 ###**************************************########################
-
+    
     if(MVasUV){
-      data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", idvar="units")       # reshape the data into long format 
+      data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", idvar="units", timevar=NULL)       # reshape the data into long format 
       data$MCMC_family.names<-family.names
     }else{
       data<-reshape(data, varying=response.names, v.names="MCMC_y", direction="long", timevar="trait", idvar="units")       # reshape the data into long format 
       data$trait<-factor(response.names[data$trait], response.names)
       if(length(response.names)!=length(family.names)){stop("family must have the same length as the number of responses")}
-      data$MCMC_family.names<-rep(family.names, each=nS)     
+      data$MCMC_family.names<-rep(family.names, each=nS)
     }
     data$units<-as.factor(data$units)
     data$MCMC_y.additional<-c(y.additional) 
     data$MCMC_y.additional2<-c(y.additional2) 
+
 ######################################################
 # for (random) meta-analysis add weights/model terms #
 ###################################################### 	
@@ -609,7 +620,7 @@
        ZRaug<-Diagonal(ncol(ZR),as.numeric(colSums(ZR)==0))[missing,]
        ZR<-rbind(ZR, ZRaug)
      }
-
+  
      if(any(colSums(ZR)>1)){stop("R-structure miss-specified: each residual must be unique to a data point")}
      if(any(rowSums(ZR)==0)){stop("R-structure miss-specified: each data point must have a residual")}
      if(any(ZR@x!=1)){stop("R-structure miss-specified: random regressions not permitted")}

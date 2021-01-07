@@ -79,7 +79,8 @@ void MCMCglmm(
         int *me_rtermP,        // vector indexing which me_outcome a set of resdiuals are informative about 
         double *me_prior_probP,   //  prior category probabilities for each me_outcome    
         double *me_XiP,       // me interaction design matrix
-        int *meP              // number of po terms, where first covariate for each term appears in X, number of covariates in each term
+        int *meP       // number of po terms, where first covariate for each term appears in X, number of covariates in each term
+
 ){         
 
 int     i, j, k,l,p,cnt,cnt2,cnt3,cnt4, rterm,itt,record,dimG,nthordinal,
@@ -165,6 +166,8 @@ for(k=nG; k<nGR; k++){
   }
   nrterms+=nlGR[k];
 }
+
+int  *present = new int[nrterms+nR]; // vector of 0 and 1's for ztmultinomial
 
 int *cond = new int[cnt];
 int *keep = new int[cnt];
@@ -2134,7 +2137,7 @@ if(itt>0){
 /* sample liabilities  */   
 /***********************/
 //Rprintf("sample liabilities\n");	
-	
+
    if(missing){
   
      cnt2=0;
@@ -2161,9 +2164,10 @@ if(itt>0){
          p = k+proposal[cnt+j]*nGR;  // indexes proposal distributions
   
          for(i=0; i<dimG; i++){
-           linki_tmp[k]->x[i] = rnorm(0.0,1.0);
-           linki[k]->x[i] = linky->x[cnt2+nlGR[k]*i+j];
-           predi[k]->x[i] =  pred->x[cnt2+nlGR[k]*i+j];
+            record=cnt2+nlGR[k]*i+j;
+            linki_tmp[k]->x[i] = rnorm(0.0,y2P[record+ny*2]);
+            linki[k]->x[i] = linky->x[record];
+            predi[k]->x[i] =  pred->x[record];
          }
   
          if(mvtype[cnt+j]==1){         // can be Gibbsed  
@@ -2557,10 +2561,108 @@ if(itt>0){
                   densityl2 += dt(yP[record]-linki_tmp[k]->x[i]/y2P[record], y2P[record+ny], true)-log(y2P[record]);
                  
                  break;
+
+                 case 25:  /* Hurdle Binomial */
+                   
+                   if(mfacP[rterm+i]==0){  // non-zero bit
+                     if(yP[record]>0.5){
+                       mndenom1 = dbinom(yP[record], y2P[record], exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])), true);  
+                       mndenom1 -= log1p(-dbinom(0.0, y2P[record], exp(linki[k]->x[i])/(1.0+exp(linki[k]->x[i])), false));
+                       mndenom2 = dbinom(yP[record], y2P[record], exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])), true); 
+                       mndenom2 -= log1p(-dbinom(0.0, y2P[record], exp(linki_tmp[k]->x[i])/(1.0+exp(linki_tmp[k]->x[i])), false)); 
+                     } 
+                   }else{
+                      if(truncP[0]){
+                        if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                        if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                      }
+                      if(yP[record]>0.5){
+                        mndenom1 += linki[k]->x[i]-log1p(exp(linki[k]->x[i]));
+                        mndenom2 += linki_tmp[k]->x[i]-log1p(exp(linki_tmp[k]->x[i]));
+                      }else{
+                        mndenom1 += -log1p(exp(linki[k]->x[i]));
+                        mndenom2 += -log1p(exp(linki_tmp[k]->x[i]));
+                      }
+                      densityl1 += mndenom1;
+                      densityl2 += mndenom2;
+                      mndenom1 = 1.0;
+                      mndenom2 = 1.0;
+                   }
                  
+                 break;
+
+                 case 26:  /* ztmb */
+                   
+                   if(truncP[0]){
+                     if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                     if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                   }
+
+                   mndenom1 /= 1.0+exp(linki[k]->x[i]);
+                   mndenom2 /= 1.0+exp(linki_tmp[k]->x[i]);
+
+                   if(yP[record]>0.5){
+                      densityl1 += (linki[k]->x[i] - log1p(exp(linki[k]->x[i])));
+                      densityl2 += (linki_tmp[k]->x[i] - log1p(exp(linki_tmp[k]->x[i])));                
+                   }else{
+                     densityl1 += -linki[k]->x[i] - log1p(exp(-linki[k]->x[i]));
+                     densityl2 += -linki_tmp[k]->x[i] - log1p(exp(-linki_tmp[k]->x[i]));     
+                   }
+                   if(mfacP[rterm+i]==nthmnl){ 
+                     densityl1 -= log1p(-mndenom1);
+                     densityl2 -= log1p(-mndenom2);
+                     nthmnl = 0;
+                     mndenom1 = 1.0;
+                     mndenom2 = 1.0;
+                   }else{
+                     nthmnl++;
+                   }
+                   
+
+                 break;
+
+                 case 27:  /* Zero-truncated Multinomial Logit */
+  
+                   if(truncP[0]){
+                     if(linki_tmp[k]->x[i]<(-logitt)){linki_tmp[k]->x[i]=-logitt;}
+                     if(linki_tmp[k]->x[i]>logitt){linki_tmp[k]->x[i]=logitt;}
+                   }
+
+                   if(yP[record]>0.5){
+                     mndenom1 += exp(linki[k]->x[i]);
+                     mndenom2 += exp(linki_tmp[k]->x[i]);
+                     densityl1 += yP[record]*linki[k]->x[i];
+                     densityl2 += yP[record]*linki_tmp[k]->x[i];
+                     present[i] = 1; 
+                   }else{
+                     present[i] = 0;
+                   }
+
+                   if(mfacP[rterm+i]==nthmnl){ 
+                     if(y2P[record+ny]>0.5){
+                       present[i+1] = 1;
+                       densityl1 -= y2P[record]*log(mndenom1);
+                       densityl2 -= y2P[record]*log(mndenom2);
+                     }else{  // reference category is empty so do not include it in the normalisation
+                       present[i+1] = 0;
+                       densityl1 -= y2P[record]*log(mndenom1-1.0);
+                       densityl2 -= y2P[record]*log(mndenom2-1.0);
+                     }
+
+                     densityl1 -= log(pkk_update(linki[k], y2P[record], present, nthmnl+2, i));
+                     densityl2 -= log(pkk_update(linki_tmp[k], y2P[record], present, nthmnl+2, i));
+
+                     nthmnl = 0;
+                     mndenom1 = 1.0;
+                     mndenom2 = 1.0;
+                   }else{
+                     nthmnl++;
+                   }
+
+                 break;
                }
              }
-           }                                                                
+           }
          }
          dbar += densityl1;
   
@@ -2582,11 +2684,10 @@ if(itt>0){
              }
              // don't need to worry about the Jacobian below because they cancel
            }
-  
+
            densityl1 += cs_dmvnorm(linki[k], predi[k], ldet[k], Ginv[k]);
            densityl2 += cs_dmvnorm(linki_tmp[k], predi[k], ldet[k], Ginv[k]);
-           
-  
+
            zn[p] *= rACCEPT; 
            wn[p] *= rACCEPT;
            wn[p] ++;

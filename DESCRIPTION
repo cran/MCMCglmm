@@ -1,16 +1,16 @@
 Package: MCMCglmm
-Version: 2.30
-Date: 2021-01-07
+Version: 2.31
+Date: 2021-03-09
 Title: MCMC Generalised Linear Mixed Models
 Depends: Matrix, coda, ape
 Imports: corpcor, tensorA, cubature, methods
 Suggests: rgl, combinat, mvtnorm, orthopolynom
 Author: Jarrod Hadfield
 Maintainer: Jarrod Hadfield <j.hadfield@ed.ac.uk>
-Description: Fits Multi-response Generalised Linear Mixed Models (and related models) using Markov chain Monte Carlo techniques. 
+Description: Fits Multivariate Generalised Linear Mixed Models (and related models) using Markov chain Monte Carlo techniques. 
 License: GPL (>= 2)
 SystemRequirements: C++11
 NeedsCompilation: yes
-Packaged: 2021-01-07 16:25:26 UTC; jhadfiel
+Packaged: 2021-03-09 14:57:35 UTC; jhadfiel
 Repository: CRAN
-Date/Publication: 2021-01-07 18:10:21 UTC
+Date/Publication: 2021-03-09 16:40:17 UTC

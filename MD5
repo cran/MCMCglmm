@@ -1,10 +1,10 @@
-a9ce2fc05dd7f28310b400e08f1e5a1b *DESCRIPTION
+164f614bdcf103c95392acbd407247fb *DESCRIPTION
 226bd14bc568352425eef6d3b6497cf0 *NAMESPACE
 4ed7dae63da989818cc431745f5b24b7 *R/Ddivergence.R
 ec8f4fa6e17d22cd1954dbb0cb4776f7 *R/Dexpressions.R
 4709b2e3cd267a25232c401c9400e220 *R/Dtensor.R
 3b2d38a7e4060933e0d6efb3f54aade3 *R/KPPM.R
-9d34d2883f8a93afc2579f6512e7c055 *R/MCMCglmm.R
+8e699db77278974c1adb69e62e1bf9d7 *R/MCMCglmm.R
 f4b5c02234963c3d700a708f1f9be7b8 *R/Ptensor.R
 543ba6114d80c897717d048badf7dc7a *R/Tri2M.R
 e381e4ec86a434ae57f6aa4d8e51db35 *R/buildV.R
@@ -46,7 +46,7 @@ b365405e5d0a9fc79d4f5554ea96d7f5 *R/sm2asreml.R
 470441520504a533a22aa8c5dfe21070 *R/spl.R
 07936be5345203365036d299100e4fb7 *R/split.direct.sum.R
 abf0a50911b4bf9b747cc971755e134a *R/summary.MCMCglmm.R
-37e613aac730b0c49f9ba8d563ee0f87 *build/vignette.rds
+c8700bfa662375d406d21d1d8a621747 *build/vignette.rds
 270742548a109ec82408ca6ba07cbc45 *data/BTdata.tab.gz
 31848469ce6a7b856599280fb311260c *data/BTped.tab.gz
 f9a811f7cc4a9330a34b4624936b3324 *data/PlodiaPO.tab.gz
@@ -54,10 +54,10 @@ f9a811f7cc4a9330a34b4624936b3324 *data/PlodiaPO.tab.gz
 dffc4ac7d54071b8b5b16d5d03ba9371 *data/PlodiaRB.tab.gz
 4fd5d3bdbc1c77ec4a6cac47ba515d94 *data/SShorns.tab.gz
 38782db5a20eee97539ea581ceaebd61 *inst/CITATION
-d3515a80ded929e0d2a6525e1a1e7d00 *inst/doc/CourseNotes.Rnw
-8e92f70842565bdc03b561af3f51d2d3 *inst/doc/CourseNotes.pdf
+72a556f9f22347a1c7d11925f6e82048 *inst/doc/CourseNotes.Rnw
+56c707b796a46e9382084993b94a3e19 *inst/doc/CourseNotes.pdf
 b62d99abd1c36fb23db055740f6795ec *inst/doc/Overview.Rnw
-72decc145e55a1edf2760c36299fd93b *inst/doc/Overview.pdf
+8c808520ce616c5e11cda6d45108bd5c *inst/doc/Overview.pdf
 1026999395afbf7a71dcb251be5c422f *man/BTdata.Rd
 85e7c90ec467aed23f2fef47f2dfdb27 *man/BTped.Rd
 96649b546369c3792cab1ff3526316fa *man/Ddivergence.Rd
@@ -207,7 +207,7 @@ a8e05575f941b551b5353b01425e83ab *src/rtcmvnorm.c
 ab5a2b5468e9d74610a2fafcb06ebc4a *src/rtcmvnormR.cc
 88f5f4aee6d0b3e84cf103ade69eac20 *src/rtnorm.c
 75e067363b82c82e2af65d5b8f2ad015 *src/rtnormR.cc
-d3515a80ded929e0d2a6525e1a1e7d00 *vignettes/CourseNotes.Rnw
+72a556f9f22347a1c7d11925f6e82048 *vignettes/CourseNotes.Rnw
 68e7b1fa238a4e0f72d638fa045c1c7a *vignettes/CourseNotes.bib
 d3515a80ded929e0d2a6525e1a1e7d00 *vignettes/Figures/CourseNotes.Rnw
 b62d99abd1c36fb23db055740f6795ec *vignettes/Figures/Overview.Rnw

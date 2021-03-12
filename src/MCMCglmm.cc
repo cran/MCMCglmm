@@ -725,6 +725,7 @@ for (k = 0 ; k < nGR; k++){
   }
   tvc += dimG*dimG;
 }
+
 tvc -= covu*covu;
 
 cnt2=0;
@@ -1169,7 +1170,7 @@ for (itt = 0; itt < (nitt+DICP[0]); itt++){
 /* form G and R structures */
 /***************************/
 						
-  for (k = 0 ; k < nGR; k++){                             
+  for (k = 0 ; k < nGR; k++){                         
     if(updateP[k]>0 || (updateP[nGR+1]>0 && covu>0 && (k==nG || k==(nG-1)))){
       if(AtermP[k]>=0){
         cs_kroneckerAupdate(Ginv[k],A[k],KGinv[k]);           //  form kronecker(G^{-1}, A^{-1}) structure
@@ -1360,7 +1361,7 @@ if(itt>0){
 /******************/
 
 //Rprintf("form equations\n");
-					
+
   cs_directsumupdate(KGinv, nG, nGR, KRinv);
 		
   WtmKRinv = cs_multiply(Wt, KRinv);   
@@ -1391,7 +1392,7 @@ if(itt>0){
   cnt = ncolX;
   
   for(k=0; k<nG; k++){
-  
+
     dimG = GRdim[k];
 
     if(AtermP[k]>=0){        	
@@ -1431,6 +1432,7 @@ if(itt>0){
   cnt=0;
 
   for(k=nG; k<nGR; k++){
+
     dimG = GRdim[k];
     for(i=0; i<nlGR[k]; i++){
       for(j=0; j<dimG; j++){
@@ -1645,7 +1647,7 @@ if(itt>0){
           G_rr = cs_rinvwishart(Ginv_rr, double(nlGR[nG])+GRnpP[nG], GinvS_rr);
         break;
         	
-        case 2: 
+        case 2:
           cs_invR(Gtmp[nG], Ginv_rr);
           G_rr = cs_rCinvwishart(Ginv_rr, double(nlGR[nG])+GRnpP[nG], splitP[nG], CM[nG]);
         break;	   
@@ -1973,9 +1975,9 @@ if(itt>0){
           cs_spfree(G[nG]);
           G[nG] = cs_schur(G_rr, covu, beta_rr);
           ldet[nG] = log(cs_invR(G[nG], Ginv[nG]));
-          
+
           for (i = 0; i < covu; i++){                     // iterate through kr
-            for (j = 0; j < GRdim[nG]; j++){              // iterate through first ks enteries
+            for (j = 0; j < GRdim[nG]; j++){              // iterate through first ks entries
               for(l=0; l<nlGR[nG]; l++){
                  W->x[W->p[W->n+nlGR[nG]*(i-covu)+l]+j] = beta_rr->x[i*GRdim[nG]+j];
               }

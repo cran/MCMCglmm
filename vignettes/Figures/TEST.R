@@ -487,6 +487,9 @@ if(jenny){
 
   firstP<-read.table("~/Work/Jenny/Data/Raw/Third_paternal.txt", header=T)
   firstP$day<-as.factor(firstP$day)
+  firstP$virus<-as.factor(firstP$virus)
+  firstP$f2rep<-as.factor(firstP$f2rep)
+  firstP$line<-as.factor(firstP$line)
 
   coef<-apply(cbind(m1R$Sol, m1R$VCV), 2, median)
   G<-list(G1=matrix(coef[9:33],5,5), G2=as.matrix(coef[34]))
@@ -1837,7 +1840,6 @@ psets<-c(psets, tpar)
 
 
 # covu
-
 print("res49")
 res49<-matrix(NA, nsim,13)
 
@@ -1845,7 +1847,7 @@ tpar<-c(1,1,-1, 1,0.5, 0.25, 0.5,1, -0.25, 0.25, -0.25, 0.5,1)
 
 for(i in 1:nsim){
 
-  n<-100
+  n<-500
   V<-matrix(c(1,0.5, 0.25, 0.5,1, -0.25, 0.25, -0.25, 0.5),3,3)
   Vr<-1
 

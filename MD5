@@ -1,10 +1,10 @@
-164f614bdcf103c95392acbd407247fb *DESCRIPTION
+7bdfda82f00e2e47e20c707cf23af0b8 *DESCRIPTION
 226bd14bc568352425eef6d3b6497cf0 *NAMESPACE
 4ed7dae63da989818cc431745f5b24b7 *R/Ddivergence.R
 ec8f4fa6e17d22cd1954dbb0cb4776f7 *R/Dexpressions.R
 4709b2e3cd267a25232c401c9400e220 *R/Dtensor.R
 3b2d38a7e4060933e0d6efb3f54aade3 *R/KPPM.R
-8e699db77278974c1adb69e62e1bf9d7 *R/MCMCglmm.R
+85ed7765e587f15646393ae6c3483fdd *R/MCMCglmm.R
 f4b5c02234963c3d700a708f1f9be7b8 *R/Ptensor.R
 543ba6114d80c897717d048badf7dc7a *R/Tri2M.R
 e381e4ec86a434ae57f6aa4d8e51db35 *R/buildV.R
@@ -31,7 +31,7 @@ ac7afff630164f2208707bc788de9b1e *R/posterior.cor.R
 3a3f3817fe5fad0d33b2d814e77cf3db *R/posterior.evals.R
 bf84a242ee81daca6e335c418e379568 *R/posterior.inverse.R
 9a8742810bd48e6c9bf4631a53f1322a *R/posterior.mode.R
-a4ea3cd5673b26ebd01b73a032a1f1d7 *R/predict.MCMCglmm.R
+6d1576f03fa2556050e1d5af8aba1348 *R/predict.MCMCglmm.R
 020ed78049b2cece6271cf09d20d7f1c *R/priorformat.R
 805f1d665fe6524274b1e63dba64bfc5 *R/prunePed.R
 48ecf0b062d66c8675b92212d41565f2 *R/rIW.R
@@ -40,7 +40,7 @@ d5d893217a6983c557ced63c564a9d84 *R/rbv.R
 90aa89fdc6421dd99d83704902ea4db6 *R/residuals.MCMCglmm.R
 f347f3ef58295ad0804e137f344451cc *R/rtcmvnorm.R
 265b49d2f6001c3f6924032127c5ac6a *R/rtnorm.R
-10a098c05b14e6717d6cba0c90360064 *R/simulate.MCMCglmm.R
+d4876ce7fc414cfa4d7420a5f1a7be17 *R/simulate.MCMCglmm.R
 b80db01d416c789e83fe50593ad9c2c9 *R/sir.R
 b365405e5d0a9fc79d4f5554ea96d7f5 *R/sm2asreml.R
 470441520504a533a22aa8c5dfe21070 *R/spl.R
@@ -55,9 +55,9 @@ dffc4ac7d54071b8b5b16d5d03ba9371 *data/PlodiaRB.tab.gz
 4fd5d3bdbc1c77ec4a6cac47ba515d94 *data/SShorns.tab.gz
 38782db5a20eee97539ea581ceaebd61 *inst/CITATION
 72a556f9f22347a1c7d11925f6e82048 *inst/doc/CourseNotes.Rnw
-56c707b796a46e9382084993b94a3e19 *inst/doc/CourseNotes.pdf
+64b3ba64b57b920e43038d31b2a4e404 *inst/doc/CourseNotes.pdf
 b62d99abd1c36fb23db055740f6795ec *inst/doc/Overview.Rnw
-8c808520ce616c5e11cda6d45108bd5c *inst/doc/Overview.pdf
+ff74651a585f1a6628a817a33d7b1fbc *inst/doc/Overview.pdf
 1026999395afbf7a71dcb251be5c422f *man/BTdata.Rd
 85e7c90ec467aed23f2fef47f2dfdb27 *man/BTped.Rd
 96649b546369c3792cab1ff3526316fa *man/Ddivergence.Rd
@@ -107,7 +107,7 @@ d4f5984a9f3d7228df27a8d378a57afd *man/predict.MCMCglmm.Rd
 9703d003b91cbe8d087f2578e882064c *man/sm2asreml.Rd
 8baa74a961fc2e4ab9ba31c95b70719b *man/spl.Rd
 2e3233cea201285b65f8267c6185e57c *man/summary.MCMCglmm.Rd
-643be02bd92a1b7d50f724ccefa3bf80 *src/MCMCglmm.cc
+782778d85fa093f36f1e2c121df9bccf *src/MCMCglmm.cc
 18dc67de163374bbdc2978e20f61c7e9 *src/MCMCglmm.h
 e19385350ecc4cbe22d2cf46c4e0119a *src/MCMCglmm_init.c
 1337c8812f8997cda17de4436d61233c *src/MCMCglmmcc.h
@@ -211,7 +211,7 @@ ab5a2b5468e9d74610a2fafcb06ebc4a *src/rtcmvnormR.cc
 68e7b1fa238a4e0f72d638fa045c1c7a *vignettes/CourseNotes.bib
 d3515a80ded929e0d2a6525e1a1e7d00 *vignettes/Figures/CourseNotes.Rnw
 b62d99abd1c36fb23db055740f6795ec *vignettes/Figures/Overview.Rnw
-bee974f54ab99db27b6dfd960a7d6d68 *vignettes/Figures/TEST.R
+7f2c6ff8b8749bf37bbe201278ede074 *vignettes/Figures/TEST.R
 e4763891f3028a412726c6fcc135f690 *vignettes/Figures/Tutorial.Rnw
 bac3c0c78062ff47d7df837f6d63d793 *vignettes/Figures/buildCN.R
 e147ff99989347612ff4f1e3dde48fd1 *vignettes/Figures/defaults.R

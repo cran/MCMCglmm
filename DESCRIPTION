@@ -1,6 +1,6 @@
 Package: MCMCglmm
-Version: 2.31
-Date: 2021-03-09
+Version: 2.32
+Date: 2021-03-12
 Title: MCMC Generalised Linear Mixed Models
 Depends: Matrix, coda, ape
 Imports: corpcor, tensorA, cubature, methods
@@ -11,6 +11,6 @@ Description: Fits Multivariate Generalised Linear Mixed Models (and related mode
 License: GPL (>= 2)
 SystemRequirements: C++11
 NeedsCompilation: yes
-Packaged: 2021-03-09 14:57:35 UTC; jhadfiel
+Packaged: 2021-03-12 12:07:30 UTC; jhadfiel
 Repository: CRAN
-Date/Publication: 2021-03-09 16:40:17 UTC
+Date/Publication: 2021-03-12 22:10:15 UTC

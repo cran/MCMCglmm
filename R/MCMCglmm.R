@@ -670,6 +670,7 @@ for(r in 1:length(rmodel.terms)){
      if((nfl[length(nfl)-1]*nrl[length(nrl)-1])!=(covu*Zlist$nrl)){
        stop("number of levels in G and R structure do match for cov=TRUE")
      }
+     covu_missing<-colSums(Zlist$Z)==0
      Z[,ustart+1:(covu*Zlist$nrl)]<-Z[,ustart+1:(covu*Zlist$nrl)]+Zlist$Z%*%kronecker(beta_rr, Diagonal(Zlist$nrl))
    }
  }
@@ -703,8 +704,17 @@ if(nadded>0){
  data<-rbind(data,data[dim(data)[1]+1:nadded,])       
  data$MCMC_dummy[dim(data)[1]-(nadded-1):0]<-1 
  data$MCMC_family.names[dim(data)[1]-(nadded-1):0]<-"gaussian"  
- if(ngstructures!=0){
-   Z<-rbind(Z, as(matrix(0,nadded,ncol(Z)), "sparseMatrix"))  
+ if(ngstructures!=0){ 
+   Zaug<-as(matrix(0,nadded,ncol(Z)), "sparseMatrix")
+   if(covu!=0 & length(covu_missing)!=0){
+    if(ngstructures==1){
+      ustart<-0
+    }else{
+      ustart<-sum(nfl[1:(ngstructures-1)]*nrl[1:(ngstructures-1)])
+    } 
+    Zaug[1:sum(covu_missing),ustart+1:(covu*nrl[ngstructures])]<-kronecker(beta_rr, Diagonal(nrl[ngstructures]))[which(covu_missing),]
+   }
+   Z<-rbind(Z, Zaug)  
  }
 }
 
@@ -1008,7 +1018,9 @@ if(is.null(start$liab)){
  data$MCMC_liab<-rnorm(length(data$MCMC_y)) 
  if(QUASI==TRUE){ 
   et.fn<-paste(data$MCMC_error.term, data$MCMC_family.names)
+ 
   for(i in unique(et.fn)){
+
     trait_set<-which(!is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
     missing_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
     dummy_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==1 & et.fn==i)
@@ -1016,7 +1028,7 @@ if(is.null(start$liab)){
     family_set<-data_tmp$MCMC_family.names[1]
 
     if(length(trait_set)<2){
-      if(length(trait_set)==0){
+      if(length(trait_set)==0 & length(missing_set)!=0){
         warning(paste("all observations are missing for error term ", i, ": liabilities sampled from Norm(0,1)", sep=""))
       }
       mu<-0

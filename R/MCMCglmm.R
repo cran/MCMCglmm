@@ -5,10 +5,13 @@
 
   if(missing(data)){stop("data argument is missing")}
   if(missing(fixed)){stop("fixed is missing")}
-  if(class(fixed)!="formula"){stop("fixed should be a formula")}
-  if(class(rcov)!="formula"){stop("rcov should be a formula")}
-  if(class(random)!="formula" & class(random)!="NULL"){stop("random should be a formula")}
 
+  if(!is(fixed, "formula")){stop("fixed should be a formula")}
+  if(!is(rcov, "formula")){stop("rcov should be a formula")}
+  if(!is.null(random)){
+    if(!is(random, "formula")){stop("random should be a formula")}
+  }
+  
   reserved.names<-c("units", "MCMC_y", "MCMC_y.additional","MCMC_y.additional2", "MCMC_mh.weights", "MCMC_liab","MCMC_meta", "MCMC_mev", "MCMC_family.names", "MCMC_error.term", "MCMC_dummy")
   family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom", "ncst", "msst", "hubinomial", "ztmb", "ztmultinomial")
 
@@ -102,7 +105,11 @@ if(is.null(family)){
      if(is.factor(data$trait)==FALSE){
        stop("trait must be a factor")
      }
-     if(any(tapply(data$family, data$trait, function(x){length(unique(x))})!=1)){
+     if(nlevels(data$trait)>length(unique(data$trait))){
+       warning("some levels in trait are not used and have been dropped")
+       data$trait<-droplevels(data$trait)
+     }
+     if(any(tapply(data$family, data$trait, function(x){length(unique(x))})!=1, na.rm=TRUE)){
        stop("all data from the same trait must come from the same distribution")
      }
      rterm.family<-data$family[match(levels(data$trait), data$trait)]

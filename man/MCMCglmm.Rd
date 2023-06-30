@@ -12,7 +12,8 @@ MCMCglmm(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL,
     data,start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",
     scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE,
     pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE,
-    saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL, trunc=FALSE)
+    saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL, trunc=FALSE, 
+    theta_scale=NULL, saveWS=TRUE)
 }
 \arguments{
   \item{fixed}{\code{\link{formula}} for the fixed effects, multiple responses 
@@ -30,12 +31,10 @@ for random effect meta-analysis.}
   \item{data}{\code{data.frame}}
   \item{start}{optional list having 5 possible elements: 
 \code{R} (R-structure) \code{G} (G-structure) and \code{liab} (latent variables or liabilities) should contain the starting values where \code{G} itself is also a list with as many elements as random effect components. The element \code{QUASI} should be logical: if \code{TRUE} starting latent variables are obtained heuristically, if \code{FALSE} then they are sampled from a Z-distribution. The element \code{r} should be be between -1 and 1 and determines the correlation between the starting latent variables and the ordered latent variables (ordered by the response variable): the default is 0.8.}
-  \item{prior}{optional list of prior specifications having 3 possible elements: 
-\code{R} (R-structure) \code{G} (G-structure) and \code{B} (fixed effects). \code{B} is a list containing the expected value (\code{mu}) and a 
-(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=0 and \code{B$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The defaults are \code{nu}=0, \code{V}=1, \code{alpha.mu}=0, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
-  \item{tune}{optional (co)variance matrix defining the proposal distribution 
-for the latent variables. If NULL an adaptive algorithm is used which ceases to 
-adapt once the burn-in phase has finished.}
+  \item{prior}{optional list of prior specifications having 4 possible elements: 
+\code{R} (R-structure) \code{G} (G-structure), \code{B} (fixed effects) and \code{S} (theta_scale parameter). \code{B} and \code{S} are lists containing the expected value (\code{mu}) and a 
+(co)variance matrix (\code{V}) representing the strength of belief: the defaults are \code{B$mu}=\code{S$mu}=0 and \code{B$V}=\code{S$V}=I*1e+10, where where I is an identity matrix of appropriate dimension.  The priors for the variance structures (\code{R} and \code{G}) are lists with the expected (co)variances (\code{V}) and degree of belief parameter (\code{nu}) for the inverse-Wishart, and also the mean vector (\code{alpha.mu}) and covariance matrix (\code{alpha.V}) for the redundant working parameters. The defaults are \code{nu}=0, \code{V}=1, \code{alpha.mu}=0, and \code{alpha.V}=0. When \code{alpha.V} is non-zero, parameter expanded algorithms are used.} 
+  \item{tune}{optional list with elements \code{mh_V} and/or \code{mh_weights} \code{mh_V} should be a list with as many elements as there are R-structure terms with each element being the (co)variance matrix defining the proposal distribution for the associated latent variables. If NULL an adaptive algorithm is used which ceases to adapt once the burn-in phase has finished. \code{mh_weights} should be equal to the number of latent variables and acts as a scaling factor for the proposal standard deviations.}
   \item{pedigree}{ordered pedigree with 3 columns id, dam and sire or a 
 \code{phylo} object. This argument is retained for back compatibility - see ginverse argument for a more general formulation.}
   \item{nodes}{pedigree/phylogeny nodes to be estimated. The default, 
@@ -64,7 +63,9 @@ saved?}
   \item{saveXL}{logical: save structural parameter design matrix}
   \item{slice}{logical: should slice sampling be used? Only applicable for binary traits with independent residuals}
   \item{ginverse}{a list of sparse inverse matrices (\eqn{{\bf A^{-1}}}{solve(A)}) that are proportional to the covariance structure of the random effects. The names of the matrices should correspond to columns in \code{data} that are associated with the random term. All levels of the random term should appear as rownames for the matrices.}
-    \item{trunc}{logical: should latent variables in binary models be truncated to prevent under/overflow (+/-20 for categorical/multinomial models and +/-7 for threshold/probit models)? }
+  \item{trunc}{logical: should latent variables in binary models be truncated to prevent under/overflow (+/-20 for categorical/multinomial models and +/-7 for threshold/probit models)? }
+  \item{theta_scale}{optional list of 4 possible elements specifying a set of location effects (fixed or random) that are to be scaled by the parameter \code{theta_scale} for the subset of observations which have level \code{level} in factor \code{factor}: \code{factor}, \code{level}, \code{fixed} (position of fixed terms to be scaled) and \code{random} (position of random effect components).}
+  \item{saveWS}{logical: save design matrix for scaled effects.}
 }
 \value{
   \item{Sol}{Posterior Distribution of MME solutions, including fixed effects}
@@ -83,6 +84,7 @@ saved?}
   \item{family}{distribution of each datum}
   \item{Tune}{(co)variance matrix of the proposal distribution for the latent variables}
   \item{meta}{logical; was \code{mev} passed?}
+  \item{Wscale}{sparse design matrix for scaled terms.}
 }
 \references{
 	General analyses: Hadfield, J.D. (2010) Journal of Statistical Software 33 2 1-22

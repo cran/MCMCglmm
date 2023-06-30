@@ -1,4 +1,4 @@
-"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE, saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL, trunc=FALSE){
+"MCMCglmm"<-function(fixed, random=NULL, rcov=~units, family="gaussian", mev=NULL, data, start=NULL, prior=NULL, tune=NULL, pedigree=NULL, nodes="ALL",scale=TRUE, nitt=13000, thin=10, burnin=3000, pr=FALSE, pl=FALSE, verbose=TRUE, DIC=TRUE, singular.ok=FALSE, saveX=TRUE, saveZ=TRUE, saveXL=TRUE, slice=FALSE, ginverse=NULL, trunc=FALSE, theta_scale=NULL, saveWS=TRUE){
 
   orig.na.action<-options("na.action")[[1]]
   options("na.action"="na.pass")	
@@ -21,77 +21,96 @@
 
   covu<-0
 
-  if(is.null(prior)==FALSE & any(names(prior)%in%c("R", "G", "B")==FALSE)){stop("prior list should contain elements R, G, and/or B only")}
+  if(!is.null(tune) & !all(names(tune)%in%c("mh_V", "mh_weights"))){
+    stop("tune list should contain elements 'mh_V' and /or 'mh_weights' only")
+  }
+
+  if(!is.null(prior) & !all(names(prior)%in%c("R", "G", "B", "S"))){stop("prior list should contain elements R, G, and/or B and/or S only")}
 
   if(!is.null(prior)){ # reformat old-style prior 
-  if(!is.list(prior$R[[1]])){
-    prior$R<-list(R1=prior$R)
+    if(!is.list(prior$R[[1]])){
+      prior$R<-list(R1=prior$R)
+    }
   }
-}
-if(!is.null(prior$R[[1]]$covu)){
-  if(prior$R[[1]]$covu){
-    covu<-1
-    prior$G<-c(prior$G, list(prior$R[[1]]))
-    prior$G[[length(prior$G)]]$covu<-NULL
-    prior$G[[length(prior$G)]]$fix<-NULL
+  if(!is.null(prior$R[[1]]$covu)){
+    if(prior$R[[1]]$covu){
+      covu<-1
+      prior$G<-c(prior$G, list(prior$R[[1]]))
+      prior$G[[length(prior$G)]]$covu<-NULL
+      prior$G[[length(prior$G)]]$fix<-NULL
+    }
   }
-}
-if(!is.null(start$R)){
-  if(!is.list(start$R)){
-    start$R<-list(R1=start$R)
+  if(!is.null(start$R)){
+    if(!is.list(start$R)){
+      start$R<-list(R1=start$R)
+    }
+    if(covu!=0){
+      start$G<-c(start$G,list(start$R[[1]]))
+    }
   }
-  if(covu!=0){
-    start$G<-c(start$G,list(start$R[[1]]))
+
+  if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
+  if(((is.null(prior$G) & is.null(random)==FALSE) & is.null(prior$R)==FALSE) | (is.null(prior$R) & is.null(prior$G)==FALSE)){stop("either both or neither R and G structures need a prior")}
+
+  if(is.null(start$QUASI)){
+    QUASI=TRUE
+  }else{
+    QUASI<-start$QUASI
+    if(is.logical(QUASI)==FALSE){stop("start$QUASI should be TRUE or FALSE")}
   }
-}
+  if(is.null(start$r)){
+    rLV<-0.8
+  }else{
+    rLV<-start$r
+    if(rLV<(-1) | rLV>1) {stop("start$r should be between -1 and 1")}
+  }
 
-if(is.null(prior)==FALSE & any(names(prior)%in%c("R", "G", "B")==FALSE)){stop("prior list should contain elements R, G, and/or B only")}
-if(((is.null(start$G) & is.null(random)==FALSE) & is.null(start$R)==FALSE) | (is.null(start$R) & is.null(start$G)==FALSE)){stop("need both or neither starting R and G structures")}
-if(((is.null(prior$G) & is.null(random)==FALSE) & is.null(prior$R)==FALSE) | (is.null(prior$R) & is.null(prior$G)==FALSE)){stop("either both or neither R and G structures need a prior")}
+  if(!is.null(theta_scale)){
+    if(!is.list(theta_scale)){
+      stop("theta_scale should be a list with 'factor', 'level', 'fixed' and/or 'random'")
+    }else{
+      if(is.null(theta_scale$factor)){stop("theta_scale should have an element 'factor' giving the column that separates records")
+      }else{
+        if(!theta_scale$factor%in%names(data)){stop("theta_scale$factor does not appear in data")}
+      }
+      if(is.null(theta_scale$level)){stop("theta_scale should have an element 'level' giving the level of 'factor' defining records that should have scaled terms")
+      }else{
+        if(!theta_scale$level%in%levels(eval(parse(text=theta_scale$factor), data))){stop("theta_scale$level is not a level in theta_scale$factor in data")}
+      }
+      if(is.null(theta_scale$fixed) & is.null(theta_scale$random)){stop("theta_scale should have elements 'fixed' and/or 'random' giving the indices of the terms to be scaled")}
+    }
+  }
 
-if(is.null(start$QUASI)){
-  QUASI=TRUE
-}else{
-  QUASI<-start$QUASI
-  if(is.logical(QUASI)==FALSE){stop("start$QUASI should be TRUE or FALSE")}
-}
-if(is.null(start$r)){
-  rLV<-0.8
-}else{
-  rLV<-start$r
-  if(rLV<(-1) | rLV>1) {stop("start$r should be between -1 and 1")}
-}
+  original.fixed<-fixed                                                                            # original model specification
+  original.random<-random 
+  original.rcov<-rcov
+  original.family<-family
 
-original.fixed<-fixed                                                                            # original model specification
-original.random<-random 
-original.rcov<-rcov
-original.family<-family
+  response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
+  data[,response.names]<-model.frame(as.formula(paste(as.character(fixed)[2], "~1")), data)[[1]]
 
-response.names<-names(get_all_vars(as.formula(paste(as.character(fixed)[2], "~1")), data))       # response variable names 
-data[,response.names]<-model.frame(as.formula(paste(as.character(fixed)[2], "~1")), data)[[1]]
+  #########################################################################
+  # for ginverse analyses form A and augment with missing nodes if needed #
+  #########################################################################
 
-#########################################################################
-# for ginverse analyses form A and augment with missing nodes if needed #
-#########################################################################
-
-if(is.null(pedigree)==FALSE){  # back compatibility if pedigree is directly passed
-if(is.null(ginverse)){
- ginverse<-list(animal=inverseA(pedigree=pedigree, scale=scale, nodes=nodes)$Ainv)
-}else{
- if("animal"%in%names(ginverse)){stop("animal ginverse appears but pedigree has been passed")}
- ginverse$animal<-inverseA(pedigree=pedigree, scale=scale, nodes=nodes)$Ainv
-}
-}
+  if(is.null(pedigree)==FALSE){  # back compatibility if pedigree is directly passed
+    if(is.null(ginverse)){
+     ginverse<-list(animal=inverseA(pedigree=pedigree, scale=scale, nodes=nodes)$Ainv)
+    }else{
+     if("animal"%in%names(ginverse)){stop("animal ginverse appears but pedigree has been passed")}
+     ginverse$animal<-inverseA(pedigree=pedigree, scale=scale, nodes=nodes)$Ainv
+    }
+  }
 
 if(is.null(ginverse)==FALSE){
- for(i in 1:length(ginverse)){           
+  for(i in 1:length(ginverse)){           
   if(is.null(rownames(ginverse[[i]]))){stop(paste(names(ginverse)[i], "ginverse must have non-null rownames"))}
   if(names(ginverse)[i]%in%names(data)==FALSE){stop(paste(names(ginverse)[i], "does not appear in data"))}
   if(any(na.omit(unique(data[,names(ginverse)[i]]))%in%rownames(ginverse[[i]])==FALSE)){stop(paste("some levels of", names(ginverse)[i], "do not have a row entry in ginverse"))}
   if(any(duplicated(rownames(ginverse[[i]])))){stop(paste("rownames of ", names(ginverse)[i], "ginverse must be unique"))}
   if(determinant(ginverse[[i]])$sign<=0){stop(paste(names(ginverse)[i], "ginverse is not positive definite"))}
   data[,names(ginverse)[i]]<-factor(data[,names(ginverse)[i]], levels=rownames(ginverse[[i]]))                        
-}
+  }
 }
 
 MVasUV=FALSE  # Multivaraite as Univariate
@@ -165,7 +184,6 @@ nt<-1                                          # number of traits (to be iterate
 if(MVasUV){
   y.additional<-matrix(NA, nS,1)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
   y.additional2<-matrix(NA, nS,1)
-  mh.weights<-matrix(1, nS,1)
   mfac<-rep(0, nlevels(data$trait))
   if(any(family.names=="categorical")){
     ncat<-tapply(data[,response.names][which(family.names=="categorical")], as.character(data$trait[which(family.names=="categorical")]), function(x){length(unique(x))})
@@ -218,7 +236,6 @@ if(MVasUV){
 
   y.additional<-matrix(NA, nS,0)                 # matrix equal in dimension to y holding the additional parameters of the distribution (n, upper interval etc.)
   y.additional2<-matrix(NA, nS,0)
-  mh.weights<-matrix(1, nS,0)
 
   for(i in 1:length(family)){
 
@@ -272,7 +289,6 @@ if(MVasUV){
       nt<-nt+nJ
       y.additional<-cbind(y.additional, matrix(1,nS,nJ))
       y.additional2<-cbind(y.additional2, matrix(1-rowSums(cont),nS,nJ))
-      mh.weights<-cbind(mh.weights, matrix(1,nS,nJ))
     }
 
 ######################
@@ -298,17 +314,7 @@ if(MVasUV){
      }
      y.additional<-cbind(y.additional, matrix(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nS,nJ))             # get n of the multinomial
      y.additional2<-cbind(y.additional2, matrix(data[,match(response.names[nJ+nt], names(data))], nS,nJ))      # get n of the reference category
-     if(grepl("ztmultinomial", family[i])){
-        tmp_y<-unlist(data[,match(response.names[0:(nJ-1)+nt], names(data))])
-        tmp_sum<-rep(rowSums(data[,match(response.names[0:nJ+nt], names(data))]), nJ)
-        tmp_pres<-rep(rowSums(data[,match(response.names[0:nJ+nt], names(data))]>0), nJ)  
-        new.weights<-1.0/sqrt(tmp_y*(1-tmp_y/tmp_sum))
-        new.weights[which(tmp_y<0.5 | (tmp_y+0.5)>tmp_sum)]<-1
-        new.weights<-matrix(new.weights, nS, nJ)
-        mh.weights<-cbind(mh.weights, new.weights) 
-      }else{ 
-        mh.weights<-cbind(mh.weights, matrix(1, nS, nJ))
-      }  
+ 
      if(any(na.omit(y.additional)>1)){slice<-FALSE}                                                                           # number of J-1 categories
      if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:nJ+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
        stop("multinomial responses must be either completely observed or completely missing")
@@ -338,8 +344,6 @@ if(MVasUV){
      }
      y.additional<-cbind(y.additional, data[,match(response.names[1+nt], names(data))]) 
      y.additional2<-cbind(y.additional2, matrix(0, nS,1))
-     mh.weights<-cbind(mh.weights, matrix(1, nS,1))
-
      if(any(is.na(y.additional[,dim(y.additional)[2]]) & apply(data[,match(response.names[0:1+nt], names(data))], 1, function(x){any(is.na(x)==FALSE)}))){
        stop("both columns of nzbinom response must be either completely observed or completely missing")
      }	 
@@ -358,7 +362,6 @@ if(MVasUV){
      if(any(data[,which(names(data)==response.names[nt+1])]<data[,which(names(data)==response.names[nt])], na.rm=T)){stop("for censored traits left censoring point must be less than right censoring point")}
      y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
      y.additional2<-cbind(y.additional2,matrix(0,nS,1))
-     mh.weights<-cbind(mh.weights,matrix(1,nS,1))  
 
      if(family.names[nt]=="cenpoisson"){
        if(all(data[,response.names[0:1+nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[0:1+nt]]>=0, na.rm=T)==FALSE){stop("Poisson data must be non-negative integers")}
@@ -380,7 +383,6 @@ if(MVasUV){
     mfac<-c(mfac, 0)  
     y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])]) # get upper interval
     y.additional2<-cbind(y.additional2, matrix(0,nS, 1))# get upper interval
-    mh.weights<-cbind(mh.weights, matrix(1,nS, 1))# get upper interval
     data<-data[,-which(names(data)==response.names[nt+1]),drop=FALSE]                                      # remove upper interval from the response
     response.names<-response.names[-(nt+1)]
     nt<-nt+1
@@ -397,7 +399,7 @@ if(MVasUV){
    if(grepl("poisson", family[i])){
      y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
      y.additional2<-cbind(y.additional2, matrix(0,nS,2))
-     mh.weights<-cbind(mh.weights, matrix(1,nS,2))
+
      if(all(data[,response.names[nt]]%%1==0, na.rm=T)==FALSE | all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
        stop("Poisson data must be non-negative integers")
      }
@@ -408,7 +410,6 @@ if(MVasUV){
 
     y.additional<-cbind(y.additional, rowSums(data[,match(response.names[0:1+nt], names(data))]), rep(0,nS))
     y.additional2<-cbind(y.additional2, matrix(0,nS,2))
-    mh.weights<-cbind(mh.weights, matrix(1,nS,2))
     
     if(all(data[,match(response.names[0:1+nt], names(data))]%%1==0, na.rm=T)==FALSE | all(data[,match(response.names[0:1+nt], names(data))]>=0, na.rm=T)==FALSE){
      stop("binomial data must be non-negative integers")
@@ -420,7 +421,6 @@ if(MVasUV){
   if(grepl("tobit", family[i])){
     y.additional<-cbind(y.additional, rep(1,nS), rep(0,nS))
     y.additional2<-cbind(y.additional2, matrix(0,nS, 2))
-    mh.weights<-cbind(mh.weights, matrix(1,nS, 2))
     if(all(data[,response.names[nt]]>=0, na.rm=T)==FALSE){
      stop("tobit data must be non-negative")
     }
@@ -452,7 +452,7 @@ if(dist.preffix=="nc" | dist.preffix=="ms"){
 
   y.additional<-cbind(y.additional, data[,which(names(data)==response.names[nt+1])])
   y.additional2<-cbind(y.additional2, data[,which(names(data)==response.names[nt+2])])# get upper interval
-  mh.weights<-cbind(mh.weights, matrix(1,nS, 1))
+
   data<-data[,-which(names(data)%in%response.names[c(nt+1, nt+2)]),drop=FALSE]                                                # remove upper interval from the response
   response.names<-response.names[-c(nt+1, nt+2)]
   nt<-nt+1
@@ -469,7 +469,7 @@ if(grepl("^ztmb", family[i])){
      }
      y.additional<-cbind(y.additional,matrix(1,nS,nJ))
      y.additional2<-cbind(y.additional2,1-as.matrix(data[,match(response.names[1:nJ-1+nt], names(data))]))
-     mh.weights<-cbind(mh.weights, matrix(1,nS, nJ))                        # remove first category
+
      family.names[nt]<-"ztmb"
      ones<-rep(1,length(family.names))
      ones[nt]<-nJ
@@ -511,7 +511,7 @@ if(grepl("^ztmb", family[i])){
   }
   y.additional<-cbind(y.additional,matrix(NA,nS,1))
   y.additional2<-cbind(y.additional2,matrix(0,nS,1)) 
-  mh.weights<-cbind(mh.weights, matrix(1,nS, 1))
+
   nt<-nt+1
 }
 }	
@@ -542,7 +542,7 @@ if(!is.null(tune$mh_weights)){
 
   data$MCMC_mh.weights<-c(tune$mh_weights)
 }else{
-  data$MCMC_mh.weights<-c(mh.weights)
+  data$MCMC_mh.weights<-rep(1, nrow(data))
 }  
 
 ######################################################
@@ -675,7 +675,7 @@ for(r in 1:length(rmodel.terms)){
        ustart<-sum(nfl[1:(ngstructures-1)]*nrl[1:(ngstructures-1)])
      }
      if((nfl[length(nfl)-1]*nrl[length(nrl)-1])!=(covu*Zlist$nrl)){
-       stop("number of levels in G and R structure do match for cov=TRUE")
+       stop("number of levels in G and R structure do not match for covu=TRUE")
      }
      covu_missing<-colSums(Zlist$Z)==0
      Z[,ustart+1:(covu*Zlist$nrl)]<-Z[,ustart+1:(covu*Zlist$nrl)]+Zlist$Z%*%kronecker(beta_rr, Diagonal(Zlist$nrl))
@@ -712,7 +712,7 @@ if(nadded>0){
  data$MCMC_dummy[dim(data)[1]-(nadded-1):0]<-1 
  data$MCMC_family.names[dim(data)[1]-(nadded-1):0]<-"gaussian"  
  if(ngstructures!=0){ 
-   Zaug<-as(matrix(0,nadded,ncol(Z)), "sparseMatrix")
+   Zaug<-Matrix(0,nadded,ncol(Z), doDiag=FALSE)
    if(covu!=0 && length(covu_missing)!=0){
     if(ngstructures==1){
       ustart<-0
@@ -734,7 +734,7 @@ data$MCMC_error.term<-rep(1:sum(nfl[nG+1:nR]), rep(nrl[nG+1:nR], nfl[nG+1:nR]))
 if(ngstructures==0){
   Z<-as(matrix(0,1,0), "sparseMatrix")
 }else{                                                    # rearrange data to match R-structure
-Z<-Z[ordering,,drop=FALSE]                                            
+  Z<-Z[ordering,,drop=FALSE]                                            
 }
 
 mfac<-mfac[trait.ordering]
@@ -762,23 +762,23 @@ if(any(rterm.family=="threshold" | rterm.family=="ordinal")){
 
 rterm.family<-rterm.family[trait.ordering]
 
-if(is.null(tune$MH_V)){
+if(is.null(tune$mh_V)){
   AMtune=c(rep(FALSE, nG), rep(TRUE, nR))
-  tune$MH_V<-as.list(1:nR)
+  tune$mh_V<-as.list(1:nR)
   for(i in 1:nR){
-    tune$MH_V[[i]] = diag(nfl[nG+i])
+    tune$mh_V[[i]] = diag(nfl[nG+i])
   }
 }else{
   AMtune=rep(FALSE, nR+nG)
   if(nR>1){
-    tune$MH_V<-sapply(diag(tune$MH_V), as.matrix, simplify=FALSE)
+    tune$mh_V<-sapply(diag(tune$mh_V), as.matrix, simplify=FALSE)
   }else{
-    tune$MH_V<-list(tune$MH_V)
+    tune$mh_V<-list(tune$mh_V)
   }
   for(i in 1:nR){
-    tune$MH_V[[i]]<-as.matrix(tune$MH_V[[i]])
-    if(dim(tune$MH_V[[i]])[1]!= dim(tune$MH_V[[i]])[2] |  dim(tune$MH_V[[i]])[2]!= nfl[nG+i]){stop(paste("proposal distribution ", i, " is the wrong dimension"))}
-    if(is.positive.definite(tune$MH_V[[i]])==FALSE){stop(paste("proposal distribution ", i, " is not positive definite"))}
+    tune$mh_V[[i]]<-as.matrix(tune$mh_V[[i]])
+    if(dim(tune$mh_V[[i]])[1]!= dim(tune$mh_V[[i]])[2] |  dim(tune$mh_V[[i]])[2]!= nfl[nG+i]){stop(paste("proposal distribution ", i, " is the wrong dimension"))}
+    if(is.positive.definite(tune$mh_V[[i]])==FALSE){stop(paste("proposal distribution ", i, " is not positive definite"))}
   }
 }	
 
@@ -815,107 +815,109 @@ sir<-any(grepl("sir\\(", dimnames(X)[[2]]))
 
 if(sir & !is.null(path.terms)){"path and sir functions cannot be used together: fit using sir function only"}
 
-if(sir | !is.null(path.terms)){  # Do structural parameters exist?
-if(sir){
- if(any(family.names!="gaussian")){stop("currently simultaneous/recursive models can only be fitted to Gaussian data unless path() is used")}
- L<-X[,grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
- L<-as(L, "sparseMatrix")
- if(any(is.na(data$MCMC_y) & rowSums(L)!=0)){
-   stop("currently missing observations cannot be augmented if they depend on simultaneous/recursive terms unless path() is used")
- }
- pL<-unique(cumsum(((duplicated(attr(X, "assign"))==FALSE)+(grepl("sir\\(", dimnames(X)[[2]])==FALSE))>0)[grep("sir\\(", dimnames(X)[[2]])])
-       # position of structural parameters
- Lnames<-grep("sir\\(", attr(terms(fixed), "term.labels"))
- Lnames<-attr(terms(fixed), "term.labels")[Lnames]
- X<-X[,-grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
+  if(sir | !is.null(path.terms)){  # Do structural parameters exist?
+  if(!is.null(theta_scale)){"path and sir functions cannot be used together with theta_scale"}
+
+  if(sir){
+   if(any(family.names!="gaussian")){stop("currently simultaneous/recursive models can only be fitted to Gaussian data unless path() is used")}
+   L<-X[,grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
+   L<-as(L, "sparseMatrix")
+   if(any(is.na(data$MCMC_y) & rowSums(L)!=0)){
+     stop("currently missing observations cannot be augmented if they depend on simultaneous/recursive terms unless path() is used")
+   }
+   pL<-unique(cumsum(((duplicated(attr(X, "assign"))==FALSE)+(grepl("sir\\(", dimnames(X)[[2]])==FALSE))>0)[grep("sir\\(", dimnames(X)[[2]])])
+         # position of structural parameters
+   Lnames<-grep("sir\\(", attr(terms(fixed), "term.labels"))
+   Lnames<-attr(terms(fixed), "term.labels")[Lnames]
+   X<-X[,-grep("sir\\(", dimnames(X)[[2]]),drop=FALSE]
+  }else{
+   if(nR>1){stop("path models can only have one R-term")}
+   if(any(family.names=="threshold")){stop("path models are not implemented for threshold responses")}
+   if(sum(ncutpoints)>0){stop("path models are not implemented for ordinal responses with >2 categories")}
+   L<-as(model.matrix(path.terms), "sparseMatrix")
+   if(nrow(L)!=nfl[nG+1]){stop("path design matrix is the wrong dimension; perhaps k is wrong")}
+   Lnames<-attr(terms(path.terms), "term.labels")
+  }
+  nL<-dim(L)[2]/dim(L)[1]  # number of structural parameters
+  pL<-FALSE
+  warning("priors for sir/path parameters not implemented")
 }else{
- if(nR>1){stop("path models can only have one R-term")}
- if(any(family.names=="threshold")){stop("path models are not implemented for threshold responses")}
- if(sum(ncutpoints)>0){stop("path models are not implemented for ordinal responses with >2 categories")}
- L<-as(model.matrix(path.terms), "sparseMatrix")
- if(nrow(L)!=nfl[nG+1]){stop("path design matrix is the wrong dimension; perhaps k is wrong")}
- Lnames<-attr(terms(path.terms), "term.labels")
-}
-nL<-dim(L)[2]/dim(L)[1]  # number of structural parameters
-pL<-FALSE
-warning("priors for sir/path parameters not implemented")
-}else{
- L<-Matrix(0,0,0, doDiag=FALSE)
  nL<-0
  Lnames=NULL
 }
 
 me<-any(grepl("me\\(", dimnames(X)[[2]]))
 if(me){
- if(any(grepl(":me\\(", as.character(fixed)[2]))){
-  stop("interactions with me terms must be of the form me():, rather than :me()")
-}
-if(any(grepl("\\* me\\(", as.character(fixed)[2]))){
- stop("*me() not allowed - use me():")
-}  
-me_sf<-close.bracket("me\\(~", as.character(fixed)[2])
-     # get start and end of the me terms
-meo_terms<-mapply(me_sf[,1], me_sf[,2], FUN=substr, x=as.character(fixed)[2])
-     # get me() formula
-mei_terms<-rep(NA, length(meo_terms))
-     # see if they're interacted with anything
-me_extras<-mapply(me_sf[,2]+1, nchar(as.character(fixed)[2]), FUN=substr, x=as.character(fixed)[2])
-if(any(grepl("^ \\*", me_extras))){stop("me()* not allowed - use me():")}
-me_extras_pos<-which(substr(me_extras, 1, 2)!=":(" & substr(me_extras, 1,1)==":")
-if(length(me_extras_pos)>0){
- for(i in 1:length(me_extras_pos)){
-   mei_terms[i]<-substr(me_extras[i], 2, gregexpr(" |$", me_extras[i])[[1]][1])
- }
-}
-me_extras_pos<-which(substr(me_extras, 1, 2)==":(")
-if(length(me_extras_pos)>0){
- for(i in 1:length(me_extras_pos)){
-  mei_terms[i]<-substr(me_extras[i], 2, close.bracket(":\\(", me_extras[i])[1,2])
-}  
-}
-
-if(any(grepl("me\\(", mei_terms))){
- stop("interactions between me() terms are not allowed - sorry")
-} 
-
-me_prior_prob<-sapply(meo_terms, function(x){attr(eval(parse(text=x), data), "me_prior_prob")}, simplify=FALSE)
-nmeo<-unlist(lapply(me_prior_prob, nrow))
-nmec<-unlist(lapply(me_prior_prob, ncol))
-me_type<-lapply(me_prior_prob, function(x){attr(x,"type")})
-me_group<-lapply(me_prior_prob, function(x){attr(x,"group")})
-me_rterm<-paste(unlist(mapply(function(x,y){rep(x, each=y)}, 1:length(nrl[nG+1:nR]), nrl[nG+1:nR]*nfl[nG+1:nR])), unlist(mapply(function(x,y){rep(1:x, y)}, nrl[nG+1:nR], nfl[nG+1:nR])))
-
-if(any(unlist(lapply(me_group, function(x){tapply(x, me_rterm, function(y){length(unique(y))})}))>1)){
- stop("observations in the same residual structure must belong to the same me group")
-}
-
-me_rterm<-unlist(lapply(me_group, function(x){x[match(unique(me_rterm),me_rterm)]}))
-me_Xi<-sapply(mei_terms, function(x){if(!is.na(x)){model.matrix(as.formula(paste0("~", x, "-1")), data)}else{model.matrix(~1, data)}}, simplify=FALSE)
-nmei<-unlist(lapply(me_Xi, ncol))
-
-stme<-1:ncol(X)
-
-for(i in 1:ncol(X)){
- stme[i]<-substr(colnames(X)[i], close.bracket("me\\(~", colnames(X)[i])[1], close.bracket("me\\(~", colnames(X)[i])[2])
-}
-stme<-match(meo_terms, stme)
-
-for(i in 1:length(meo_terms)){
-       # reorder terms so categories vary slowest
- me_order<-1:(nmei[i]*(nmec[i]-1))
- for(j in 2:nmec[i]){
-  facname<-paste0("me\\(.*\\)", colnames(me_prior_prob[[i]])[j])
-  if(nmei[i]!=sum(grepl(facname, colnames(X)))){
-    stop("levels dropped in terms intercated with 'me' term; try fitting terms in the interaction in a different order")
+  if(!is.null(theta_scale)){stop("me terms not allowed with theta_scale")}
+  if(any(grepl(":me\\(", as.character(fixed)[2]))){
+    stop("interactions with me terms must be of the form me():, rather than :me()")
   }
-  me_order[nmei[i]*(j-2)+1:nmei[i]]<-which(grepl(facname, colnames(X)))
-}
-X[,stme[i]-1+1:(nmei[i]*(nmec[i]-1))]<-X[,me_order]
-colnames(X)[stme[i]-1+1:(nmei[i]*(nmec[i]-1))]<-colnames(X)[me_order]
-}   
-nme<-length(meo_terms)
-     # need to reorder columns of X
-X[,grep("me\\(", colnames(X))][which(X[,grep("me\\(", colnames(X))]==0)]<-1e-18
+  if(any(grepl("\\* me\\(", as.character(fixed)[2]))){
+   stop("*me() not allowed - use me():")
+  }  
+  me_sf<-close.bracket("me\\(~", as.character(fixed)[2])
+       # get start and end of the me terms
+  meo_terms<-mapply(me_sf[,1], me_sf[,2], FUN=substr, x=as.character(fixed)[2])
+       # get me() formula
+  mei_terms<-rep(NA, length(meo_terms))
+       # see if they're interacted with anything
+  me_extras<-mapply(me_sf[,2]+1, nchar(as.character(fixed)[2]), FUN=substr, x=as.character(fixed)[2])
+  if(any(grepl("^ \\*", me_extras))){stop("me()* not allowed - use me():")}
+  me_extras_pos<-which(substr(me_extras, 1, 2)!=":(" & substr(me_extras, 1,1)==":")
+  if(length(me_extras_pos)>0){
+   for(i in 1:length(me_extras_pos)){
+     mei_terms[i]<-substr(me_extras[i], 2, gregexpr(" |$", me_extras[i])[[1]][1])
+   }
+  }
+  me_extras_pos<-which(substr(me_extras, 1, 2)==":(")
+  if(length(me_extras_pos)>0){
+   for(i in 1:length(me_extras_pos)){
+      mei_terms[i]<-substr(me_extras[i], 2, close.bracket(":\\(", me_extras[i])[1,2])
+   }  
+  }
+
+  if(any(grepl("me\\(", mei_terms))){
+   stop("interactions between me() terms are not allowed - sorry")
+  } 
+
+  me_prior_prob<-sapply(meo_terms, function(x){attr(eval(parse(text=x), data), "me_prior_prob")}, simplify=FALSE)
+  nmeo<-unlist(lapply(me_prior_prob, nrow))
+  nmec<-unlist(lapply(me_prior_prob, ncol))
+  me_type<-lapply(me_prior_prob, function(x){attr(x,"type")})
+  me_group<-lapply(me_prior_prob, function(x){attr(x,"group")})
+  me_rterm<-paste(unlist(mapply(function(x,y){rep(x, each=y)}, 1:length(nrl[nG+1:nR]), nrl[nG+1:nR]*nfl[nG+1:nR])), unlist(mapply(function(x,y){rep(1:x, y)}, nrl[nG+1:nR], nfl[nG+1:nR])))
+
+  if(any(unlist(lapply(me_group, function(x){tapply(x, me_rterm, function(y){length(unique(y))})}))>1)){
+   stop("observations in the same residual structure must belong to the same me group")
+  }
+
+  me_rterm<-unlist(lapply(me_group, function(x){x[match(unique(me_rterm),me_rterm)]}))
+  me_Xi<-sapply(mei_terms, function(x){if(!is.na(x)){model.matrix(as.formula(paste0("~", x, "-1")), data)}else{model.matrix(~1, data)}}, simplify=FALSE)
+  nmei<-unlist(lapply(me_Xi, ncol))
+
+  stme<-1:ncol(X)
+
+  for(i in 1:ncol(X)){
+   stme[i]<-substr(colnames(X)[i], close.bracket("me\\(~", colnames(X)[i])[1], close.bracket("me\\(~", colnames(X)[i])[2])
+  }
+  stme<-match(meo_terms, stme)
+
+  for(i in 1:length(meo_terms)){
+         # reorder terms so categories vary slowest
+   me_order<-1:(nmei[i]*(nmec[i]-1))
+   for(j in 2:nmec[i]){
+    facname<-paste0("me\\(.*\\)", colnames(me_prior_prob[[i]])[j])
+    if(nmei[i]!=sum(grepl(facname, colnames(X)))){
+      stop("levels dropped in terms intercated with 'me' term; try fitting terms in the interaction in a different order")
+    }
+    me_order[nmei[i]*(j-2)+1:nmei[i]]<-which(grepl(facname, colnames(X)))
+  }
+  X[,stme[i]-1+1:(nmei[i]*(nmec[i]-1))]<-X[,me_order]
+  colnames(X)[stme[i]-1+1:(nmei[i]*(nmec[i]-1))]<-colnames(X)[me_order]
+  }   
+  nme<-length(meo_terms)
+       # need to reorder columns of X
+  X[,grep("me\\(", colnames(X))][which(X[,grep("me\\(", colnames(X))]==0)]<-1e-18
 }else{
   me_prior_prob<-0
   me_Xi<-0
@@ -949,6 +951,50 @@ if(any(apply(X,1, function(x){all(x==0)}))){
  X[,1][which(apply(X,1, function(x){all(x==0)}))]<-1e-18 
 }
 
+if(!is.null(theta_scale)){
+  # "Jarrod: forming L is VERY slow - should be able to speed up using i,p,x slots"
+  # deleting columns - need to delete i and x between p[d] and p[d]-1 where d is the column to be deleted
+  # deleting rows - need to delete i and x where i==d and d is the row to be deleted
+  # p then needs to be updated to reflect the new structure (hard!). 
+
+  theta_scale$scale_pos<-which(eval(parse(text=theta_scale$factor), data)==theta_scale$level)
+
+  if(length(unique(data$MCMC_error.term[theta_scale$scale_pos]))>1){stop("Only models in which the residual variance is homogeneous over observations that have scaled random/fixed effects (theta_scale) are allowed")}
+  
+  if(!is.null(theta_scale$fixed)){
+    if(any((theta_scale$fixed%%1)!=0) | any(theta_scale$fixed<1) | any(theta_scale$fixed>ncol(X))){
+       stop(paste("theta_scale$fixed should be integers between 1 and the number of fixed terms:", ncol(X)))
+    }
+    if(any(duplicated(theta_scale$fixed))){stop("there should be no duplicate indices in theta_scale$fixed")}
+    Xscale<-X
+    if(length(unique(theta_scale$fixed))!=ncol(X)){
+      Xscale[,-theta_scale$fixed]<-0
+    }
+    Xscale[-theta_scale$scale_pos,]<-0
+  }else{
+    Xscale<-Matrix(0, nrow(X), ncol(X),doDiag=FALSE)
+  }
+  if(!is.null(theta_scale$random)){ 
+    if(any((theta_scale$random%%1)!=0) | any(theta_scale$random<1) | any(theta_scale$random>sum(nfl[1:nG]))){
+       stop(paste("theta_scale$random should be integers between 1 and the number of random effect components:", sum(nfl[1:nG])))
+    }
+    if(any(duplicated(theta_scale$random))){stop("there should be no duplicate indices in theta_scale$random")}
+    Zscale<-Z
+    theta_scale$random<-which(rep(1:sum(nfl[1:nG]), rep(nrl[1:nG], nfl[1:nG]))%in%theta_scale$random)
+    if(length(theta_scale$random)!=ncol(Z)){
+      Zscale[,-theta_scale$random]<-0
+    }
+    Zscale[-theta_scale$scale_pos,]<-0
+  }else{
+    Zscale<-Matrix(0, nrow(Z), ncol(Z),doDiag=FALSE)
+  }  
+  L<-cbind(Xscale, Zscale)
+}
+
+if(is.null(theta_scale) & !nL>0){
+  L<-as(matrix(0,1,0), "sparseMatrix")
+}
+
 #####################################
 # Check prior for the fixed effects #
 #####################################
@@ -958,25 +1004,38 @@ if(is.null(prior$B)){
   prior$L=list(V=diag(nL)*1e+10, mu=matrix(0,nL,1))
 }else{
   if(is.matrix(prior$B$mu)==FALSE){
-   prior$B$mu<-matrix(prior$B$mu,  length(prior$B$mu), 1)
- }
- if(is.matrix(prior$B$V)==FALSE){
+    prior$B$mu<-matrix(prior$B$mu,  length(prior$B$mu), 1)
+  }
+  if(is.matrix(prior$B$V)==FALSE){
    prior$B$V<-as.matrix(prior$B$V)
- }	
- if(is.positive.definite(prior$B$V)==FALSE){stop("fixed effect V prior is not positive definite")}
- if((dim(X)[2]+nL)!=dim(prior$B$mu)[1]){stop("fixed effect mu prior is the wrong dimension")}
- if((dim(X)[2]+nL)!=dim(prior$B$V)[1] | (dim(X)[2]+nL)!=dim(prior$B$V)[2]){stop("fixed effect V prior is the wrong dimension")}
-
- if(nL>0){
-  if(any(prior$B$V[pL,-pL, drop=FALSE]!=0)){stop("sorry - sir effects and classic fixed effects have to be independent a priori")}
-  prior$L$mu<-prior$B$mu[pL,1, drop=FALSE]
-  prior$L$V<-prior$B$V[pL,pL, drop=FALSE]
-  prior$B$mu<-prior$B$mu[-pL,1, drop=FALSE]
-  prior$B$V<-prior$B$V[-pL,-pL, drop=FALSE]
-}else{
-  prior$L=list(V=diag(0)*1e+10, mu=matrix(0,nL,1))
-}   
+  }	
+  if(is.positive.definite(prior$B$V)==FALSE){stop("fixed effect V prior is not positive definite")}
+  if((dim(X)[2]+nL)!=dim(prior$B$mu)[1]){stop("fixed effect mu prior is the wrong dimension")}
+  if((dim(X)[2]+nL)!=dim(prior$B$V)[1] | (dim(X)[2]+nL)!=dim(prior$B$V)[2]){stop("fixed effect V prior is the wrong dimension")}
+  if(nL>0){
+    if(any(prior$B$V[pL,-pL, drop=FALSE]!=0)){stop("sorry - sir effects and classic fixed effects have to be independent a priori")}
+    prior$L$mu<-prior$B$mu[pL,1, drop=FALSE]
+    prior$L$V<-prior$B$V[pL,pL, drop=FALSE]
+    prior$B$mu<-prior$B$mu[-pL,1, drop=FALSE]
+    prior$B$V<-prior$B$V[-pL,-pL, drop=FALSE]
+  }else{
+    prior$L=list(V=diag(0)*1e+10, mu=matrix(0,nL,1))
+  }   
 }	   
+
+if(is.null(prior$S) | is.null(theta_scale)){
+  prior$S=list(V=diag(!is.null(theta_scale))*1e+10, mu=matrix(0,!is.null(theta_scale),1))
+}else{
+  if(length(prior$S$mu)!=1){stop("prior$S$mu should be a single number")}
+  if(!is.matrix(prior$S$mu)){
+    prior$S$mu<-matrix(prior$S$mu, 1, 1)
+  }
+  if(length(prior$S$V)!=1){stop("prior$S$V should be a single number")}
+  if(!is.matrix(prior$S$V)){
+    prior$S$V<-matrix(prior$S$V, 1, 1)
+  }  
+  if(!is.positive.definite(prior$S$V)){stop("prior$S$V should be positive")}
+}    
 
 ################
 # Missing data #
@@ -1022,166 +1081,167 @@ cnt<-cnt+nfl[i+nG]*nrl[i+nG]
 if(any(mvtype==0) & !is.null(path.terms)){stop("slice samlping not possible with path/sir models")}
 
 if(is.null(start$liab)){
- data$MCMC_liab<-rnorm(length(data$MCMC_y)) 
- if(QUASI==TRUE){ 
-  et.fn<-paste(data$MCMC_error.term, data$MCMC_family.names)
- 
-  for(i in unique(et.fn)){
+  data$MCMC_liab<-rnorm(length(data$MCMC_y)) 
+  if(QUASI==TRUE){ 
+    et.fn<-paste(data$MCMC_error.term, data$MCMC_family.names)
 
-    trait_set<-which(!is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
-    missing_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
-    dummy_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==1 & et.fn==i)
-    data_tmp<-data[trait_set,]
-    family_set<-data_tmp$MCMC_family.names[1]
+    for(i in unique(et.fn)){
 
-    if(length(trait_set)<2){
-      if(length(trait_set)==0 & length(missing_set)!=0){
-        warning(paste("all observations are missing for error term ", i, ": liabilities sampled from Norm(0,1)", sep=""))
-      }
-      mu<-0
-      v<-1
-    }else{ 
-      if(family_set=="poisson" | family_set=="ztpoisson"){
-        mu<-mean(data_tmp$MCMC_y)
-        v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
-        mu<-log(mu)-0.5*v
-      }
-      if(family_set=="cenpoisson"){
-        mu<-mean(data_tmp$MCMC_y+1)
-        v<-abs(log(abs(((var(data_tmp$MCMC_y+1)-mu)/(mu^2))+1)))
-        mu<-log(mu)-0.5*v
-      }          
-      if(family_set=="multinomial" | family_set=="ztmb" | family_set=="ztmultinomial"){
-        non_inf<-c()
-        if(family_set=="multinomial"){
-          non_inf<-which(!(data_tmp$MCMC_y>0 | data_tmp$MCMC_y.additional2>0))
-          make_miss<-non_inf
-        }  
-        if(family_set=="ztmultinomial"){
-          non_inf<-which(!(data_tmp$MCMC_y>0 & data_tmp$MCMC_y.additional2>0))
-          make_miss<-which(!(data_tmp$MCMC_y>0))
-        }  
+      trait_set<-which(!is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
+      missing_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==0 & et.fn==i)
+      dummy_set<-which(is.na(data$MCMC_y) & data$MCMC_dummy==1 & et.fn==i)
+      data_tmp<-data[trait_set,]
+      family_set<-data_tmp$MCMC_family.names[1]
 
-        if(length(non_inf)>0){
-          missing_set<-c(missing_set, trait_set[make_miss])
-          trait_set<-trait_set[-make_miss]
-          data_tmp<-data_tmp[-non_inf,]
+      if(length(trait_set)<2){
+        if(length(trait_set)==0 & length(missing_set)!=0){
+          warning(paste("all observations are missing for error term ", i, ": liabilities sampled from Norm(0,1)", sep=""))}
+        mu<-0
+        v<-1
+      }else{ 
+        if(family_set=="poisson" | family_set=="ztpoisson"){
+          mu<-mean(data_tmp$MCMC_y)
+          v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
+          mu<-log(mu)-0.5*v
         }
-      
-        if(length(table(data_tmp$MCMC_y))>2){
-          m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional2)~1, family="quasibinomial", data=data_tmp))
-          v<-abs(((as.numeric(m1$dispersion[1])-1)/(mean(data_tmp$MCMC_y+data_tmp$MCMC_y.additional2)-1))/(plogis(m1$coef[1])*(1-plogis(m1$coef[1]))))
-          mu<-m1$coef[1]*sqrt(1 + v*((16 * sqrt(3))/(15 * pi))^2) 
-        }else{
+        if(family_set=="cenpoisson"){
+          mu<-mean(data_tmp$MCMC_y+1)
+          v<-abs(log(abs(((var(data_tmp$MCMC_y+1)-mu)/(mu^2))+1)))
+          mu<-log(mu)-0.5*v
+        }          
+        if(family_set=="multinomial" | family_set=="ztmb" | family_set=="ztmultinomial"){
+          non_inf<-c()
+          if(family_set=="multinomial"){
+            non_inf<-which(!(data_tmp$MCMC_y>0 | data_tmp$MCMC_y.additional2>0))
+            make_miss<-non_inf
+          }  
+          if(family_set=="ztmultinomial"){
+            non_inf<-which(!(data_tmp$MCMC_y>0 & data_tmp$MCMC_y.additional2>0))
+            make_miss<-which(!(data_tmp$MCMC_y>0))
+          }  
+
+          if(length(non_inf)>0){
+            missing_set<-c(missing_set, trait_set[make_miss])
+            trait_set<-trait_set[-make_miss]
+            data_tmp<-data_tmp[-non_inf,]
+          }
+
+          if(length(table(data_tmp$MCMC_y))>2){
+            m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional2)~1, family="quasibinomial", data=data_tmp))
+            v<-abs(((as.numeric(m1$dispersion[1])-1)/(mean(data_tmp$MCMC_y+data_tmp$MCMC_y.additional2)-1))/(plogis(m1$coef[1])*(1-plogis(m1$coef[1]))))
+            mu<-m1$coef[1]*sqrt(1 + v*((16 * sqrt(3))/(15 * pi))^2) 
+          }else{
+            v<-1
+            mu<-0
+          }
+        }
+        if(family_set=="nzbinom"){ 
           v<-1
-          mu<-0
+          mu<-plogis(1-(1-mean(data_tmp$MCMC_y, na.rm=TRUE))^(1/mean(data_tmp$MCMC_y.additional, na.rm=TRUE)))
+        }
+        if(family_set=="exponential" | family_set=="cenexponential"){
+          if(any(data_tmp$MCMC_y==0)){
+            data_tmp$MCMC_y[which(data_tmp$MCMC_y==0)]<-1e-6
+          }
+          m1<-summary(glm(MCMC_y~1, family="Gamma", data=data_tmp))
+          v<-abs((as.numeric(m1$dispersion[1])-1)/2)
+          mu<-as.numeric(m1$coef[1])
+        }
+        if(family_set=="geometric"){
+          mu<-1/(mean(data_tmp$MCMC_y)+1)
+          mu<-log(mu)-log(1-mu)
+          v<-mu^2
+        }
+        if(family_set=="ordinal" | family_set=="threshold"){
+          v<-1
+          mu<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(1+(data_tmp$MCMC_family.names[1]=="ordinal")))[2]
+          if(any(abs(mu)==Inf)){
+            mu[which(abs(mu)==Inf)]<-7*sign(mu[which(abs(mu)==Inf)])
+          }  
+        }
+        if(family_set=="cengaussian"){ 
+          v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
+          mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
+        }
+        if(family_set=="gaussian"){ 
+          v<-var(data_tmp$MCMC_y)
+          mu<-mean(data_tmp$MCMC_y)
+        }
+        if(family_set=="zipoisson" | family_set=="hupoisson" | family_set=="zapoisson"){
+          if(max(data_tmp$MCMC_y)==1){
+            mu<-mean(data_tmp$MCMC_y==1)
+            if(family_set!="zapoisson"){
+              mu<-log(mu/(1-mu))
+            }else{  
+              mu<-log(-log(mu))
+            }
+            v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
+          }else{
+            data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
+            mu<-mean(data_tmp$MCMC_y)
+            v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
+            mu<-log(mu)-0.5*v
+          }
+        }
+        if(family_set=="zibinomial" | family_set=="hubinomial"){
+          if(max(data_tmp$MCMC_y)==1){
+            mu<-mean(data_tmp$MCMC_y==1)
+            mu<-log(mu/(1-mu))
+            v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
+          }else{
+            data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
+            m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional-MCMC_y)~1, family="quasibinomial", data=data_tmp))
+            v<-abs(((as.numeric(m1$dispersion[1])-1)/(mean(data_tmp$MCMC_y.additional)-1))/(plogis(m1$coef[1])*(1-plogis(m1$coef[1]))))
+            mu<-m1$coef[1]*sqrt(1 + v*((16 * sqrt(3))/(15 * pi))^2) 
+          }
+        }
+        if(family_set=="zitobit"){
+          if(max(data_tmp$MCMC_y)==1){
+            mu<-mean(data_tmp$MCMC_y==1)
+            mu<-log(mu/(1-mu))
+            v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
+          }else{
+            v<-var(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
+            mu<-mean(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
+          }
+        }
+        if(family_set=="ncst" | family_set=="msst"){
+          mu<-mean(data_tmp$MCMC_y*data_tmp$MCMC_y.additional, na.rm=TRUE)
+          v<-var(data_tmp$MCMC_y*data_tmp$MCMC_y.additional, na.rm=TRUE)
         }
       }
-      if(family_set=="nzbinom"){ 
-      v<-1
-      mu<-plogis(1-(1-mean(data_tmp$MCMC_y, na.rm=TRUE))^(1/mean(data_tmp$MCMC_y.additional, na.rm=TRUE)))
+      if(is.na(v) | is.na(mu)){
+        warning(paste("good starting values not obtained for error term", i, "liabilities: using Norm(0,1)"))
+        if(is.na(v)){v<-1}
+        if(is.na(mu)){mu<-0}
       }
-      if(family_set=="exponential" | family_set=="cenexponential"){
-      if(any(data_tmp$MCMC_y==0)){
-        data_tmp$MCMC_y[which(data_tmp$MCMC_y==0)]<-1e-6
+      if(length(missing_set)>0){
+        data$MCMC_liab[missing_set]<-rnorm(length(missing_set),mu, sqrt(v))
       }
-      m1<-summary(glm(MCMC_y~1, family="Gamma", data=data_tmp))
-      v<-abs((as.numeric(m1$dispersion[1])-1)/2)
-      mu<-as.numeric(m1$coef[1])
-    }
-    if(family_set=="geometric"){
-      mu<-1/(mean(data_tmp$MCMC_y)+1)
-      mu<-log(mu)-log(1-mu)
-      v<-mu^2
-    }
-    if(family_set=="ordinal" | family_set=="threshold"){
-      v<-1
-      mu<-qnorm(cumsum(c(0,table(data_tmp$MCMC_y)/length(data_tmp$MCMC_y))), 0, sqrt(1+(data_tmp$MCMC_family.names[1]=="ordinal")))[2]
-      if(any(abs(mu)==Inf)){
-        mu[which(abs(mu)==Inf)]<-7*sign(mu[which(abs(mu)==Inf)])
-      }  
-    }
-    if(family_set=="cengaussian"){ 
-      v<-var(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
-      mu<-mean(apply(cbind(data_tmp$MCMC_y,data_tmp$MCMC_y.additional),1,function(x){mean(x[which(abs(x)!=Inf)])}))
-    }
-    if(family_set=="gaussian"){ 
-      v<-var(data_tmp$MCMC_y)
-      mu<-mean(data_tmp$MCMC_y)
-    }
-    if(family_set=="zipoisson" | family_set=="hupoisson" | family_set=="zapoisson"){
-      if(max(data_tmp$MCMC_y)==1){
-        mu<-mean(data_tmp$MCMC_y==1)
-        if(family_set!="zapoisson"){
-         mu<-log(mu/(1-mu))
-       }else{
-         mu<-log(-log(mu))
-       }
-       v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
-     }else{
-      data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
-      mu<-mean(data_tmp$MCMC_y)
-      v<-abs(log(((var(data_tmp$MCMC_y)-mu)/(mu^2))+1))
-      mu<-log(mu)-0.5*v
+      if(length(dummy_set)>0){
+        data$MCMC_liab[dummy_set]<-rnorm(length(dummy_set), 0, sqrt(v))
+      }
+      if(length(trait_set)>0){
+        l_tmp<-sort(rnorm(length(trait_set), mu, sqrt(v)))
+        if(family_set=="multinomial" | family_set=="ztmultinomial"){
+          l_tmp<-l_tmp[rank((data$MCMC_y/data$MCMC_y.additional)[trait_set], ties.method="random")]
+        }else{
+          l_tmp<-l_tmp[rank(data$MCMC_y[trait_set], ties.method="random")]
+        }
+        l_tmp<-rnorm(length(trait_set), as.vector(mu)+rLV*(l_tmp-as.vector(mu)), sqrt(v*(1-rLV^2)))
+        data$MCMC_liab[trait_set]<-l_tmp
+      }
     }
   }
-  if(family_set=="zibinomial" | family_set=="hubinomial"){
-    if(max(data_tmp$MCMC_y)==1){
-      mu<-mean(data_tmp$MCMC_y==1)
-      mu<-log(mu/(1-mu))
-      v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
-    }else{
-     data_tmp<-data_tmp[-which(data_tmp$MCMC_y==0),]  
-     m1<-summary(glm(cbind(MCMC_y, MCMC_y.additional-MCMC_y)~1, family="quasibinomial", data=data_tmp))
-     v<-abs(((as.numeric(m1$dispersion[1])-1)/(mean(data_tmp$MCMC_y.additional)-1))/(plogis(m1$coef[1])*(1-plogis(m1$coef[1]))))
-     mu<-m1$coef[1]*sqrt(1 + v*((16 * sqrt(3))/(15 * pi))^2) 
-   }
- }
- if(family_set=="zitobit"){
-  if(max(data_tmp$MCMC_y)==1){
-    mu<-mean(data_tmp$MCMC_y==1)
-    mu<-log(mu/(1-mu))
-    v<-diag(GRprior[[nG+nR]]$V)[length(diag(GRprior[[nG+nR]]$V))]
-  }else{
-    v<-var(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
-    mu<-mean(data_tmp$MCMC_y[-which(data_tmp$MCMC_y==0)], na.rm=TRUE)
-  }
-}
-if(family_set=="ncst" | family_set=="msst"){
-  mu<-mean(data_tmp$MCMC_y*data_tmp$MCMC_y.additional, na.rm=TRUE)
-  v<-var(data_tmp$MCMC_y*data_tmp$MCMC_y.additional, na.rm=TRUE)
-}
-}
-if(is.na(v) | is.na(mu)){
-  warning(paste("good starting values not obtained for error term", i, "liabilities: using Norm(0,1)"))
-  if(is.na(v)){v<-1}
-  if(is.na(mu)){mu<-0}
-}
-if(length(missing_set)>0){
-  data$MCMC_liab[missing_set]<-rnorm(length(missing_set),mu, sqrt(v))
-}
-if(length(dummy_set)>0){
-  data$MCMC_liab[dummy_set]<-rnorm(length(dummy_set), 0, sqrt(v))
-}
-if(length(trait_set)>0){
-  l_tmp<-sort(rnorm(length(trait_set), mu, sqrt(v)))
-  if(family_set=="multinomial" | family_set=="ztmultinomial"){
-    l_tmp<-l_tmp[rank((data$MCMC_y/data$MCMC_y.additional)[trait_set], ties.method="random")]
-  }else{
-    l_tmp<-l_tmp[rank(data$MCMC_y[trait_set], ties.method="random")]
-  }
-  l_tmp<-rnorm(length(trait_set), as.vector(mu)+rLV*(l_tmp-as.vector(mu)), sqrt(v*(1-rLV^2)))
-  data$MCMC_liab[trait_set]<-l_tmp
-}
-}
-}
 }else{
   if(length(c(start$liab))!=length(data$MCMC_y)){stop("liabilities must have the same dimensions as the response")}
   if(any(is.na(start$liab))){stop("starting liabilities must not contain missing values")}
   if(any(data$MCMC_family.names=="cengaussian" & (start$liab>data$MCMC_y.additional | start$liab<data$MCMC_y))){
    stop("starting liabilities for censored Gaussian data must lie between censoring points")
  }
- data$MCMC_liab<-c(start$liab)
+ data$MCMC_dummy
+ data$MCMC_liab<-rnorm(nrow(data))
+ data$MCMC_liab[which(data$MCMC_dummy==0)]<-c(start$liab)[ordering]
 }
 
 if(any(data$MCMC_family.names=="cengaussian" & (data$MCMC_liab>data$MCMC_y.additional | data$MCMC_liab<data$MCMC_y), na.rm=T)){
@@ -1262,13 +1322,20 @@ anteBvpP<-unlist(lapply(GRprior, function(x){if(!is.null(x$beta.V)){c(solve(x$be
 
 BvpP<-c(solve(prior$B$V), sum(prior$B$V!=0)==dim(prior$B$V)[1])
 BmupP<-c(prior$B$mu)
+
 if(nL>0){
   LvpP<-c(solve(prior$L$V), sum(prior$L$V!=0)==dim(prior$L$V)[1])
   LmupP<-c(prior$L$mu)
-}else{
+}
+if(!is.null(theta_scale)){  # use LvpP for theta_scale prior: theta_scale and sir models cannot be use together
+  LvpP<-c(solve(prior$S$V), sum(prior$S$V!=0)==dim(prior$S$V)[1])
+  LmupP<-c(prior$S$mu)
+}
+if(!nL>0 & is.null(theta_scale)){
   LvpP<-1
   LmupP<-0
 }
+
 
 AmupP<-unlist(lapply(GRprior, function(x){x$alpha.mu}))
 PXterms<-unlist(lapply(GRprior, function(x){all(x$alpha.V==0)==FALSE}))
@@ -1331,7 +1398,8 @@ if(nkeep<1){stop("burnin is equal to, or greater than number of iterations")}
 if(nG==0){pr<-FALSE}
 
 Loc<-1:((sum((nfl*nrl)[1:nG])*pr+dim(X)[2]+nL*0)*nkeep)
-lambda<-1:(nL*nkeep)
+
+lambda<-1:(nL*nkeep+(!is.null(theta_scale))*nkeep)
 
 if(ncutpoints_store>0){
   CP<-1:(ncutpoints_store*nkeep)
@@ -1358,14 +1426,16 @@ if(DIC==TRUE){
  }
 }
 
+
+
 output<-.C("MCMCglmm",
   as.double(data$MCMC_y),   
   as.double(c(data$MCMC_y.additional, data$MCMC_y.additional2, data$MCMC_mh.weights)),
   as.double(data$MCMC_liab), 
   as.integer(mvtype),   
   as.integer(length(data$MCMC_y)),
-  as.integer(c(X@Dim,Z@Dim, L@Dim, unlist(lapply(ginverse, function(x){x@Dim[1]})))),  
-  as.integer(c(length(X@x),length(Z@x),length(L@x),unlist(lapply(ginverse, function(x){length(x@x)})))),       
+  as.integer(c(X@Dim,Z@Dim, if(nL>0){L@Dim}else{c(0,0)}, if(!is.null(theta_scale)){L@Dim}else{c(0,0)}, unlist(lapply(ginverse, function(x){x@Dim[1]})))),  
+  as.integer(c(length(X@x),length(Z@x),if(nL>0){length(L@x)}else{0}, if(!is.null(theta_scale)){length(L@x)}else{0}, unlist(lapply(ginverse, function(x){length(x@x)})))),       
   as.integer(X@i),         
   as.integer(X@p),        
   as.double(X@x),         	  
@@ -1389,7 +1459,7 @@ output<-.C("MCMCglmm",
   as.double(Var),
   as.double(PLiab),
   as.integer(data$MCMC_family.names),
-  as.double(c(unlist(tune$MH_V))),
+  as.double(c(unlist(tune$mh_V))),
   as.integer(verbose),
   as.double(BvpP),
   as.double(BmupP),
@@ -1441,6 +1511,15 @@ if(nL>0){
  lambda<-mcmc(lambda, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
 }else{
  lambda<-NULL
+}
+
+
+if(!is.null(theta_scale)){       
+ thetaS<-matrix(output[[55]], nkeep,1)  
+ colnames(thetaS)<-"theta_scale"    
+ thetaS<-mcmc(thetaS, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin)
+}else{
+ thetaS<-NULL
 }
 
 if(ncutpoints_store!=0){
@@ -1556,18 +1635,26 @@ if(saveZ){
   }
 }
 
-if(saveXL==FALSE | nL==0){
+if((!saveWS | is.null(theta_scale)) & (!saveXL | nL==0)){
   L<-NULL
 }else{
- if(!is.null(path.terms)){
-   L<-kronecker(as.matrix(L), Diagonal(nrl[nG+1]))
- }
- Lordering<-rep(order(ordering),nL)+rep(((1:nL)-1)*length(ordering),each=length(ordering))
- L<-L[order(ordering),Lordering,drop=FALSE]
- Ldummy.data<-rep(dummy.data,nL)+rep(((1:nL)-1)*length(dummy.data),each=length(dummy.data))
- if(length(dummy.data)>0){
-   L<-L[-dummy.data,-Ldummy.data,drop=FALSE]
- }
+  if(saveWS & !is.null(theta_scale)){
+    L<-L[order(ordering),]
+    if(length(dummy.data)>0){
+      L<-L[-dummy.data,,drop=FALSE]
+    } 
+  }
+  if(saveXL & nL>0){
+    if(!is.null(path.terms)){
+      L<-kronecker(as.matrix(L), Diagonal(nrl[nG+1]))
+    }
+    Lordering<-rep(order(ordering),nL)+rep(((1:nL)-1)*length(ordering),each=length(ordering))
+    L<-L[order(ordering),Lordering,drop=FALSE]
+    Ldummy.data<-rep(dummy.data,nL)+rep(((1:nL)-1)*length(dummy.data),each=length(dummy.data))
+    if(length(dummy.data)>0){
+      L<-L[-dummy.data,-Ldummy.data,drop=FALSE]
+    }
+  }  
 }
 
 y.additional<-cbind(data$MCMC_y.additional, data$MCMC_y.additional2)[order(ordering),]
@@ -1618,6 +1705,7 @@ for(i in 1:nR){
 output<-list(
   Sol=mcmc(Sol, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin),
   Lambda = lambda,
+  ThetaS = thetaS,
   VCV=mcmc(VCV, start=burnin+1, end=burnin+1+(nkeep-1)*thin, thin=thin),
   CP=CP,
   Liab=Liab,
@@ -1635,7 +1723,8 @@ output<-list(
   family=family, 
   Tune=list2bdiag(Tune),
   meta=!is.null(mev),
-  y.additional=y.additional
+  y.additional=y.additional,
+  Wscale=L 
   )
 
 class(output)<-c("MCMCglmm")
